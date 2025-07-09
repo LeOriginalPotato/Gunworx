@@ -22,7 +22,6 @@ import {
   ArrowRight,
   ArrowLeft,
   RotateCcw,
-  Scan,
   PenTool,
   FileSignature,
 } from "lucide-react"
@@ -904,12 +903,6 @@ const initialData: FirearmEntry[] = [
     make: "Glock",
     type: "Pistol",
     caliber: "9mm",
-    id: "49",
-    stockNo: "A48",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
     serialNo: "SSN600",
     fullName: "DDD",
     surname: "White",
@@ -1480,57 +1473,27 @@ export default function GunworxTracker() {
               <CardHeader>
                 <CardTitle>Search & Filter</CardTitle>
                 <CardDescription>
-                  Search across all {stats.total} entries including names, addresses, serial numbers, and more. Use a
-                  barcode scanner for quick item lookup.
+                  Search across all entries including names, addresses, serial numbers, and more. Use a barcode scanner
+                  for quick item lookup.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-4">
-                  {/* Barcode Scanner Section */}
-                  <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <Button
-                      variant={isBarcodeMode ? "default" : "outline"}
-                      onClick={toggleBarcodeMode}
-                      className={isBarcodeMode ? "bg-blue-600 hover:bg-blue-700" : ""}
-                    >
-                      <Scan className="w-4 h-4 mr-2" />
-                      {isBarcodeMode ? "Exit Barcode Mode" : "Barcode Scanner"}
-                    </Button>
-
-                    {isBarcodeMode && (
-                      <div className="flex-1">
-                        <Input
-                          id="barcode-input"
-                          value={barcodeInput}
-                          onChange={(e) => setBarcodeInput(e.target.value)}
-                          onKeyDown={handleBarcodeInput}
-                          placeholder="Scan barcode or type manually and press Enter..."
-                          className="bg-white border-blue-300 focus:border-blue-500"
-                          autoFocus
-                        />
-                      </div>
-                    )}
-
-                    {isBarcodeMode && (
-                      <div className="text-sm text-blue-600 font-medium">Scanner Active - Scan item or press Enter</div>
-                    )}
-                  </div>
-
                   {/* Regular Search and Filter */}
                   <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1">
                       <div className="relative">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input
-                          placeholder="Search by name, address, serial number, make, model..."
+                          placeholder="Search by name, address, serial number, make, model... (or scan barcode)"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
+                          onKeyDown={handleBarcodeInput}
                           className="pl-10"
-                          disabled={isBarcodeMode}
                         />
                       </div>
                     </div>
-                    <Select value={statusFilter} onValueChange={setStatusFilter} disabled={isBarcodeMode}>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-full md:w-48">
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
