@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gunworx Firearms Tracker</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+    <meta name="description" content="Professional firearms tracking system for compliance with FIREARMS CONTROL ACT, 2000">
+    <meta name="keywords" content="firearms, tracking, inventory, gunworx, compliance">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center gap-4 mb-4">
+                <img src="assets/images/logo.png" alt="Gunworx Logo" class="h-12 w-auto">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Gunworx Firearms Tracker</h1>
+                    <p class="text-gray-600">FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div class="card">
+                <div class="p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Items</p>
+                            <p class="text-2xl font-bold" id="total-count">851</p>
+                        </div>
+                        <i data-lucide="package" class="icon-lg text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Collected</p>
+                            <p class="text-2xl font-bold text-green-600" id="collected-count">750</p>
+                        </div>
+                        <i data-lucide="check-circle" class="icon-lg text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">In Stock</p>
+                            <p class="text-2xl font-bold text-blue-600" id="instock-count">0</p>
+                        </div>
+                        <i data-lucide="package" class="icon-lg text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Dealer Stock</p>
+                            <p class="text-2xl font-bold text-orange-600" id="dealer-count">26</p>
+                        </div>
+                        <i data-lucide="alert-circle" class="icon-lg text-orange-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Safe Keeping</p>
+                            <p class="text-2xl font-bold text-red-600" id="safekeeping-count">75</p>
+                        </div>
+                        <i data-lucide="clock" class="icon-lg text-red-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <button class="tab-button active" onclick="showTab('inventory')" id="inventory-tab">
+                        <i data-lucide="list" class="icon mr-2"></i>
+                        Inventory Management
+                    </button>
+                    <button class="tab-button" onclick="showTab('add')" id="add-tab">
+                        <i data-lucide="plus" class="icon mr-2"></i>
+                        Add New Item
+                    </button>
+                    <button class="tab-button" onclick="showTab('reports')" id="reports-tab">
+                        <i data-lucide="bar-chart" class="icon mr-2"></i>
+                        Reports
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="inventory-content" class="space-y-4">
+            <!-- Search and Filter Controls -->
+            <div class="card">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                        <i data-lucide="search" class="icon"></i>
+                        Search & Filter
+                    </h3>
+                    <p class="text-gray-600 mb-4">Search across all entries including names, addresses, serial numbers, and more. Use a barcode scanner for quick item lookup.</p>
+                    
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <i data-lucide="search" class="absolute left-3 top-3 icon text-gray-400"></i>
+                                    <input 
+                                        type="text" 
+                                        class="input pl-10" 
+                                        placeholder="Search by name, address, serial number, make, model... (or scan barcode)"
+                                        id="search-input"
+                                        onkeydown="handleBarcodeInput(event)"
+                                        oninput="filterFirearms()"
+                                    >
+                                </div>
+                            </div>
+                            <select class="select w-full md:w-48" id="status-filter" onchange="filterFirearms()">
+                                <option value="all">All Status</option>
+                                <option value="in-stock">In Stock</option>
+                                <option value="dealer-stock">Dealer Stock</option>
+                                <option value="safe-keeping">Safe Keeping</option>
+                            </select>
+                            <button class="btn btn-outline" onclick="exportData()">
+                                <i data-lucide="download" class="icon mr-2"></i>
+                                Export CSV
+                            </button>
+                        </div>
+                        
+                        <div id="search-results" class="hidden">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-600">Search results for: <strong id="search-term"></strong></span>
+                                <button class="btn btn-ghost btn-sm" onclick="clearSearch()">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <!-- Active Firearms Table -->
+                <div class="card">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                            <i data-lucide="package" class="icon"></i>
+                            Active Inventory (<span id="active-count">101</span> items)
+                        </h3>
+                        <p class="text-gray-600 mb-4">Items currently in stock, dealer stock, or safe keeping</p>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Stock No</th>
+                                        <th>Make/Type</th>
+                                        <th>Serial No</th>
+                                        <th>Owner</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="active-firearms-table">
+                                    <!-- Active firearms will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collected Firearms Table -->
+                <div class="card">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                            <i data-lucide="check-circle" class="icon text-green-600"></i>
+                            Collected Items (<span id="collected-table-count">750</span> items)
+                        </h3>
+                        <p class="text-gray-600 mb-4">Items that have been collected by owners</p>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Original Stock</th>
+                                        <th>Make/Type</th>
+                                        <th>Serial No</th>
+                                        <th>Owner</th>
+                                        <th>Date Collected</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="collected-firearms-table">
+                                    <!-- Collected firearms will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Item Tab -->
+        <div id="add-content" class="space-y-4 hidden">
+            <div class="card">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                        <i data-lucide="plus" class="icon"></i>
+                        Add New Firearm
+                    </h3>
+                    <p class="text-gray-600 mb-6">Enter details for a new firearm entry</p>
+                    
+                    <form id="add-firearm-form" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Stock Number *</label>
+                                <input type="text" class="input" name="stockNo" placeholder="e.g., A01, B02, C03" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Date Received</label>
+                                <input type="date" class="input" name="dateReceived">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select class="select" name="status">
+                                    <option value="in-stock">In Stock</option>
+                                    <option value="dealer-stock">Dealer Stock</option>
+                                    <option value="safe-keeping">Safe Keeping</option>
+                                    <option value="collected">Collected</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Make *</label>
+                                <input type="text" class="input" name="make" placeholder="e.g., Glock, CZ, Taurus, Walther" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                <input type="text" class="input" name="type" placeholder="e.g., Pistol, Rifle, Shotgun, Revolver">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Caliber</label>
+                                <input type="text" class="input" name="caliber" placeholder="e.g., 9mm, .22LR, 12GA, 308">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number *</label>
+                            <input type="text" class="input" name="serialNo" placeholder="Enter unique serial number" required>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">First Name / Company Name</label>
+                                <input type="text" class="input" name="fullName" placeholder="Owner's first name or company">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Surname</label>
+                                <input type="text" class="input" name="surname" placeholder="Owner's surname (if applicable)">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Registration/ID Number</label>
+                            <input type="text" class="input" name="registrationId" placeholder="ID number or company registration">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Physical Address</label>
+                            <input type="text" class="input" name="physicalAddress" placeholder="Owner's physical address">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Licence Number</label>
+                                <input type="text" class="input" name="licenceNo" placeholder="e.g., 37/23, 40/11">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Licence Date</label>
+                                <input type="date" class="input" name="licenceDate">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+                            <textarea class="textarea" name="remarks" rows="4" placeholder="Additional notes, contact information, special instructions, etc."></textarea>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button type="submit" class="btn btn-primary flex-1">
+                                <i data-lucide="plus" class="icon mr-2"></i>
+                                Add Firearm
+                            </button>
+                            <button type="button" class="btn btn-outline w-32" onclick="clearForm()">
+                                Clear Form
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports-content" class="space-y-4 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <i data-lucide="bar-chart" class="icon"></i>
+                            Status Summary
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Total Items:</span>
+                                <span class="font-semibold" id="report-total">851</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Collected:</span>
+                                <span class="font-semibold text-green-600" id="report-collected">750</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">In Stock:</span>
+                                <span class="font-semibold text-blue-600" id="report-instock">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Dealer Stock:</span>
+                                <span class="font-semibold text-orange-600" id="report-dealer">26</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Safe Keeping:</span>
+                                <span class="font-semibold text-red-600" id="report-safekeeping">75</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <i data-lucide="download" class="icon"></i>
+                            Export Options
+                        </h3>
+                        <div class="space-y-3">
+                            <button class="btn btn-outline w-full" onclick="exportData('all')">
+                                <i data-lucide="file-text" class="icon mr-2"></i>
+                                Export All Data (CSV)
+                            </button>
+                            <button class="btn btn-outline w-full" onclick="exportData('active')">
+                                <i data-lucide="package" class="icon mr-2"></i>
+                                Export Active Items Only
+                            </button>
+                            <button class="btn btn-outline w-full" onclick="exportData('collected')">
+                                <i data-lucide="check-circle" class="icon mr-2"></i>
+                                Export Collected Items Only
+                            </button>
+                            <button class="btn btn-outline w-full" onclick="printReport()">
+                                <i data-lucide="printer" class="icon mr-2"></i>
+                                Print Summary Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 4rem;">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <i data-lucide="edit" class="icon"></i>
+                    Edit Firearm Entry
+                </h2>
+                <button onclick="closeEditModal()" class="btn btn-ghost">
+                    <i data-lucide="x" class="icon"></i>
+                </button>
+            </div>
+            
+            <form id="edit-firearm-form" class="space-y-6">
+                <!-- Form fields similar to add form -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Stock Number *</label>
+                        <input type="text" class="input" name="stockNo" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date Received</label>
+                        <input type="date" class="input" name="dateReceived">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select class="select" name="status">
+                            <option value="in-stock">In Stock</option>
+                            <option value="dealer-stock">Dealer Stock</option>
+                            <option value="safe-keeping">Safe Keeping</option>
+                            <option value="collected">Collected</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Make *</label>
+                        <input type="text" class="input" name="make" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                        <input type="text" class="input" name="type">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Caliber</label>
+                        <input type="text" class="input" name="caliber">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number *</label>
+                    <input type="text" class="input" name="serialNo" required>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name / Company Name</label>
+                        <input type="text" class="input" name="fullName">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Surname</label>
+                        <input type="text" class="input" name="surname">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Registration/ID Number</label>
+                    <input type="text" class="input" name="registrationId">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Physical Address</label>
+                    <input type="text" class="input" name="physicalAddress">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Licence Number</label>
+                        <input type="text" class="input" name="licenceNo">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Licence Date</label>
+                        <input type="date" class="input" name="licenceDate">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+                    <textarea class="textarea" name="remarks" rows="4"></textarea>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="button" class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="save" class="icon mr-2"></i>
+                        Update Firearm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-12 border-t border-gray-200 pt-8">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="text-gray-600 text-sm">
+                    © 2024 Gunworx Firearms Tracker. All rights reserved.
+                </div>
+                <div class="text-gray-600 text-sm mt-2 md:mt-0">
+                    Compliant with FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
