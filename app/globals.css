@@ -23,12 +23,12 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
   }
 
   .dark {
@@ -68,50 +68,56 @@
   }
 }
 
-/* Custom styles for the firearms tracker */
-.container {
-  @apply mx-auto px-4 sm:px-6 lg:px-8;
+/* Custom scrollbar styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
 }
 
-/* Table styles */
-.table-container {
-  @apply overflow-x-auto;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-/* Badge styles */
-.badge {
-  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
 }
 
-.badge-green {
-  @apply bg-green-100 text-green-800;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 
-.badge-secondary {
-  @apply bg-gray-100 text-gray-800;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-.badge-outline {
-  @apply bg-transparent border border-gray-300 text-gray-700;
+/* Responsive table styles */
+.responsive-table {
+  @apply w-full overflow-x-auto;
 }
 
-.badge-destructive {
-  @apply bg-red-100 text-red-800;
+.responsive-table table {
+  @apply min-w-full;
 }
 
-/* Form styles */
-.form-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+.responsive-table th,
+.responsive-table td {
+  @apply px-2 py-1 text-xs;
 }
 
-/* Responsive utilities */
-@media (max-width: 768px) {
-  .mobile-stack {
-    @apply flex-col;
+@media (min-width: 768px) {
+  .responsive-table th,
+  .responsive-table td {
+    @apply px-3 py-2 text-sm;
   }
+}
 
-  .mobile-full {
-    @apply w-full;
+@media (min-width: 1024px) {
+  .responsive-table th,
+  .responsive-table td {
+    @apply px-4 py-3 text-base;
   }
 }
 
@@ -122,21 +128,86 @@
   }
 
   .print-break {
-    page-break-after: always;
+    page-break-before: always;
+  }
+
+  body {
+    font-size: 12px;
+  }
+
+  table {
+    font-size: 10px;
   }
 }
 
-/* Accessibility improvements */
-.sr-only {
-  @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+/* Compact table styles for large datasets */
+.compact-table {
+  font-size: 0.875rem;
 }
 
-/* Focus styles */
-.focus-visible {
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+.compact-table th,
+.compact-table td {
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Animation utilities */
+.compact-table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+}
+
+@media (max-width: 768px) {
+  .compact-table {
+    font-size: 0.75rem;
+  }
+
+  .compact-table th,
+  .compact-table td {
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+@media print {
+  .compact-table {
+    font-size: 0.75rem;
+  }
+
+  .compact-table th,
+  .compact-table td {
+    padding: 0.25rem;
+    border: 1px solid #e5e7eb;
+  }
+}
+
+/* Status indicator styles */
+.status-indicator {
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-rifle {
+  background-color: #dbeafe;
+  color: #1e40af;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-pistol {
+  background-color: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-carbine {
+  background-color: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Animation classes */
 .fade-in {
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -154,22 +225,210 @@
 
 /* Loading spinner */
 .spinner {
-  @apply animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600;
+  @apply inline-block w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin;
 }
 
-/* Custom scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+/* Highlight search results */
+.search-highlight {
+  @apply bg-yellow-200 px-1 rounded;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-gray-100 rounded-full;
+/* Mobile-first responsive design */
+.mobile-stack {
+  @apply flex flex-col space-y-2;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-gray-400 rounded-full;
+@media (min-width: 768px) {
+  .mobile-stack {
+    @apply flex-row space-y-0 space-x-4;
+  }
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-600;
+/* Grid layouts for different screen sizes */
+.grid-responsive {
+  @apply grid grid-cols-1 gap-4;
+}
+
+@media (min-width: 640px) {
+  .grid-responsive {
+    @apply grid-cols-2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive {
+    @apply grid-cols-3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid-responsive {
+    @apply grid-cols-4;
+  }
+}
+
+/* Table cell truncation */
+.truncate-cell {
+  @apply max-w-0 truncate;
+}
+
+/* Sticky header */
+.sticky-header {
+  @apply sticky top-0 z-10 bg-white shadow-sm;
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-lg hover:scale-105;
+}
+
+/* Focus styles for accessibility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Button variants */
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+}
+
+/* Form styles */
+.form-input {
+  @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+/* Utility classes for spacing */
+.space-y-tight > * + * {
+  margin-top: 0.5rem;
+}
+
+.space-x-tight > * + * {
+  margin-left: 0.5rem;
+}
+
+/* Error states */
+.error-border {
+  @apply border-red-500 focus:border-red-500 focus:ring-red-500;
+}
+
+.error-text {
+  @apply text-red-600 text-sm mt-1;
+}
+
+/* Success states */
+.success-border {
+  @apply border-green-500 focus:border-green-500 focus:ring-green-500;
+}
+
+.success-text {
+  @apply text-green-600 text-sm mt-1;
+}
+
+/* Loading states */
+.loading-overlay {
+  @apply absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center;
+}
+
+/* Tooltip styles */
+.tooltip {
+  @apply absolute z-50 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg;
+}
+
+/* Badge styles */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-blue {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.badge-green {
+  @apply bg-green-100 text-green-800;
+}
+
+.badge-yellow {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.badge-red {
+  @apply bg-red-100 text-red-800;
+}
+
+.badge-gray {
+  @apply bg-gray-100 text-gray-800;
+}
+
+/* Progress bar */
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+.progress-fill {
+  @apply bg-blue-600 h-2 rounded-full transition-all duration-300;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply animate-pulse bg-gray-300 rounded;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .dark-mode {
+    @apply bg-gray-900 text-white;
+  }
+
+  .dark-mode .card {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .dark-mode .form-input {
+    @apply bg-gray-800 border-gray-600 text-white;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .high-contrast {
+    @apply border-2 border-black;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .respect-motion {
+    @apply transition-none animate-none;
+  }
+}
+
+/* Print optimization */
+@media print {
+  .print-hidden {
+    @apply hidden;
+  }
+
+  .print-visible {
+    @apply block;
+  }
+
+  .print-page-break {
+    page-break-before: always;
+  }
+
+  .print-no-break {
+    page-break-inside: avoid;
+  }
 }

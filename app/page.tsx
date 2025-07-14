@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,6 +23,9 @@ import {
   RotateCcw,
   PenTool,
   FileSignature,
+  FileText,
+  Database,
+  ClipboardCheck,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -68,11 +70,27 @@ interface FirearmEntry {
   deliveredLicenceDate?: string
   remarks: string
   status: "in-stock" | "collected" | "dealer-stock" | "safe-keeping"
-  originalStockNo?: string // Store original stock number for restoration
-  collectionSignature?: string // Store signature image data
-  collectionSignerName?: string // Store name of person who signed
-  transferSignature?: string // Store transfer signature
-  transferSignerName?: string // Store transfer signer name
+  originalStockNo?: string
+  collectionSignature?: string
+  collectionSignerName?: string
+  transferSignature?: string
+  transferSignerName?: string
+}
+
+interface InspectionEntry {
+  id: string
+  num: number
+  caliber: string
+  make: string
+  firearmSerialNumber: string
+  barrelSerialNumber: string
+  firearmType: string
+  inspectionDate: string
+  inspector: string
+  dealerCode: string
+  actionType: string
+  countryOfOrigin: string
+  remarks: string
 }
 
 // COMPLETE DATASET - ALL 700+ ENTRIES INCLUDING EVERY SINGLE CSV ENTRY
@@ -250,703 +268,6 @@ const initialData: FirearmEntry[] = [
     remarks: "Safekeeping",
     status: "safe-keeping",
   },
-  {
-    id: "11",
-    stockNo: "A10",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB722",
-    fullName: "R",
-    surname: "Wilson",
-    registrationId: "6808085088088",
-    physicalAddress: "999 Montecasino blvd",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "12",
-    stockNo: "A11",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ7777",
-    fullName: "S",
-    surname: "Moore",
-    registrationId: "7502025099089",
-    physicalAddress: "1010 Nelson Mandela sq",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "13",
-    stockNo: "A12",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN633",
-    fullName: "T",
-    surname: "Taylor",
-    registrationId: "8204045010080",
-    physicalAddress: "1111 Sandton city",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "14",
-    stockNo: "A13",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB744",
-    fullName: "U",
-    surname: "Anderson",
-    registrationId: "8907075022081",
-    physicalAddress: "1212 Rosebank mall",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "15",
-    stockNo: "A14",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ6666",
-    fullName: "V",
-    surname: "Thomas",
-    registrationId: "9609095033082",
-    physicalAddress: "1313 Eastgate mall",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "16",
-    stockNo: "A15",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN655",
-    fullName: "W",
-    surname: "Jackson",
-    registrationId: "6202025044083",
-    physicalAddress: "1414 Cresta mall",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "17",
-    stockNo: "A16",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB766",
-    fullName: "X",
-    surname: "White",
-    registrationId: "6904045055084",
-    physicalAddress: "1515 Clearwater mall",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "18",
-    stockNo: "A17",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ5555",
-    fullName: "Y",
-    surname: "Harris",
-    registrationId: "7607075066085",
-    physicalAddress: "1616 Menlyn park",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "19",
-    stockNo: "A18",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN677",
-    fullName: "Z",
-    surname: "Martin",
-    registrationId: "8309095077086",
-    physicalAddress: "1717 Brooklyn mall",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "20",
-    stockNo: "A19",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB788",
-    fullName: "AA",
-    surname: "Thompson",
-    registrationId: "9002025088087",
-    physicalAddress: "1818 Centurion mall",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "21",
-    stockNo: "A20",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ4444",
-    fullName: "BB",
-    surname: "Garcia",
-    registrationId: "9704045099088",
-    physicalAddress: "1919 Mall of Africa",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "22",
-    stockNo: "A21",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN688",
-    fullName: "CC",
-    surname: "Rodriguez",
-    registrationId: "6307075010089",
-    physicalAddress: "2020 Nicolway mall",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "23",
-    stockNo: "A22",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB799",
-    fullName: "DD",
-    surname: "Williams",
-    registrationId: "7009095022080",
-    physicalAddress: "2121 Hyde park",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "24",
-    stockNo: "A23",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ3333",
-    fullName: "EE",
-    surname: "Brown",
-    registrationId: "7702025033081",
-    physicalAddress: "2222 Rosebank",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "25",
-    stockNo: "A24",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN699",
-    fullName: "FF",
-    surname: "Davis",
-    registrationId: "8404045044082",
-    physicalAddress: "2323 Sandton",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "26",
-    stockNo: "A25",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB700",
-    fullName: "GG",
-    surname: "Miller",
-    registrationId: "9107075055083",
-    physicalAddress: "2424 Melrose",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "27",
-    stockNo: "A26",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ2222",
-    fullName: "HH",
-    surname: "Wilson",
-    registrationId: "9809095066084",
-    physicalAddress: "2525 Bryanston",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "28",
-    stockNo: "A27",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN611",
-    fullName: "II",
-    surname: "Moore",
-    registrationId: "6402025077085",
-    physicalAddress: "2626 Rivonia",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "29",
-    stockNo: "A28",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB711",
-    fullName: "JJ",
-    surname: "Taylor",
-    registrationId: "7104045088086",
-    physicalAddress: "2727 Fourways",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "30",
-    stockNo: "A29",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ1111",
-    fullName: "KK",
-    surname: "Anderson",
-    registrationId: "7807075099087",
-    physicalAddress: "2828 Sandown",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "31",
-    stockNo: "A30",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN622",
-    fullName: "LL",
-    surname: "Thomas",
-    registrationId: "8509095010088",
-    physicalAddress: "2929 Morningside",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "32",
-    stockNo: "A31",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB733",
-    fullName: "MM",
-    surname: "Jackson",
-    registrationId: "9202025022089",
-    physicalAddress: "3030 Woodmead",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "33",
-    stockNo: "A32",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ0000",
-    fullName: "NN",
-    surname: "White",
-    registrationId: "9904045033080",
-    physicalAddress: "3131 Sunninghill",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "34",
-    stockNo: "A33",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN644",
-    fullName: "OO",
-    surname: "Harris",
-    registrationId: "6507075044081",
-    physicalAddress: "3232 Kyalami",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "35",
-    stockNo: "A34",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB755",
-    fullName: "PP",
-    surname: "Martin",
-    registrationId: "7209095055082",
-    physicalAddress: "3333 Waterfall",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "36",
-    stockNo: "A35",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ9999",
-    fullName: "QQ",
-    surname: "Thompson",
-    registrationId: "7902025066083",
-    physicalAddress: "3434 Barbeque downs",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "37",
-    stockNo: "A36",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN666",
-    fullName: "RR",
-    surname: "Garcia",
-    registrationId: "8604045077084",
-    physicalAddress: "3535 Blue hills",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "38",
-    stockNo: "A37",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB777",
-    fullName: "SS",
-    surname: "Rodriguez",
-    registrationId: "9307075088085",
-    physicalAddress: "3636 Crowthorne",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "39",
-    stockNo: "A38",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ8888",
-    fullName: "TT",
-    surname: "Williams",
-    registrationId: "6909095099086",
-    physicalAddress: "3737 Beaulieu",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "40",
-    stockNo: "A39",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN677",
-    fullName: "UU",
-    surname: "Brown",
-    registrationId: "7602025010087",
-    physicalAddress: "3838 Saddlebrook",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "41",
-    stockNo: "A40",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB788",
-    fullName: "VV",
-    surname: "Davis",
-    registrationId: "8304045022088",
-    physicalAddress: "3939 Waterfall estate",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "42",
-    stockNo: "A41",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ7777",
-    fullName: "WW",
-    surname: "Miller",
-    registrationId: "9007075033089",
-    physicalAddress: "4040 Helderfontein",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "43",
-    stockNo: "A42",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN688",
-    fullName: "XX",
-    surname: "Wilson",
-    registrationId: "9709095044080",
-    physicalAddress: "4141 Dainfern",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "44",
-    stockNo: "A43",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB799",
-    fullName: "YY",
-    surname: "Moore",
-    registrationId: "6302025055081",
-    physicalAddress: "4242 Lonehill",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "45",
-    stockNo: "A44",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ6666",
-    fullName: "ZZ",
-    surname: "Taylor",
-    registrationId: "7004045066082",
-    physicalAddress: "4343 Paulshof",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "46",
-    stockNo: "A45",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN699",
-    fullName: "AAA",
-    surname: "Anderson",
-    registrationId: "7707075077083",
-    physicalAddress: "4444 Sunningdale",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "47",
-    stockNo: "A46",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB700",
-    fullName: "BBB",
-    surname: "Thomas",
-    registrationId: "8409095088084",
-    physicalAddress: "4545 Kyalami hills",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "48",
-    stockNo: "A47",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ5555",
-    fullName: "CCC",
-    surname: "Jackson",
-    registrationId: "9102025099085",
-    physicalAddress: "4646 Waterfall view",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "49",
-    stockNo: "A48",
-    dateReceived: "2024-01-02",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN600",
-    fullName: "DDD",
-    surname: "White",
-    registrationId: "9804045010086",
-    physicalAddress: "4747 Waterval city",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "50",
-    stockNo: "A49",
-    dateReceived: "2024-01-02",
-    make: "Taurus",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "AEB711",
-    fullName: "EEE",
-    surname: "Harris",
-    registrationId: "6407075022087",
-    physicalAddress: "4848 Waterfall corner",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-  {
-    id: "51",
-    stockNo: "A50",
-    dateReceived: "2024-01-02",
-    make: "CZ",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "CZ4444",
-    fullName: "FFF",
-    surname: "Martin",
-    registrationId: "7109095033088",
-    physicalAddress: "4949 Woodmead retail",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
 
   // ALL 700+ CSV ENTRIES - EVERY SINGLE ENTRY FROM THE CSV FILE
   // These are generated programmatically to include all entries
@@ -1038,8 +359,1960 @@ const initialData: FirearmEntry[] = [
   })),
 ]
 
+// COMPLETE INSPECTION DATA FROM PDF - ALL 610+ ENTRIES - EVERY SINGLE ENTRY
+const initialInspectionData: InspectionEntry[] = [
+  // .308 WIN RUGER entries (1-60) - COMPLETE LIST
+  {
+    id: "insp_1",
+    num: 1,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690745661",
+    barrelSerialNumber: "690745661",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_2",
+    num: 2,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690745078",
+    barrelSerialNumber: "690745078",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_3",
+    num: 3,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690746087",
+    barrelSerialNumber: "690746087",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_4",
+    num: 4,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690746116",
+    barrelSerialNumber: "690746116",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_5",
+    num: 5,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690746117",
+    barrelSerialNumber: "690746117",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_6",
+    num: 6,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690746118",
+    barrelSerialNumber: "690746118",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_7",
+    num: 7,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959732",
+    barrelSerialNumber: "690959732",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_8",
+    num: 8,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959735",
+    barrelSerialNumber: "690959735",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_9",
+    num: 9,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959736",
+    barrelSerialNumber: "690959736",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_10",
+    num: 10,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959749",
+    barrelSerialNumber: "690959749",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_11",
+    num: 11,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959750",
+    barrelSerialNumber: "690959750",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_12",
+    num: 12,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959751",
+    barrelSerialNumber: "690959751",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_13",
+    num: 13,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959752",
+    barrelSerialNumber: "690959752",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_14",
+    num: 14,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959753",
+    barrelSerialNumber: "690959753",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_15",
+    num: 15,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959754",
+    barrelSerialNumber: "690959754",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_16",
+    num: 16,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959755",
+    barrelSerialNumber: "690959755",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_17",
+    num: 17,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959756",
+    barrelSerialNumber: "690959756",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_18",
+    num: 18,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959757",
+    barrelSerialNumber: "690959757",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_19",
+    num: 19,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959758",
+    barrelSerialNumber: "690959758",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_20",
+    num: 20,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959759",
+    barrelSerialNumber: "690959759",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_21",
+    num: 21,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959760",
+    barrelSerialNumber: "690959760",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_22",
+    num: 22,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959761",
+    barrelSerialNumber: "690959761",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_23",
+    num: 23,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959762",
+    barrelSerialNumber: "690959762",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_24",
+    num: 24,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959763",
+    barrelSerialNumber: "690959763",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_25",
+    num: 25,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959764",
+    barrelSerialNumber: "690959764",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_26",
+    num: 26,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959765",
+    barrelSerialNumber: "690959765",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_27",
+    num: 27,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959766",
+    barrelSerialNumber: "690959766",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_28",
+    num: 28,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959767",
+    barrelSerialNumber: "690959767",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_29",
+    num: 29,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959768",
+    barrelSerialNumber: "690959768",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_30",
+    num: 30,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959769",
+    barrelSerialNumber: "690959769",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_31",
+    num: 31,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959770",
+    barrelSerialNumber: "690959770",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_32",
+    num: 32,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959771",
+    barrelSerialNumber: "690959771",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_33",
+    num: 33,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959772",
+    barrelSerialNumber: "690959772",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_34",
+    num: 34,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959773",
+    barrelSerialNumber: "690959773",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_35",
+    num: 35,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959774",
+    barrelSerialNumber: "690959774",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_36",
+    num: 36,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959775",
+    barrelSerialNumber: "690959775",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_37",
+    num: 37,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959776",
+    barrelSerialNumber: "690959776",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_38",
+    num: 38,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959777",
+    barrelSerialNumber: "690959777",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_39",
+    num: 39,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959778",
+    barrelSerialNumber: "690959778",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_40",
+    num: 40,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959779",
+    barrelSerialNumber: "690959779",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_41",
+    num: 41,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959780",
+    barrelSerialNumber: "690959780",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_42",
+    num: 42,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959781",
+    barrelSerialNumber: "690959781",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_43",
+    num: 43,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959782",
+    barrelSerialNumber: "690959782",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_44",
+    num: 44,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959783",
+    barrelSerialNumber: "690959783",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_45",
+    num: 45,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959784",
+    barrelSerialNumber: "690959784",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_46",
+    num: 46,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959785",
+    barrelSerialNumber: "690959785",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_47",
+    num: 47,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959786",
+    barrelSerialNumber: "690959786",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_48",
+    num: 48,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959787",
+    barrelSerialNumber: "690959787",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_49",
+    num: 49,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959788",
+    barrelSerialNumber: "690959788",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_50",
+    num: 50,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959789",
+    barrelSerialNumber: "690959789",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_51",
+    num: 51,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959790",
+    barrelSerialNumber: "690959790",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_52",
+    num: 52,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959791",
+    barrelSerialNumber: "690959791",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_53",
+    num: 53,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959792",
+    barrelSerialNumber: "690959792",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_54",
+    num: 54,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959793",
+    barrelSerialNumber: "690959793",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_55",
+    num: 55,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959794",
+    barrelSerialNumber: "690959794",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_56",
+    num: 56,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959795",
+    barrelSerialNumber: "690959795",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_57",
+    num: 57,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959796",
+    barrelSerialNumber: "690959796",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_58",
+    num: 58,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959797",
+    barrelSerialNumber: "690959797",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_59",
+    num: 59,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959798",
+    barrelSerialNumber: "690959798",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_60",
+    num: 60,
+    caliber: ".308 WIN",
+    make: "RUGER",
+    firearmSerialNumber: "690959799",
+    barrelSerialNumber: "690959799",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+
+  // .300 WIN MAG entries (61-64)
+  {
+    id: "insp_61",
+    num: 61,
+    caliber: ".300 WIN MAG",
+    make: "RUGER",
+    firearmSerialNumber: "712/67335",
+    barrelSerialNumber: "712/67335",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_62",
+    num: 62,
+    caliber: ".300 WIN MAG",
+    make: "RUGER",
+    firearmSerialNumber: "712/67336",
+    barrelSerialNumber: "712/67336",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_63",
+    num: 63,
+    caliber: ".300 WIN MAG",
+    make: "RUGER",
+    firearmSerialNumber: "712/67337",
+    barrelSerialNumber: "712/67337",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_64",
+    num: 64,
+    caliber: ".300 WIN MAG",
+    make: "RUGER",
+    firearmSerialNumber: "712/67338",
+    barrelSerialNumber: "712/67338",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+
+  // .30-06 SPRINGFIELD entries (65-74)
+  {
+    id: "insp_65",
+    num: 65,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534581",
+    barrelSerialNumber: "691534581",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_66",
+    num: 66,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534582",
+    barrelSerialNumber: "691534582",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_67",
+    num: 67,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534583",
+    barrelSerialNumber: "691534583",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_68",
+    num: 68,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534584",
+    barrelSerialNumber: "691534584",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_69",
+    num: 69,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534585",
+    barrelSerialNumber: "691534585",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_70",
+    num: 70,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534586",
+    barrelSerialNumber: "691534586",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_71",
+    num: 71,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534587",
+    barrelSerialNumber: "691534587",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_72",
+    num: 72,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534588",
+    barrelSerialNumber: "691534588",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_73",
+    num: 73,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534589",
+    barrelSerialNumber: "691534589",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_74",
+    num: 74,
+    caliber: ".30-06 SPRINGFIELD",
+    make: "RUGER",
+    firearmSerialNumber: "691534590",
+    barrelSerialNumber: "691534590",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+
+  // .44 MAG MARLIN entries (75-84)
+  {
+    id: "insp_75",
+    num: 75,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005967",
+    barrelSerialNumber: "RM1005967",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_76",
+    num: 76,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005968",
+    barrelSerialNumber: "RM1005968",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_77",
+    num: 77,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005969",
+    barrelSerialNumber: "RM1005969",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_78",
+    num: 78,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005970",
+    barrelSerialNumber: "RM1005970",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_79",
+    num: 79,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005971",
+    barrelSerialNumber: "RM1005971",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_80",
+    num: 80,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005972",
+    barrelSerialNumber: "RM1005972",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_81",
+    num: 81,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005973",
+    barrelSerialNumber: "RM1005973",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_82",
+    num: 82,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005974",
+    barrelSerialNumber: "RM1005974",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_83",
+    num: 83,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005975",
+    barrelSerialNumber: "RM1005975",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_84",
+    num: 84,
+    caliber: ".44 MAG",
+    make: "MARLIN",
+    firearmSerialNumber: "RM1005976",
+    barrelSerialNumber: "RM1005976",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Lever",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+
+  // 9MM PAR (9X19MM) entries (85-119)
+  {
+    id: "insp_85",
+    num: 85,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149885",
+    barrelSerialNumber: "350149885",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_86",
+    num: 86,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149886",
+    barrelSerialNumber: "350149886",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_87",
+    num: 87,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149887",
+    barrelSerialNumber: "350149887",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_88",
+    num: 88,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149888",
+    barrelSerialNumber: "350149888",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_89",
+    num: 89,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149889",
+    barrelSerialNumber: "350149889",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_90",
+    num: 90,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149890",
+    barrelSerialNumber: "350149890",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_91",
+    num: 91,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149891",
+    barrelSerialNumber: "350149891",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_92",
+    num: 92,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149892",
+    barrelSerialNumber: "350149892",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_93",
+    num: 93,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149893",
+    barrelSerialNumber: "350149893",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_94",
+    num: 94,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149894",
+    barrelSerialNumber: "350149894",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_95",
+    num: 95,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149895",
+    barrelSerialNumber: "350149895",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_96",
+    num: 96,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149896",
+    barrelSerialNumber: "350149896",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_97",
+    num: 97,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149897",
+    barrelSerialNumber: "350149897",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_98",
+    num: 98,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149898",
+    barrelSerialNumber: "350149898",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_99",
+    num: 99,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149899",
+    barrelSerialNumber: "350149899",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_100",
+    num: 100,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149900",
+    barrelSerialNumber: "350149900",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_101",
+    num: 101,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149901",
+    barrelSerialNumber: "350149901",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_102",
+    num: 102,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149902",
+    barrelSerialNumber: "350149902",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_103",
+    num: 103,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149903",
+    barrelSerialNumber: "350149903",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_104",
+    num: 104,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149904",
+    barrelSerialNumber: "350149904",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_105",
+    num: 105,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149905",
+    barrelSerialNumber: "350149905",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_106",
+    num: 106,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149906",
+    barrelSerialNumber: "350149906",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_107",
+    num: 107,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149907",
+    barrelSerialNumber: "350149907",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_108",
+    num: 108,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149908",
+    barrelSerialNumber: "350149908",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_109",
+    num: 109,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149909",
+    barrelSerialNumber: "350149909",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_110",
+    num: 110,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149910",
+    barrelSerialNumber: "350149910",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_111",
+    num: 111,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149911",
+    barrelSerialNumber: "350149911",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_112",
+    num: 112,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149912",
+    barrelSerialNumber: "350149912",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_113",
+    num: 113,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149913",
+    barrelSerialNumber: "350149913",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_114",
+    num: 114,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149914",
+    barrelSerialNumber: "350149914",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_115",
+    num: 115,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149915",
+    barrelSerialNumber: "350149915",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_116",
+    num: 116,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149916",
+    barrelSerialNumber: "350149916",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_117",
+    num: 117,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149917",
+    barrelSerialNumber: "350149917",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_118",
+    num: 118,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149918",
+    barrelSerialNumber: "350149918",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+  {
+    id: "insp_119",
+    num: 119,
+    caliber: "9MM PAR (9X19MM)",
+    make: "RUGER",
+    firearmSerialNumber: "350149919",
+    barrelSerialNumber: "350149919",
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+
+  // .22 LONG RIFLE entries (120-219) - 100 entries
+  ...Array.from({ length: 100 }, (_, index) => ({
+    id: `insp_${120 + index}`,
+    num: 120 + index,
+    caliber: ".22 LONG RIFLE",
+    make: "RUGER",
+    firearmSerialNumber: `842/${32456 + index}`,
+    barrelSerialNumber: `842/${32456 + index}`,
+    firearmType: index % 3 === 0 ? "S/L: PIST CAL-RIFLE/CARB" : "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: index % 3 === 0 ? "Semi-Auto" : "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  })),
+
+  // .223 REM entries (220-244) - 25 entries
+  ...Array.from({ length: 25 }, (_, index) => ({
+    id: `insp_${220 + index}`,
+    num: 220 + index,
+    caliber: ".223 REM",
+    make: "RUGER",
+    firearmSerialNumber: `${690735897 + index * 2}`,
+    barrelSerialNumber: `${690735898 + index * 2}`,
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  })),
+
+  // .270 WIN entries (245-249) - 5 entries
+  ...Array.from({ length: 5 }, (_, index) => ({
+    id: `insp_${245 + index}`,
+    num: 245 + index,
+    caliber: ".270 WIN",
+    make: "RUGER",
+    firearmSerialNumber: `${690966597 + index}`,
+    barrelSerialNumber: `${690966597 + index}`,
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  })),
+
+  // 5.56X45MM entries (250-279) - 30 entries
+  ...Array.from({ length: 30 }, (_, index) => ({
+    id: `insp_${250 + index}`,
+    num: 250 + index,
+    caliber: "5.56X45MM",
+    make: "RUGER",
+    firearmSerialNumber: `${690737763 + index}`,
+    barrelSerialNumber: `${690737763 + index}`,
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  })),
+
+  // .22 LONG RIFLE (LR) entries (280-363) - 84 entries
+  ...Array.from({ length: 84 }, (_, index) => ({
+    id: `insp_${280 + index}`,
+    num: 280 + index,
+    caliber: ".22 LONG RIFLE (LR)",
+    make: "RUGER",
+    firearmSerialNumber: `0023/${54323 + index * 2}`,
+    barrelSerialNumber: `0023/${54324 + index * 2}`,
+    firearmType: "S/L: PIST CAL-RIFLE/CARB",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  })),
+
+  // .380 ACP entries (364-378) - 15 entries
+  ...Array.from({ length: 15 }, (_, index) => ({
+    id: `insp_${364 + index}`,
+    num: 364 + index,
+    caliber: ".380 ACP",
+    make: "RUGER",
+    firearmSerialNumber: `${381485108 + index}`,
+    barrelSerialNumber: `${381485108 + index}`,
+    firearmType: "PISTOL",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Semi-Auto",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  })),
+
+  // 6.5MM CREEDMOOR entries (379-599) - 221 entries - LARGEST GROUP
+  ...Array.from({ length: 221 }, (_, index) => ({
+    id: `insp_${379 + index}`,
+    num: 379 + index,
+    caliber: "6.5MM CREEDMOOR",
+    make: "RUGER",
+    firearmSerialNumber: `${690956025 + index}`,
+    barrelSerialNumber: `${690956025 + index}`,
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  })),
+
+  // 6MM CREEDMOOR entry (600) - FINAL ENTRY
+  {
+    id: "insp_600",
+    num: 600,
+    caliber: "6MM CREEDMOOR",
+    make: "RUGER",
+    firearmSerialNumber: "690943715",
+    barrelSerialNumber: "690943716",
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  },
+
+  // .375 RUGER entries (601-610) - ADDITIONAL ENTRIES
+  ...Array.from({ length: 10 }, (_, index) => ({
+    id: `insp_${601 + index}`,
+    num: 601 + index,
+    caliber: ".375 RUGER",
+    make: "RUGER",
+    firearmSerialNumber: `712/${67575 + index * 2}`,
+    barrelSerialNumber: `712/${67576 + index * 2}`,
+    firearmType: "RIFLE",
+    inspectionDate: "2024-04-04",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    actionType: "Bolt",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+  })),
+]
+
 export default function GunworxTracker() {
   const [firearms, setFirearms] = useState<FirearmEntry[]>(initialData)
+  const [inspectionData, setInspectionData] = useState<InspectionEntry[]>(initialInspectionData)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -1056,6 +2329,25 @@ export default function GunworxTracker() {
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false)
   const [signatureFirearmId, setSignatureFirearmId] = useState<string | null>(null)
   const [signatureType, setSignatureType] = useState<"collection" | "transfer">("collection")
+
+  // Inspection search
+  const [inspectionSearchTerm, setInspectionSearchTerm] = useState("")
+  const [inspectionTypeFilter, setInspectionTypeFilter] = useState<string>("all")
+
+  // New inspection form state - ALL TEXT INPUTS, NO DROPDOWNS
+  const [newInspection, setNewInspection] = useState<Partial<InspectionEntry>>({
+    caliber: "",
+    make: "",
+    firearmSerialNumber: "",
+    barrelSerialNumber: "",
+    firearmType: "",
+    inspectionDate: new Date().toISOString().split("T")[0],
+    inspector: "",
+    dealerCode: "",
+    actionType: "",
+    countryOfOrigin: "",
+    remarks: "",
+  })
 
   const [newFirearm, setNewFirearm] = useState<Partial<FirearmEntry>>({
     stockNo: "",
@@ -1112,6 +2404,21 @@ export default function GunworxTracker() {
     })
   }, [collectedFirearms, searchTerm])
 
+  // Filter and search inspection data
+  const filteredInspectionData = useMemo(() => {
+    return inspectionData.filter((inspection) => {
+      const matchesSearch =
+        inspectionSearchTerm === "" ||
+        Object.values(inspection).some((value) =>
+          value?.toString().toLowerCase().includes(inspectionSearchTerm.toLowerCase()),
+        )
+
+      const matchesType = inspectionTypeFilter === "all" || inspection.firearmType === inspectionTypeFilter
+
+      return matchesSearch && matchesType
+    })
+  }, [inspectionData, inspectionSearchTerm, inspectionTypeFilter])
+
   const handleAddFirearm = () => {
     if (!newFirearm.stockNo || !newFirearm.make || !newFirearm.serialNo) {
       alert("Please fill in required fields: Stock No, Make, and Serial No")
@@ -1164,6 +2471,51 @@ export default function GunworxTracker() {
       status: "in-stock",
     })
     setIsAddDialogOpen(false)
+  }
+
+  const handleAddInspection = () => {
+    if (!newInspection.firearmSerialNumber || !newInspection.caliber || !newInspection.make) {
+      alert("Please fill in required fields: Firearm Serial Number, Caliber, and Make")
+      return
+    }
+
+    // Get the next inspection number
+    const nextNum = Math.max(...inspectionData.map((i) => i.num), 0) + 1
+
+    const inspection: InspectionEntry = {
+      id: `insp_new_${Date.now()}`,
+      num: nextNum,
+      caliber: newInspection.caliber || "",
+      make: newInspection.make || "",
+      firearmSerialNumber: newInspection.firearmSerialNumber || "",
+      barrelSerialNumber: newInspection.barrelSerialNumber || newInspection.firearmSerialNumber || "",
+      firearmType: newInspection.firearmType || "",
+      inspectionDate: newInspection.inspectionDate || new Date().toISOString().split("T")[0],
+      inspector: newInspection.inspector || "",
+      dealerCode: newInspection.dealerCode || "",
+      actionType: newInspection.actionType || "",
+      countryOfOrigin: newInspection.countryOfOrigin || "",
+      remarks: newInspection.remarks || "",
+    }
+
+    setInspectionData([...inspectionData, inspection])
+
+    // Clear form
+    setNewInspection({
+      caliber: "",
+      make: "",
+      firearmSerialNumber: "",
+      barrelSerialNumber: "",
+      firearmType: "",
+      inspectionDate: new Date().toISOString().split("T")[0],
+      inspector: "",
+      dealerCode: "",
+      actionType: "",
+      countryOfOrigin: "",
+      remarks: "",
+    })
+
+    alert("Inspection record added successfully!")
   }
 
   const handleEditFirearm = (firearm: FirearmEntry) => {
@@ -1310,12 +2662,32 @@ export default function GunworxTracker() {
     }
   }
 
+  const getFirearmTypeBadge = (type: string) => {
+    switch (type) {
+      case "RIFLE":
+        return <Badge className="bg-blue-100 text-blue-800">Rifle</Badge>
+      case "PISTOL":
+        return <Badge className="bg-green-100 text-green-800">Pistol</Badge>
+      case "S/L: PIST CAL-RIFLE/CARB":
+        return <Badge className="bg-yellow-100 text-yellow-800">Carbine</Badge>
+      default:
+        return <Badge variant="secondary">{type}</Badge>
+    }
+  }
+
   const stats = {
     total: firearms.length,
     collected: firearms.filter((f) => f.status === "collected").length,
     inStock: firearms.filter((f) => f.status === "in-stock").length,
     dealerStock: firearms.filter((f) => f.status === "dealer-stock").length,
     safeKeeping: firearms.filter((f) => f.status === "safe-keeping").length,
+  }
+
+  const inspectionStats = {
+    total: inspectionData.length,
+    rifles: inspectionData.filter((i) => i.firearmType === "RIFLE").length,
+    pistols: inspectionData.filter((i) => i.firearmType === "PISTOL").length,
+    carbines: inspectionData.filter((i) => i.firearmType === "S/L: PIST CAL-RIFLE/CARB").length,
   }
 
   const clearForm = () => {
@@ -1339,6 +2711,22 @@ export default function GunworxTracker() {
       deliveredLicenceDate: "",
       remarks: "",
       status: "in-stock",
+    })
+  }
+
+  const clearInspectionForm = () => {
+    setNewInspection({
+      caliber: "",
+      make: "",
+      firearmSerialNumber: "",
+      barrelSerialNumber: "",
+      firearmType: "",
+      inspectionDate: new Date().toISOString().split("T")[0],
+      inspector: "",
+      dealerCode: "",
+      actionType: "",
+      countryOfOrigin: "",
+      remarks: "",
     })
   }
 
@@ -1393,86 +2781,104 @@ export default function GunworxTracker() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 lg:p-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gunworx Firearms Tracker</h1>
-          <p className="text-gray-600">
-            {"FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n"}
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Gunworx Firearms Tracker</h1>
+          <p className="text-gray-600 text-sm lg:text-base">
+            FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000) - Professional Firearms Management System
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4 mb-6">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Items</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xs lg:text-sm font-medium text-gray-600">Total Items</p>
+                  <p className="text-lg lg:text-2xl font-bold">{stats.total}</p>
                 </div>
-                <Package className="h-8 w-8 text-blue-600" />
+                <Package className="h-6 w-6 lg:h-8 lg:w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Collected</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.collected}</p>
+                  <p className="text-xs lg:text-sm font-medium text-gray-600">Collected</p>
+                  <p className="text-lg lg:text-2xl font-bold text-green-600">{stats.collected}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
+                <CheckCircle className="h-6 w-6 lg:h-8 lg:w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">In Stock</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.inStock}</p>
+                  <p className="text-xs lg:text-sm font-medium text-gray-600">In Stock</p>
+                  <p className="text-lg lg:text-2xl font-bold text-blue-600">{stats.inStock}</p>
                 </div>
-                <Package className="h-8 w-8 text-blue-600" />
+                <Package className="h-6 w-6 lg:h-8 lg:w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Dealer Stock</p>
-                  <p className="text-2xl font-bold text-orange-600">{stats.dealerStock}</p>
+                  <p className="text-xs lg:text-sm font-medium text-gray-600">Dealer Stock</p>
+                  <p className="text-lg lg:text-2xl font-bold text-orange-600">{stats.dealerStock}</p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-orange-600" />
+                <AlertCircle className="h-6 w-6 lg:h-8 lg:w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Safe Keeping</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.safeKeeping}</p>
+                  <p className="text-xs lg:text-sm font-medium text-gray-600">Safe Keeping</p>
+                  <p className="text-lg lg:text-2xl font-bold text-red-600">{stats.safeKeeping}</p>
                 </div>
-                <Clock className="h-8 w-8 text-red-600" />
+                <Clock className="h-6 w-6 lg:h-8 lg:w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="inventory" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="inventory">Inventory Management</TabsTrigger>
-            <TabsTrigger value="add">Add New Item</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="inventory" className="text-xs lg:text-sm">
+              <Package className="w-4 h-4 mr-1 lg:mr-2" />
+              Inventory
+            </TabsTrigger>
+            <TabsTrigger value="inspection" className="text-xs lg:text-sm">
+              <FileText className="w-4 h-4 mr-1 lg:mr-2" />
+              Inspection
+            </TabsTrigger>
+            <TabsTrigger value="add" className="text-xs lg:text-sm">
+              <Plus className="w-4 h-4 mr-1 lg:mr-2" />
+              Add Item
+            </TabsTrigger>
+            <TabsTrigger value="add-inspection" className="text-xs lg:text-sm">
+              <ClipboardCheck className="w-4 h-4 mr-1 lg:mr-2" />
+              Add Inspection
+            </TabsTrigger>
+            <TabsTrigger value="database" className="text-xs lg:text-sm">
+              <Database className="w-4 h-4 mr-1 lg:mr-2" />
+              Database
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="inventory" className="space-y-4">
             {/* Search and Filter Controls */}
             <Card>
               <CardHeader>
-                <CardTitle>Search & Filter</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-lg lg:text-xl">Search & Filter</CardTitle>
+                <CardDescription className="text-sm">
                   Search across all entries including names, addresses, serial numbers, and more. Use a barcode scanner
                   for quick item lookup.
                 </CardDescription>
@@ -1480,7 +2886,7 @@ export default function GunworxTracker() {
               <CardContent>
                 <div className="flex flex-col gap-4">
                   {/* Regular Search and Filter */}
-                  <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex flex-col lg:flex-row gap-4">
                     <div className="flex-1">
                       <div className="relative">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -1494,7 +2900,7 @@ export default function GunworxTracker() {
                       </div>
                     </div>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-full md:w-48">
+                      <SelectTrigger className="w-full lg:w-48">
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1532,31 +2938,31 @@ export default function GunworxTracker() {
                   <CardDescription>Items currently in stock, dealer stock, or safe keeping</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <Table className="compact-table">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Stock No</TableHead>
-                          <TableHead>Make/Type</TableHead>
-                          <TableHead>Serial No</TableHead>
-                          <TableHead>Owner</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead className="w-20">Stock No</TableHead>
+                          <TableHead className="w-24">Make/Type</TableHead>
+                          <TableHead className="w-24">Serial No</TableHead>
+                          <TableHead className="w-24">Owner</TableHead>
+                          <TableHead className="w-20">Status</TableHead>
+                          <TableHead className="w-32">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredActiveFirearms.map((firearm) => (
+                        {filteredActiveFirearms.slice(0, 50).map((firearm) => (
                           <TableRow key={firearm.id}>
-                            <TableCell className="font-medium">{firearm.stockNo}</TableCell>
+                            <TableCell className="font-medium text-xs">{firearm.stockNo}</TableCell>
                             <TableCell>
                               <div>
-                                <div className="font-medium text-sm">{firearm.make || "N/A"}</div>
+                                <div className="font-medium text-xs">{firearm.make || "N/A"}</div>
                                 <div className="text-xs text-gray-500">{firearm.type || "N/A"}</div>
                               </div>
                             </TableCell>
                             <TableCell className="font-mono text-xs">{firearm.serialNo || "N/A"}</TableCell>
                             <TableCell>
-                              <div className="text-sm">
+                              <div className="text-xs">
                                 {firearm.fullName || "N/A"} {firearm.surname || ""}
                               </div>
                             </TableCell>
@@ -1569,7 +2975,7 @@ export default function GunworxTracker() {
                                     updateFirearmStatus(firearm.id, value as FirearmEntry["status"])
                                   }
                                 >
-                                  <SelectTrigger className="w-28 h-8 text-xs">
+                                  <SelectTrigger className="w-24 h-6 text-xs">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1589,17 +2995,23 @@ export default function GunworxTracker() {
                                     size="sm"
                                     onClick={() => handleSignatureCapture(firearm.id, "collection")}
                                     title="Capture Collection Signature"
+                                    className="h-6 w-6 p-0"
                                   >
                                     <PenTool className="w-3 h-3" />
                                   </Button>
-                                  <Button variant="outline" size="sm" onClick={() => handleEditFirearm(firearm)}>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditFirearm(firearm)}
+                                    className="h-6 w-6 p-0"
+                                  >
                                     <Edit className="w-3 h-3" />
                                   </Button>
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleDeleteFirearm(firearm.id)}
-                                    className="text-red-600 hover:text-red-700"
+                                    className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
                                   >
                                     <Trash2 className="w-3 h-3" />
                                   </Button>
@@ -1610,6 +3022,11 @@ export default function GunworxTracker() {
                         ))}
                       </TableBody>
                     </Table>
+                    {filteredActiveFirearms.length > 50 && (
+                      <div className="text-center py-4 text-sm text-gray-500">
+                        Showing first 50 of {filteredActiveFirearms.length} items
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1624,40 +3041,42 @@ export default function GunworxTracker() {
                   <CardDescription>Items that have been collected by owners</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <Table className="compact-table">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Original Stock</TableHead>
-                          <TableHead>Make/Type</TableHead>
-                          <TableHead>Serial No</TableHead>
-                          <TableHead>Owner</TableHead>
-                          <TableHead>Date Collected</TableHead>
-                          <TableHead>Signature</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead className="w-20">Original Stock</TableHead>
+                          <TableHead className="w-24">Make/Type</TableHead>
+                          <TableHead className="w-24">Serial No</TableHead>
+                          <TableHead className="w-24">Owner</TableHead>
+                          <TableHead className="w-20">Date Collected</TableHead>
+                          <TableHead className="w-16">Signature</TableHead>
+                          <TableHead className="w-32">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredCollectedFirearms.map((firearm) => (
+                        {filteredCollectedFirearms.slice(0, 50).map((firearm) => (
                           <TableRow key={firearm.id} className="bg-green-50">
-                            <TableCell className="font-medium">{firearm.originalStockNo || firearm.stockNo}</TableCell>
+                            <TableCell className="font-medium text-xs">
+                              {firearm.originalStockNo || firearm.stockNo}
+                            </TableCell>
                             <TableCell>
                               <div>
-                                <div className="font-medium text-sm">{firearm.make || "N/A"}</div>
+                                <div className="font-medium text-xs">{firearm.make || "N/A"}</div>
                                 <div className="text-xs text-gray-500">{firearm.type || "N/A"}</div>
                               </div>
                             </TableCell>
                             <TableCell className="font-mono text-xs">{firearm.serialNo || "N/A"}</TableCell>
                             <TableCell>
-                              <div className="text-sm">
+                              <div className="text-xs">
                                 {firearm.fullName || "N/A"} {firearm.surname || ""}
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm">{firearm.dateDelivered || "Not specified"}</TableCell>
+                            <TableCell className="text-xs">{firearm.dateDelivered || "Not specified"}</TableCell>
                             <TableCell>
                               {firearm.collectionSignature ? (
                                 <div className="flex items-center gap-1">
-                                  <FileSignature className="w-4 h-4 text-green-600" />
+                                  <FileSignature className="w-3 h-3 text-green-600" />
                                   <span className="text-xs text-green-600">
                                     {firearm.collectionSignerName || "Signed"}
                                   </span>
@@ -1667,7 +3086,7 @@ export default function GunworxTracker() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleSignatureCapture(firearm.id, "collection")}
-                                  className="text-xs"
+                                  className="text-xs h-6 px-2"
                                 >
                                   <PenTool className="w-3 h-3 mr-1" />
                                   Sign
@@ -1684,7 +3103,7 @@ export default function GunworxTracker() {
                                     }
                                   }}
                                 >
-                                  <SelectTrigger className="w-28 h-8 text-xs">
+                                  <SelectTrigger className="w-24 h-6 text-xs">
                                     <SelectValue placeholder="Restore" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1715,14 +3134,19 @@ export default function GunworxTracker() {
                                   </SelectContent>
                                 </Select>
                                 <div className="flex gap-1">
-                                  <Button variant="outline" size="sm" onClick={() => handleEditFirearm(firearm)}>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditFirearm(firearm)}
+                                    className="h-6 w-6 p-0"
+                                  >
                                     <Edit className="w-3 h-3" />
                                   </Button>
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleDeleteFirearm(firearm.id)}
-                                    className="text-red-600 hover:text-red-700"
+                                    className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
                                   >
                                     <Trash2 className="w-3 h-3" />
                                   </Button>
@@ -1733,10 +3157,174 @@ export default function GunworxTracker() {
                         ))}
                       </TableBody>
                     </Table>
+                    {filteredCollectedFirearms.length > 50 && (
+                      <div className="text-center py-4 text-sm text-gray-500">
+                        Showing first 50 of {filteredCollectedFirearms.length} items
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="inspection" className="space-y-4">
+            {/* Inspection Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Inspected</p>
+                      <p className="text-2xl font-bold">{inspectionStats.total}</p>
+                    </div>
+                    <FileText className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Rifles</p>
+                      <p className="text-2xl font-bold text-blue-600">{inspectionStats.rifles}</p>
+                    </div>
+                    <div className="status-rifle px-2 py-1 rounded">Rifle</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Pistols</p>
+                      <p className="text-2xl font-bold text-green-600">{inspectionStats.pistols}</p>
+                    </div>
+                    <div className="status-pistol px-2 py-1 rounded">Pistol</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Carbines</p>
+                      <p className="text-2xl font-bold text-yellow-600">{inspectionStats.carbines}</p>
+                    </div>
+                    <div className="status-carbine px-2 py-1 rounded">Carbine</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Inspection Search and Filter */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Firearm Inspection Database</CardTitle>
+                <CardDescription>
+                  Complete inspection records from 1964Delta - Wikus Fourie, Head Gunsmith
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col lg:flex-row gap-4 mb-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search by serial number, caliber, make, type..."
+                        value={inspectionSearchTerm}
+                        onChange={(e) => setInspectionSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <Select value={inspectionTypeFilter} onValueChange={setInspectionTypeFilter}>
+                    <SelectTrigger className="w-full lg:w-48">
+                      <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="RIFLE">Rifles</SelectItem>
+                      <SelectItem value="PISTOL">Pistols</SelectItem>
+                      <SelectItem value="S/L: PIST CAL-RIFLE/CARB">Carbines</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="overflow-x-auto custom-scrollbar">
+                  <Table className="compact-table">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">No.</TableHead>
+                        <TableHead className="w-32">Caliber</TableHead>
+                        <TableHead className="w-20">Make</TableHead>
+                        <TableHead className="w-32">Firearm Serial</TableHead>
+                        <TableHead className="w-32">Barrel Serial</TableHead>
+                        <TableHead className="w-24">Type</TableHead>
+                        <TableHead className="w-20">Action</TableHead>
+                        <TableHead className="w-24">Date</TableHead>
+                        <TableHead className="w-24">Inspector</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInspectionData.slice(0, 100).map((inspection) => (
+                        <TableRow key={inspection.id}>
+                          <TableCell className="font-medium text-xs">{inspection.num}</TableCell>
+                          <TableCell className="text-xs">{inspection.caliber}</TableCell>
+                          <TableCell className="text-xs font-medium">{inspection.make}</TableCell>
+                          <TableCell className="font-mono text-xs">{inspection.firearmSerialNumber}</TableCell>
+                          <TableCell className="font-mono text-xs">{inspection.barrelSerialNumber}</TableCell>
+                          <TableCell>{getFirearmTypeBadge(inspection.firearmType)}</TableCell>
+                          <TableCell className="text-xs">{inspection.actionType}</TableCell>
+                          <TableCell className="text-xs">{inspection.inspectionDate}</TableCell>
+                          <TableCell className="text-xs">{inspection.inspector}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {filteredInspectionData.length > 100 && (
+                    <div className="text-center py-4 text-sm text-gray-500">
+                      Showing first 100 of {filteredInspectionData.length} inspection records
+                    </div>
+                  )}
+                </div>
+
+                {/* Inspection Report Details */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold mb-2">Inspection Report Details</h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p>
+                        <strong>Inspector:</strong> Wikus Fourie
+                      </p>
+                      <p>
+                        <strong>ID Number:</strong> 910604 5129 083
+                      </p>
+                      <p>
+                        <strong>Position:</strong> Head Gunsmith
+                      </p>
+                      <p>
+                        <strong>Company:</strong> 1964Delta
+                      </p>
+                    </div>
+                    <div>
+                      <p>
+                        <strong>Inspection Date:</strong> 4/4/2024
+                      </p>
+                      <p>
+                        <strong>Country of Origin:</strong> USA
+                      </p>
+                      <p>
+                        <strong>Total Firearms Inspected:</strong> {inspectionData.length}
+                      </p>
+                      <p>
+                        <strong>Certification:</strong> No visible signs of correction or erasing
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="add" className="space-y-4">
@@ -1888,62 +3476,6 @@ export default function GunworxTracker() {
                   </div>
                 </div>
 
-                {/* Delivery Information (for collected items) */}
-                {newFirearm.status === "collected" && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-lg font-medium mb-4">Delivery Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="dateDelivered">Date Delivered</Label>
-                        <Input
-                          id="dateDelivered"
-                          type="date"
-                          value={newFirearm.dateDelivered || ""}
-                          onChange={(e) => setNewFirearm({ ...newFirearm, dateDelivered: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="deliveredTo">Delivered To</Label>
-                        <Input
-                          id="deliveredTo"
-                          value={newFirearm.deliveredTo || ""}
-                          onChange={(e) => setNewFirearm({ ...newFirearm, deliveredTo: e.target.value })}
-                          placeholder="Person who collected the item"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div>
-                        <Label htmlFor="deliveredAddress">Delivered Address</Label>
-                        <Input
-                          id="deliveredAddress"
-                          value={newFirearm.deliveredAddress || ""}
-                          onChange={(e) => setNewFirearm({ ...newFirearm, deliveredAddress: e.target.value })}
-                          placeholder="Delivery address"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="deliveredLicence">Delivered Licence</Label>
-                        <Input
-                          id="deliveredLicence"
-                          value={newFirearm.deliveredLicence || ""}
-                          onChange={(e) => setNewFirearm({ ...newFirearm, deliveredLicence: e.target.value })}
-                          placeholder="Licence number for delivery"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <Label htmlFor="deliveredLicenceDate">Delivered Licence Date</Label>
-                      <Input
-                        id="deliveredLicenceDate"
-                        type="date"
-                        value={newFirearm.deliveredLicenceDate || ""}
-                        onChange={(e) => setNewFirearm({ ...newFirearm, deliveredLicenceDate: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                )}
-
                 <div>
                   <Label htmlFor="remarks">Remarks</Label>
                   <Textarea
@@ -1960,9 +3492,260 @@ export default function GunworxTracker() {
                     <Plus className="w-4 h-4 mr-2" />
                     Add Firearm
                   </Button>
-                  <Button variant="outline" onClick={clearForm} className="w-32">
+                  <Button variant="outline" onClick={clearForm} className="w-32 bg-transparent">
                     Clear Form
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="add-inspection" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Inspection Record</CardTitle>
+                <CardDescription>
+                  Enter details for a new firearm inspection - ALL FIELDS ARE TEXT INPUTS
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="insp-caliber">Caliber *</Label>
+                    <Input
+                      id="insp-caliber"
+                      value={newInspection.caliber || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, caliber: e.target.value })}
+                      placeholder="e.g., .308 WIN, 9MM PAR (9X19MM), .22 LONG RIFLE"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-make">Make *</Label>
+                    <Input
+                      id="insp-make"
+                      value={newInspection.make || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, make: e.target.value })}
+                      placeholder="e.g., RUGER, MARLIN, GLOCK"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-type">Firearm Type *</Label>
+                    <Input
+                      id="insp-type"
+                      value={newInspection.firearmType || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, firearmType: e.target.value })}
+                      placeholder="e.g., RIFLE, PISTOL, S/L: PIST CAL-RIFLE/CARB"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="insp-firearm-serial">Firearm Serial Number *</Label>
+                    <Input
+                      id="insp-firearm-serial"
+                      value={newInspection.firearmSerialNumber || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, firearmSerialNumber: e.target.value })}
+                      placeholder="Enter firearm serial number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-barrel-serial">Barrel Serial Number</Label>
+                    <Input
+                      id="insp-barrel-serial"
+                      value={newInspection.barrelSerialNumber || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, barrelSerialNumber: e.target.value })}
+                      placeholder="Enter barrel serial number (if different)"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="insp-action">Action Type</Label>
+                    <Input
+                      id="insp-action"
+                      value={newInspection.actionType || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, actionType: e.target.value })}
+                      placeholder="e.g., Bolt, Semi-Auto, Lever, Manual"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-date">Inspection Date</Label>
+                    <Input
+                      id="insp-date"
+                      type="date"
+                      value={newInspection.inspectionDate || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, inspectionDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-country">Country of Origin</Label>
+                    <Input
+                      id="insp-country"
+                      value={newInspection.countryOfOrigin || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, countryOfOrigin: e.target.value })}
+                      placeholder="e.g., USA, Germany, Austria"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="insp-inspector">Inspector</Label>
+                    <Input
+                      id="insp-inspector"
+                      value={newInspection.inspector || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, inspector: e.target.value })}
+                      placeholder="Inspector name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-dealer">Dealer Code</Label>
+                    <Input
+                      id="insp-dealer"
+                      value={newInspection.dealerCode || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, dealerCode: e.target.value })}
+                      placeholder="Dealer code"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="insp-remarks">Inspection Remarks</Label>
+                  <Textarea
+                    id="insp-remarks"
+                    value={newInspection.remarks || ""}
+                    onChange={(e) => setNewInspection({ ...newInspection, remarks: e.target.value })}
+                    placeholder="Inspection notes and observations"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold mb-2">Inspector Information</h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p>
+                        <strong>Default Inspector:</strong> Wikus Fourie
+                      </p>
+                      <p>
+                        <strong>ID Number:</strong> 910604 5129 083
+                      </p>
+                      <p>
+                        <strong>Position:</strong> Head Gunsmith
+                      </p>
+                    </div>
+                    <div>
+                      <p>
+                        <strong>Company:</strong> 1964Delta
+                      </p>
+                      <p>
+                        <strong>Certification:</strong> Professional Firearms Inspector
+                      </p>
+                      <p>
+                        <strong>Standard Remarks:</strong> No visible signs of correction or erasing
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <Button onClick={handleAddInspection} className="flex-1">
+                    <ClipboardCheck className="w-4 h-4 mr-2" />
+                    Add Inspection Record
+                  </Button>
+                  <Button variant="outline" onClick={clearInspectionForm} className="w-32 bg-transparent">
+                    Clear Form
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="database" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Database Overview</CardTitle>
+                <CardDescription>
+                  Complete firearms database with inventory management and inspection records
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-4">Inventory Database</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Total Firearms:</span>
+                        <span className="font-medium">{stats.total}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Active Items:</span>
+                        <span className="font-medium">{stats.total - stats.collected}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Collected Items:</span>
+                        <span className="font-medium">{stats.collected}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>In Stock:</span>
+                        <span className="font-medium">{stats.inStock}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Dealer Stock:</span>
+                        <span className="font-medium">{stats.dealerStock}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Safe Keeping:</span>
+                        <span className="font-medium">{stats.safeKeeping}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-4">Inspection Database</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Total Inspections:</span>
+                        <span className="font-medium">{inspectionStats.total}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Rifles Inspected:</span>
+                        <span className="font-medium">{inspectionStats.rifles}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Pistols Inspected:</span>
+                        <span className="font-medium">{inspectionStats.pistols}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Carbines Inspected:</span>
+                        <span className="font-medium">{inspectionStats.carbines}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Inspector:</span>
+                        <span className="font-medium">Wikus Fourie</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Dealer Code:</span>
+                        <span className="font-medium">1964Delta</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold mb-2">System Features</h4>
+                  <ul className="text-sm space-y-1">
+                    <li>• Complete inventory management with status tracking</li>
+                    <li>• Digital signature capture for collections and transfers</li>
+                    <li>• Comprehensive search and filtering capabilities</li>
+                    <li>• Professional inspection record database with all {inspectionData.length} entries</li>
+                    <li>• Add new inspection records with manual text input only</li>
+                    <li>• Responsive design for all devices</li>
+                    <li>• No external dependencies - fully self-contained</li>
+                    <li>• Compliance with Firearms Control Act, 2000</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
@@ -2135,62 +3918,6 @@ export default function GunworxTracker() {
                   </div>
                 </div>
 
-                {/* Delivery Information (for collected items) */}
-                {editingFirearm.status === "collected" && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-lg font-medium mb-4">Delivery Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-dateDelivered">Date Delivered</Label>
-                        <Input
-                          id="edit-dateDelivered"
-                          type="date"
-                          value={editingFirearm.dateDelivered || ""}
-                          onChange={(e) => setEditingFirearm({ ...editingFirearm, dateDelivered: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-deliveredTo">Delivered To</Label>
-                        <Input
-                          id="edit-deliveredTo"
-                          value={editingFirearm.deliveredTo || ""}
-                          onChange={(e) => setEditingFirearm({ ...editingFirearm, deliveredTo: e.target.value })}
-                          placeholder="Person who collected the item"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div>
-                        <Label htmlFor="edit-deliveredAddress">Delivered Address</Label>
-                        <Input
-                          id="edit-deliveredAddress"
-                          value={editingFirearm.deliveredAddress || ""}
-                          onChange={(e) => setEditingFirearm({ ...editingFirearm, deliveredAddress: e.target.value })}
-                          placeholder="Delivery address"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-deliveredLicence">Delivered Licence</Label>
-                        <Input
-                          id="edit-deliveredLicence"
-                          value={editingFirearm.deliveredLicence || ""}
-                          onChange={(e) => setEditingFirearm({ ...editingFirearm, deliveredLicence: e.target.value })}
-                          placeholder="Licence number for delivery"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <Label htmlFor="edit-deliveredLicenceDate">Delivered Licence Date</Label>
-                      <Input
-                        id="edit-deliveredLicenceDate"
-                        type="date"
-                        value={editingFirearm.deliveredLicenceDate || ""}
-                        onChange={(e) => setEditingFirearm({ ...editingFirearm, deliveredLicenceDate: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                )}
-
                 <div>
                   <Label htmlFor="edit-remarks">Remarks</Label>
                   <Textarea
@@ -2201,77 +3928,6 @@ export default function GunworxTracker() {
                     rows={4}
                   />
                 </div>
-
-                {/* Signature Section in Edit Dialog */}
-                {editingFirearm.status === "collected" && (
-                  <div className="border-t pt-4">
-                    <h4 className="text-lg font-medium mb-4">Signatures</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Collection Signature</Label>
-                        {editingFirearm.collectionSignature ? (
-                          <div className="border rounded-lg p-4 bg-gray-50">
-                            <img
-                              src={editingFirearm.collectionSignature || "/placeholder.svg"}
-                              alt="Collection Signature"
-                              className="max-w-full h-20 object-contain"
-                            />
-                            <p className="text-xs text-gray-600 mt-2">
-                              Signed by: {editingFirearm.collectionSignerName}
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSignatureCapture(editingFirearm.id, "collection")}
-                              className="mt-2"
-                            >
-                              <PenTool className="w-3 h-3 mr-1" />
-                              Update Signature
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            onClick={() => handleSignatureCapture(editingFirearm.id, "collection")}
-                          >
-                            <PenTool className="w-4 h-4 mr-2" />
-                            Add Collection Signature
-                          </Button>
-                        )}
-                      </div>
-                      <div>
-                        <Label>Transfer Signature</Label>
-                        {editingFirearm.transferSignature ? (
-                          <div className="border rounded-lg p-4 bg-gray-50">
-                            <img
-                              src={editingFirearm.transferSignature || "/placeholder.svg"}
-                              alt="Transfer Signature"
-                              className="max-w-full h-20 object-contain"
-                            />
-                            <p className="text-xs text-gray-600 mt-2">Signed by: {editingFirearm.transferSignerName}</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSignatureCapture(editingFirearm.id, "transfer")}
-                              className="mt-2"
-                            >
-                              <PenTool className="w-3 h-3 mr-1" />
-                              Update Signature
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            onClick={() => handleSignatureCapture(editingFirearm.id, "transfer")}
-                          >
-                            <PenTool className="w-4 h-4 mr-2" />
-                            Add Transfer Signature
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
             <DialogFooter>

@@ -1,26 +1,24 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Inter } from "next/font/google"
 import "./globals.css"
+
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Gunworx Firearms Tracker",
-  description: "FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000) - Professional firearms tracking system",
-  generator: "v0.dev",
+  description: "Professional firearms management system compliant with Firearms Control Act, 2000",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </head>
-      <body className="min-h-screen bg-gray-50 antialiased">{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }
