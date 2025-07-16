@@ -191,11 +191,6 @@ class AuthService {
 
     if (!userToDelete) return
 
-    // Prevent deleting system admin
-    if (userToDelete.isSystemAdmin) {
-      throw new Error("Cannot delete system administrator")
-    }
-
     const filteredUsers = users.filter((u) => u.id !== userId)
 
     // Delete from server

@@ -1074,8 +1074,31 @@ export default function GunworxTracker() {
   const [editingFirearm, setEditingFirearm] = useState<FirearmEntry | null>(null)
   const [deletingFirearmId, setDeletingFirearmId] = useState<string | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isAddInspectionDialogOpen, setIsAddInspectionDialogOpen] = useState(false)
   const [newFirearm, setNewFirearm] = useState<Partial<FirearmEntry>>({
     status: "in-stock",
+  })
+
+  // New inspection form state
+  const [newInspection, setNewInspection] = useState<Partial<InspectionEntry>>({
+    caliber: "",
+    make: "RUGER",
+    firearmSerialNumber: "",
+    barrelSerialNumber: "",
+    frameSerialNumber: "",
+    receiverSerialNumber: "",
+    firearmType: "",
+    firearmTypeOther: "",
+    inspectionDate: new Date().toISOString().split("T")[0],
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    companyName: "1964Delta",
+    actionType: "",
+    actionTypeOther: "",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   })
 
   // Enhanced search state
@@ -1323,6 +1346,67 @@ export default function GunworxTracker() {
     setIsAddDialogOpen(false)
   }
 
+  const handleAddInspection = () => {
+    if (!newInspection.firearmSerialNumber || !newInspection.caliber || !newInspection.make) {
+      alert("Please fill in required fields: Firearm Serial Number, Caliber, and Make")
+      return
+    }
+
+    // Get the next inspection number
+    const nextNum = Math.max(...inspections.map((i) => i.num), 0) + 1
+
+    const inspectionToAdd: InspectionEntry = {
+      id: `insp_new_${Date.now()}`,
+      num: nextNum,
+      caliber: newInspection.caliber || "",
+      make: newInspection.make || "",
+      firearmSerialNumber: newInspection.firearmSerialNumber || "",
+      barrelSerialNumber: newInspection.barrelSerialNumber || newInspection.firearmSerialNumber || "",
+      frameSerialNumber: newInspection.frameSerialNumber || newInspection.firearmSerialNumber || "",
+      receiverSerialNumber: newInspection.receiverSerialNumber || newInspection.firearmSerialNumber || "",
+      firearmType: newInspection.firearmType || "",
+      firearmTypeOther: newInspection.firearmTypeOther || "",
+      inspectionDate: newInspection.inspectionDate || new Date().toISOString().split("T")[0],
+      inspector: newInspection.inspector || "Wikus Fourie",
+      dealerCode: newInspection.dealerCode || "1964Delta",
+      companyName: newInspection.companyName || "1964Delta",
+      actionType: newInspection.actionType || "",
+      actionTypeOther: newInspection.actionTypeOther || "",
+      countryOfOrigin: newInspection.countryOfOrigin || "USA",
+      remarks: newInspection.remarks || "No visible signs of correction or erasing",
+      comments:
+        newInspection.comments ||
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    }
+
+    setInspections((prev) => [...prev, inspectionToAdd])
+
+    // Clear form
+    setNewInspection({
+      caliber: "",
+      make: "RUGER",
+      firearmSerialNumber: "",
+      barrelSerialNumber: "",
+      frameSerialNumber: "",
+      receiverSerialNumber: "",
+      firearmType: "",
+      firearmTypeOther: "",
+      inspectionDate: new Date().toISOString().split("T")[0],
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
+      actionType: "",
+      actionTypeOther: "",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    })
+
+    setIsAddInspectionDialogOpen(false)
+    alert("Inspection record added successfully!")
+  }
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       "in-stock": { color: "bg-green-100 text-green-800", icon: Package },
@@ -1385,10 +1469,11 @@ export default function GunworxTracker() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="firearms">Firearms</TabsTrigger>
             <TabsTrigger value="inspections">Inspections</TabsTrigger>
+            <TabsTrigger value="add-inspection">Add Inspection</TabsTrigger>
             {currentUser.role === "admin" && <TabsTrigger value="users">Users</TabsTrigger>}
           </TabsList>
 
@@ -1518,7 +1603,7 @@ export default function GunworxTracker() {
                           {expandedSections.firearms ? (
                             <ChevronUp className="w-4 h-4" />
                           ) : (
-                            <ChevronDown className="w-4 h-4" />
+                            <ChevronDown className=" h-4" />
                           )}
                         </div>
 
@@ -1922,6 +2007,172 @@ export default function GunworxTracker() {
             </Card>
           </TabsContent>
 
+          {/* Add Inspection Tab */}
+          <TabsContent value="add-inspection" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Inspection</CardTitle>
+                <CardDescription>Add a new firearm inspection record</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="insp-caliber">Caliber *</Label>
+                    <Input
+                      id="insp-caliber"
+                      value={newInspection.caliber}
+                      onChange={(e) => setNewInspection({ ...newInspection, caliber: e.target.value })}
+                      placeholder="Enter caliber"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-make">Make *</Label>
+                    <Select
+                      value={newInspection.make}
+                      onValueChange={(value) => setNewInspection({ ...newInspection, make: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RUGER">RUGER</SelectItem>
+                        <SelectItem value="MARLIN">MARLIN</SelectItem>
+                        <SelectItem value="GLOCK">GLOCK</SelectItem>
+                        <SelectItem value="SMITH & WESSON">SMITH & WESSON</SelectItem>
+                        <SelectItem value="BERETTA">BERETTA</SelectItem>
+                        <SelectItem value="SIG SAUER">SIG SAUER</SelectItem>
+                        <SelectItem value="WINCHESTER">WINCHESTER</SelectItem>
+                        <SelectItem value="REMINGTON">REMINGTON</SelectItem>
+                        <SelectItem value="SAVAGE">SAVAGE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-serial">Firearm Serial Number *</Label>
+                    <Input
+                      id="insp-serial"
+                      value={newInspection.firearmSerialNumber}
+                      onChange={(e) =>
+                        setNewInspection({
+                          ...newInspection,
+                          firearmSerialNumber: e.target.value,
+                          barrelSerialNumber: e.target.value,
+                          frameSerialNumber: e.target.value,
+                          receiverSerialNumber: e.target.value,
+                        })
+                      }
+                      placeholder="Enter serial number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-type">Firearm Type</Label>
+                    <Select
+                      value={newInspection.firearmType}
+                      onValueChange={(value) => setNewInspection({ ...newInspection, firearmType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RIFLE">RIFLE</SelectItem>
+                        <SelectItem value="PISTOL">PISTOL</SelectItem>
+                        <SelectItem value="Self-Loading Rifle/Carbine">Self-Loading Rifle/Carbine</SelectItem>
+                        <SelectItem value="SHOTGUN">SHOTGUN</SelectItem>
+                        <SelectItem value="REVOLVER">REVOLVER</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-action">Action Type</Label>
+                    <Select
+                      value={newInspection.actionType}
+                      onValueChange={(value) => setNewInspection({ ...newInspection, actionType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Bolt">Bolt</SelectItem>
+                        <SelectItem value="Semi-Auto">Semi-Auto</SelectItem>
+                        <SelectItem value="Lever">Lever</SelectItem>
+                        <SelectItem value="Pump">Pump</SelectItem>
+                        <SelectItem value="Break">Break</SelectItem>
+                        <SelectItem value="Single Shot">Single Shot</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-date">Inspection Date</Label>
+                    <Input
+                      id="insp-date"
+                      type="date"
+                      value={newInspection.inspectionDate}
+                      onChange={(e) => setNewInspection({ ...newInspection, inspectionDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-inspector">Inspector</Label>
+                    <Input
+                      id="insp-inspector"
+                      value={newInspection.inspector}
+                      onChange={(e) => setNewInspection({ ...newInspection, inspector: e.target.value })}
+                      placeholder="Enter inspector name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-dealer">Dealer Code</Label>
+                    <Input
+                      id="insp-dealer"
+                      value={newInspection.dealerCode}
+                      onChange={(e) => setNewInspection({ ...newInspection, dealerCode: e.target.value })}
+                      placeholder="Enter dealer code"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-company">Company Name</Label>
+                    <Input
+                      id="insp-company"
+                      value={newInspection.companyName}
+                      onChange={(e) => setNewInspection({ ...newInspection, companyName: e.target.value })}
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-country">Country of Origin</Label>
+                    <Input
+                      id="insp-country"
+                      value={newInspection.countryOfOrigin}
+                      onChange={(e) => setNewInspection({ ...newInspection, countryOfOrigin: e.target.value })}
+                      placeholder="Enter country of origin"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="insp-remarks">Remarks</Label>
+                  <Textarea
+                    id="insp-remarks"
+                    value={newInspection.remarks}
+                    onChange={(e) => setNewInspection({ ...newInspection, remarks: e.target.value })}
+                    placeholder="Enter remarks"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="insp-comments">Comments</Label>
+                  <Textarea
+                    id="insp-comments"
+                    value={newInspection.comments}
+                    onChange={(e) => setNewInspection({ ...newInspection, comments: e.target.value })}
+                    placeholder="Enter comments"
+                  />
+                </div>
+                <Button onClick={handleAddInspection} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Inspection
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {currentUser.role === "admin" && (
             <TabsContent value="users">
               <UserManagement currentUser={currentUser} />
@@ -2203,6 +2454,12 @@ export default function GunworxTracker() {
               </div>
               <div className="col-span-2">
                 <Label htmlFor="edit-remarks">Remarks</Label>
+                <Textarea
+                  id="edit-remarks"
+                  value={editingFirearm.remarks}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, remarks: e.target.value })}
+                  rows={3}
+                />
                 <Textarea
                   id="edit-remarks"
                   value={editingFirearm.remarks}

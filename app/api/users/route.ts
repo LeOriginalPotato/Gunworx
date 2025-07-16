@@ -74,11 +74,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: "User not found" }, { status: 404 })
         }
 
-        // Prevent updating system admin
-        if (serverUsers[userIndex].isSystemAdmin) {
-          return NextResponse.json({ error: "Cannot modify system administrator" }, { status: 403 })
-        }
-
         serverUsers[userIndex] = { ...serverUsers[userIndex], ...user }
         return NextResponse.json(serverUsers[userIndex])
 
@@ -90,11 +85,6 @@ export async function POST(request: NextRequest) {
         const userToDelete = serverUsers.find((u) => u.id === user.id)
         if (!userToDelete) {
           return NextResponse.json({ error: "User not found" }, { status: 404 })
-        }
-
-        // Prevent deleting system admin
-        if (userToDelete.isSystemAdmin) {
-          return NextResponse.json({ error: "Cannot delete system administrator" }, { status: 403 })
         }
 
         serverUsers = serverUsers.filter((u) => u.id !== user.id)

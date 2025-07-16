@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Plus, Edit, Trash2, Shield, UserIcon, Eye, EyeOff, Users, Lock, UserCheck } from "lucide-react"
+import { Plus, Edit, Trash2, Shield, UserIcon, Eye, EyeOff, Users, UserCheck, Crown } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
 interface UserManagementProps {
@@ -51,7 +51,11 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     username: "",
     password: "",
     role: "user" as "admin" | "user",
+    isSystemAdmin: false,
   })
+
+  // Check if current user is system admin
+  const isCurrentUserSystemAdmin = currentUser.isSystemAdmin === true
 
   // Load users on component mount
   useEffect(() => {
@@ -145,15 +149,22 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       return
     }
 
+    // Only system admins can create system admin users
+    if (newUser.isSystemAdmin && !isCurrentUserSystemAdmin) {
+      setError("Only system administrators can create system admin accounts")
+      return
+    }
+
     try {
       const createdUser = await authService.createUser({
         username: newUser.username,
         password,
         role: newUser.role,
+        isSystemAdmin: newUser.isSystemAdmin,
       })
 
       await loadUsers()
-      setNewUser({ username: "", password: "", role: "user" })
+      setNewUser({ username: "", password: "", role: "user", isSystemAdmin: false })
       setIsAddDialogOpen(false)
 
       alert(
@@ -161,6 +172,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
 
 Username: ${createdUser.username}
 Password: ${password}
+Role: ${createdUser.isSystemAdmin ? "System Administrator" : createdUser.role}
 
 Please provide these credentials to the user.`,
       )
@@ -172,9 +184,9 @@ Please provide these credentials to the user.`,
   }
 
   const handleEditUser = (user: User) => {
-    // Prevent editing the system admin user
-    if (user.isSystemAdmin) {
-      setError("Cannot edit the system administrator account")
+    // Only system admins can edit system admin users (including other system admins)
+    if (user.isSystemAdmin && !isCurrentUserSystemAdmin) {
+      setError("Only system administrators can edit system admin accounts")
       return
     }
 
@@ -203,6 +215,12 @@ Please provide these credentials to the user.`,
       return
     }
 
+    // Only system admins can set system admin role
+    if (editingUser.isSystemAdmin && !isCurrentUserSystemAdmin) {
+      setError("Only system administrators can grant system admin privileges")
+      return
+    }
+
     // Check if username exists for other users
     const existingUsers = await authService.getUsers()
     const existingUser = existingUsers.find((u) => u.username === editingUser.username && u.id !== editingUser.id)
@@ -222,6 +240,7 @@ Please provide these credentials to the user.`,
 
 Username: ${editingUser.username}
 Password: ${editingUser.password}
+Role: ${editingUser.isSystemAdmin ? "System Administrator" : editingUser.role}
 
 Please provide the updated credentials to the user.`,
       )
@@ -235,9 +254,9 @@ Please provide the updated credentials to the user.`,
   const handleDeleteUser = (userId: string) => {
     const user = users.find((u) => u.id === userId)
 
-    // Prevent deleting the system admin user
-    if (user?.isSystemAdmin) {
-      setError("Cannot delete the system administrator account")
+    // Only system admins can delete system admin users
+    if (user?.isSystemAdmin && !isCurrentUserSystemAdmin) {
+      setError("Only system administrators can delete system admin accounts")
       return
     }
 
@@ -278,7 +297,7 @@ Please provide the updated credentials to the user.`,
     if (user.isSystemAdmin) {
       return (
         <Badge className="bg-purple-100 text-purple-800">
-          <Lock className="w-3 h-3 mr-1" />
+          <Crown className="w-3 h-3 mr-1" />
           System Admin
         </Badge>
       )
@@ -295,6 +314,31 @@ Please provide the updated credentials to the user.`,
         User
       </Badge>
     )
+  }
+
+  const canEditUser = (user: User) => {
+    // System admins can edit anyone
+    if (isCurrentUserSystemAdmin) return true
+
+    // Non-system admins cannot edit system admins
+    if (user.isSystemAdmin) return false
+
+    // Regular admins can edit non-system admin users
+    return currentUser.role === "admin"
+  }
+
+  const canDeleteUser = (user: User) => {
+    // Cannot delete yourself
+    if (user.id === currentUser.id) return false
+
+    // System admins can delete anyone (except themselves)
+    if (isCurrentUserSystemAdmin) return true
+
+    // Non-system admins cannot delete system admins
+    if (user.isSystemAdmin) return false
+
+    // Regular admins can delete non-system admin users
+    return currentUser.role === "admin"
   }
 
   // Calculate statistics
@@ -319,6 +363,17 @@ Please provide the updated credentials to the user.`,
   return (
     <TooltipProvider>
       <div className="space-y-6">
+        {/* System Admin Notice */}
+        {isCurrentUserSystemAdmin && (
+          <Alert className="border-purple-200 bg-purple-50">
+            <Crown className="h-4 w-4 text-purple-600" />
+            <AlertDescription className="text-purple-800">
+              <strong>System Administrator Access:</strong> You have full privileges to manage all users, including
+              creating and managing other system administrators.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -339,7 +394,7 @@ Please provide the updated credentials to the user.`,
                   <p className="text-sm font-medium text-gray-600">System Admins</p>
                   <p className="text-2xl font-bold text-purple-600">{stats.systemAdmins}</p>
                 </div>
-                <Lock className="h-8 w-8 text-purple-600" />
+                <Crown className="h-8 w-8 text-purple-600" />
               </div>
             </CardContent>
           </Card>
@@ -421,6 +476,21 @@ Please provide the updated credentials to the user.`,
                         </SelectContent>
                       </Select>
                     </div>
+                    {isCurrentUserSystemAdmin && (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="new-system-admin"
+                          checked={newUser.isSystemAdmin}
+                          onChange={(e) => setNewUser({ ...newUser, isSystemAdmin: e.target.checked })}
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="new-system-admin" className="text-sm font-medium">
+                          <Crown className="w-4 h-4 inline mr-1 text-purple-600" />
+                          System Administrator
+                        </Label>
+                      </div>
+                    )}
                     {error && (
                       <Alert variant="destructive">
                         <AlertDescription>{error}</AlertDescription>
@@ -475,7 +545,7 @@ Please provide the updated credentials to the user.`,
                       <TableRow key={user.id} className={user.isSystemAdmin ? "bg-purple-50" : ""}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                            {user.isSystemAdmin && <Lock className="w-4 h-4 text-purple-600" />}
+                            {user.isSystemAdmin && <Crown className="w-4 h-4 text-purple-600" />}
                             {user.username}
                           </div>
                         </TableCell>
@@ -502,13 +572,17 @@ Please provide the updated credentials to the user.`,
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleEditUser(user)}
-                                  disabled={user.isSystemAdmin}
+                                  disabled={!canEditUser(user)}
                                 >
                                   <Edit className="w-3 h-3" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {user.isSystemAdmin ? "Cannot edit system admin" : "Edit user"}
+                                {!canEditUser(user)
+                                  ? user.isSystemAdmin && !isCurrentUserSystemAdmin
+                                    ? "Only system admins can edit system admin accounts"
+                                    : "Insufficient permissions"
+                                  : "Edit user"}
                               </TooltipContent>
                             </Tooltip>
                             <Tooltip>
@@ -517,18 +591,20 @@ Please provide the updated credentials to the user.`,
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDeleteUser(user.id)}
-                                  disabled={user.isSystemAdmin || user.id === currentUser.id}
+                                  disabled={!canDeleteUser(user)}
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                {user.isSystemAdmin
-                                  ? "Cannot delete system admin"
-                                  : user.id === currentUser.id
+                                {!canDeleteUser(user)
+                                  ? user.id === currentUser.id
                                     ? "Cannot delete yourself"
-                                    : "Delete user"}
+                                    : user.isSystemAdmin && !isCurrentUserSystemAdmin
+                                      ? "Only system admins can delete system admin accounts"
+                                      : "Insufficient permissions"
+                                  : "Delete user"}
                               </TooltipContent>
                             </Tooltip>
                           </div>
@@ -541,13 +617,22 @@ Please provide the updated credentials to the user.`,
             )}
 
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-2">User Management Notes</h4>
+              <h4 className="font-semibold text-blue-900 mb-2">User Management Permissions</h4>
               <ul className="text-sm text-blue-800 space-y-1">
-                <li>• System administrator account cannot be edited or deleted</li>
+                <li>
+                  • <Crown className="w-3 h-3 inline mr-1" />
+                  <strong>System Administrators:</strong> Can manage all users including other system admins
+                </li>
+                <li>
+                  • <Shield className="w-3 h-3 inline mr-1" />
+                  <strong>Regular Administrators:</strong> Can manage non-system admin users only
+                </li>
+                <li>
+                  • <UserIcon className="w-3 h-3 inline mr-1" />
+                  <strong>Users:</strong> Cannot access user management
+                </li>
                 <li>• Users cannot delete their own accounts</li>
                 <li>• Passwords are visible to administrators for credential sharing</li>
-                <li>• Provide credentials directly to users when creating accounts</li>
-                <li>• Admin users have full system access including user management</li>
                 <li>• Data syncs with server automatically every 30 seconds</li>
               </ul>
             </div>
@@ -597,6 +682,21 @@ Please provide the updated credentials to the user.`,
                     </SelectContent>
                   </Select>
                 </div>
+                {isCurrentUserSystemAdmin && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit-system-admin"
+                      checked={editingUser.isSystemAdmin || false}
+                      onChange={(e) => setEditingUser({ ...editingUser, isSystemAdmin: e.target.checked })}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="edit-system-admin" className="text-sm font-medium">
+                      <Crown className="w-4 h-4 inline mr-1 text-purple-600" />
+                      System Administrator
+                    </Label>
+                  </div>
+                )}
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
