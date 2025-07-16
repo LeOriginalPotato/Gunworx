@@ -2,145 +2,139 @@
 
 import type React from "react"
 
-import { useRef, useState, useEffect } from "react"
+import { useRef, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { PenTool, RotateCcw, Save, AlertCircle } from "lucide-react"
+import { Pen, RotateCcw, Save, AlertCircle } from "lucide-react"
 
 interface SignaturePadProps {
   isOpen: boolean
   onClose: () => void
-  onSignatureSave: (signatureData: string, signerName: string) => void
+  onSave: (signature: string, signerName: string, fullName: string) => void
   title?: string
 }
 
-export function SignaturePad({ isOpen, onClose, onSignatureSave, title = "Digital Signature" }: SignaturePadProps) {
+export function SignaturePad({ isOpen, onClose, onSave, title = "Digital Signature" }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [signerName, setSignerName] = useState("")
-  const [hasSignature, setHasSignature] = useState(false)
+  const [fullName, setFullName] = useState("")
   const [error, setError] = useState("")
+  const [hasSignature, setHasSignature] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
-      // Reset state when dialog opens
+      // Reset form when dialog opens
       setSignerName("")
-      setHasSignature(false)
+      setFullName("")
       setError("")
+      setHasSignature(false)
 
-      // Clear canvas
+      // Initialize canvas
       const canvas = canvasRef.current
       if (canvas) {
         const ctx = canvas.getContext("2d")
         if (ctx) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          ctx.fillStyle = "white"
+          // Set canvas size
+          canvas.width = 400
+          canvas.height = 200
+
+          // Set drawing properties
+          ctx.strokeStyle = "#000000"
+          ctx.lineWidth = 2
+          ctx.lineCap = "round"
+          ctx.lineJoin = "round"
+
+          // Clear canvas with white background
+          ctx.fillStyle = "#ffffff"
           ctx.fillRect(0, 0, canvas.width, canvas.height)
         }
       }
     }
   }, [isOpen])
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     setIsDrawing(true)
     setHasSignature(true)
     const canvas = canvasRef.current
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
+    if (!canvas) return
 
-      const ctx = canvas.getContext("2d")
-      if (ctx) {
-        ctx.beginPath()
-        ctx.moveTo(x, y)
-      }
+    const rect = canvas.getBoundingClientRect()
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    let clientX, clientY
+    if ("touches" in e) {
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
+    } else {
+      clientX = e.clientX
+      clientY = e.clientY
     }
+
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+
+    ctx.beginPath()
+    ctx.moveTo(x, y)
   }
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return
 
     const canvas = canvasRef.current
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
+    if (!canvas) return
 
-      const ctx = canvas.getContext("2d")
-      if (ctx) {
-        ctx.lineTo(x, y)
-        ctx.stroke()
-      }
+    const rect = canvas.getBoundingClientRect()
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    let clientX, clientY
+    if ("touches" in e) {
+      e.preventDefault() // Prevent scrolling on touch
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
+    } else {
+      clientX = e.clientX
+      clientY = e.clientY
     }
+
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+
+    ctx.lineTo(x, y)
+    ctx.stroke()
   }
 
   const stopDrawing = () => {
     setIsDrawing(false)
   }
 
-  const startDrawingTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault()
-    setIsDrawing(true)
-    setHasSignature(true)
+  const clearCanvas = () => {
     const canvas = canvasRef.current
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect()
-      const touch = e.touches[0]
-      const x = touch.clientX - rect.left
-      const y = touch.clientY - rect.top
+    if (!canvas) return
 
-      const ctx = canvas.getContext("2d")
-      if (ctx) {
-        ctx.beginPath()
-        ctx.moveTo(x, y)
-      }
-    }
-  }
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
 
-  const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault()
-    if (!isDrawing) return
-
-    const canvas = canvasRef.current
-    if (canvas) {
-      const rect = canvas.getBoundingClientRect()
-      const touch = e.touches[0]
-      const x = touch.clientX - rect.left
-      const y = touch.clientY - rect.top
-
-      const ctx = canvas.getContext("2d")
-      if (ctx) {
-        ctx.lineTo(x, y)
-        ctx.stroke()
-      }
-    }
-  }
-
-  const stopDrawingTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault()
-    setIsDrawing(false)
-  }
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current
-    if (canvas) {
-      const ctx = canvas.getContext("2d")
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.fillStyle = "white"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-      }
-    }
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
     setHasSignature(false)
   }
 
-  const saveSignature = () => {
+  const handleSave = () => {
+    setError("")
+
     if (!signerName.trim()) {
-      setError("Please enter the signer's full name")
+      setError("Signer name is required")
+      return
+    }
+
+    if (!fullName.trim()) {
+      setError("Full name is required")
       return
     }
 
@@ -150,80 +144,95 @@ export function SignaturePad({ isOpen, onClose, onSignatureSave, title = "Digita
     }
 
     const canvas = canvasRef.current
-    if (canvas) {
+    if (!canvas) {
+      setError("Canvas not available")
+      return
+    }
+
+    try {
       const signatureData = canvas.toDataURL("image/png")
-      onSignatureSave(signatureData, signerName.trim())
+      onSave(signatureData, signerName.trim(), fullName.trim())
       onClose()
+    } catch (err) {
+      setError("Failed to save signature")
     }
   }
 
   const handleClose = () => {
     setSignerName("")
-    setHasSignature(false)
+    setFullName("")
     setError("")
+    setHasSignature(false)
     onClose()
   }
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (canvas) {
-      const ctx = canvas.getContext("2d")
-      if (ctx) {
-        ctx.strokeStyle = "#000000"
-        ctx.lineWidth = 2
-        ctx.lineCap = "round"
-        ctx.lineJoin = "round"
-
-        // Set white background
-        ctx.fillStyle = "white"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-      }
-    }
-  }, [isOpen])
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <PenTool className="w-5 h-5" />
+            <Pen className="w-5 h-5" />
             {title}
           </DialogTitle>
-          <DialogDescription>Please enter your full name and provide your digital signature below.</DialogDescription>
+          <DialogDescription>Please enter your details and provide your digital signature below</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Signer Name Input */}
           <div>
-            <Label htmlFor="signer-name">Full Name *</Label>
+            <Label htmlFor="signer-name">Signer Name *</Label>
             <Input
               id="signer-name"
               value={signerName}
               onChange={(e) => setSignerName(e.target.value)}
-              placeholder="Enter your full name"
-              className="mt-1"
+              placeholder="Enter your name as it should appear"
             />
           </div>
 
+          {/* Full Name Input */}
           <div>
-            <Label>Digital Signature *</Label>
-            <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-4">
+            <Label htmlFor="full-name">Full Name *</Label>
+            <Input
+              id="full-name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Enter your full legal name"
+            />
+          </div>
+
+          {/* Signature Canvas */}
+          <div>
+            <Label>Signature *</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 bg-gray-50">
               <canvas
                 ref={canvasRef}
-                width={600}
-                height={200}
-                className="w-full h-48 border border-gray-200 rounded cursor-crosshair bg-white"
+                className="border border-gray-300 rounded bg-white cursor-crosshair touch-none"
+                style={{ width: "100%", height: "150px" }}
                 onMouseDown={startDrawing}
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseLeave={stopDrawing}
-                onTouchStart={startDrawingTouch}
-                onTouchMove={drawTouch}
-                onTouchEnd={stopDrawingTouch}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
               />
-              <p className="text-sm text-gray-500 mt-2 text-center">Sign above using your mouse or touch screen</p>
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-xs text-gray-500">Sign above using mouse or touch</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={clearCanvas}
+                  className="flex items-center gap-1 bg-transparent"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Clear
+                </Button>
+              </div>
             </div>
           </div>
 
+          {/* Error Message */}
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -231,14 +240,14 @@ export function SignaturePad({ isOpen, onClose, onSignatureSave, title = "Digita
             </Alert>
           )}
 
+          {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={clearSignature} className="flex-1 bg-transparent">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-            <Button onClick={saveSignature} className="flex-1">
+            <Button onClick={handleSave} className="flex-1">
               <Save className="w-4 h-4 mr-2" />
               Save Signature
+            </Button>
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
             </Button>
           </div>
         </div>

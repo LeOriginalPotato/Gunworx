@@ -22,16 +22,35 @@ const SYSTEM_ADMIN_PASSWORD = "Password123"
 
 class AuthService {
   private users: Map<string, { user: User; password: string }> = new Map()
+  private initialized = false
 
   constructor() {
     // Only initialize in browser environment
     if (typeof window !== "undefined") {
+      this.initialize()
+    }
+  }
+
+  private initialize() {
+    if (this.initialized) return
+
+    try {
       this.loadUsers()
       // Always ensure system admin exists
       this.users.set(SYSTEM_ADMIN.username, {
         user: SYSTEM_ADMIN,
         password: SYSTEM_ADMIN_PASSWORD,
       })
+      this.initialized = true
+    } catch (error) {
+      console.error("Failed to initialize auth service:", error)
+      // Initialize with just system admin if loading fails
+      this.users.clear()
+      this.users.set(SYSTEM_ADMIN.username, {
+        user: SYSTEM_ADMIN,
+        password: SYSTEM_ADMIN_PASSWORD,
+      })
+      this.initialized = true
     }
   }
 
@@ -42,12 +61,20 @@ class AuthService {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const userData = JSON.parse(saved)
-        Object.entries(userData).forEach(([username, data]: [string, any]) => {
-          this.users.set(username, data)
-        })
+        if (userData && typeof userData === "object") {
+          Object.entries(userData).forEach(([username, data]: [string, any]) => {
+            if (data && data.user && data.password) {
+              this.users.set(username, data)
+            }
+          })
+        }
       }
     } catch (error) {
       console.warn("Failed to load users from localStorage:", error)
+      // Clear corrupted data
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(STORAGE_KEY)
+      }
     }
   }
 
@@ -66,6 +93,10 @@ class AuthService {
   }
 
   login(username: string, password: string): User | null {
+    if (!this.initialized && typeof window !== "undefined") {
+      this.initialize()
+    }
+
     const userData = this.users.get(username)
     if (userData && userData.password === password) {
       const user = {
@@ -104,12 +135,16 @@ class AuthService {
   }
 
   createUser(username: string, password: string, role: "admin" | "user" = "user"): User {
+    if (!this.initialized && typeof window !== "undefined") {
+      this.initialize()
+    }
+
     if (this.users.has(username)) {
       throw new Error("Username already exists")
     }
 
     const user: User = {
-      id: `user_${Date.now()}`,
+      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       username,
       role,
       createdAt: new Date().toISOString(),
@@ -121,6 +156,10 @@ class AuthService {
   }
 
   updateUser(userId: string, updates: Partial<User>): User {
+    if (!this.initialized && typeof window !== "undefined") {
+      this.initialize()
+    }
+
     for (const [username, userData] of this.users.entries()) {
       if (userData.user.id === userId) {
         const updatedUser = { ...userData.user, ...updates }
@@ -133,6 +172,10 @@ class AuthService {
   }
 
   updatePassword(userId: string, newPassword: string): void {
+    if (!this.initialized && typeof window !== "undefined") {
+      this.initialize()
+    }
+
     for (const [username, userData] of this.users.entries()) {
       if (userData.user.id === userId) {
         this.users.set(username, { ...userData, password: newPassword })
@@ -144,6 +187,10 @@ class AuthService {
   }
 
   deleteUser(userId: string): void {
+    if (!this.initialized && typeof window !== "undefined") {
+      this.initialize()
+    }
+
     // Prevent deletion of system admin
     if (userId === SYSTEM_ADMIN.id) {
       throw new Error("Cannot delete system administrator")
@@ -160,19 +207,46 @@ class AuthService {
   }
 
   getAllUsers(): User[] {
-    // Return ALL users including those created by admin, but filter out system admin
-    return Array.from(this.users.values())
-      .map((data) => data.user)
-      .filter((user) => user.id !== SYSTEM_ADMIN.id)
+    if (!this.initialized && typeof window !== "undefined") {
+      this.initialize()
+    }
+
+    try {
+      // Return ALL users including those created by admin, but filter out system admin
+      return Array.from(this.users.values())
+        .map((data) => data.user)
+        .filter((user) => user.id !== SYSTEM_ADMIN.id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    } catch (error) {
+      console.error("Error getting all users:", error)
+      return []
+    }
   }
 
   getUserById(userId: string): User | null {
+    if (!this.initialized && typeof window !== "undefined") {
+      this.initialize()
+    }
+
     for (const userData of this.users.values()) {
       if (userData.user.id === userId) {
         return userData.user
       }
     }
     return null
+  }
+
+  // Method to check if service is ready
+  isReady(): boolean {
+    return this.initialized
+  }
+
+  // Method to get user count safely
+  getUserCount(): number {
+    if (!this.initialized && typeof window !== "undefined") {
+      this.initialize()
+    }
+    return this.users.size - 1 // Subtract 1 for system admin
   }
 }
 

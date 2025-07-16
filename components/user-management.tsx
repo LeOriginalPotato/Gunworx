@@ -27,7 +27,18 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, Edit, Trash2, Users, UserCheck, Shield, AlertCircle, CheckCircle } from "lucide-react"
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Users,
+  UserCheck,
+  Shield,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  RefreshCw,
+} from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
 interface UserManagementProps {
@@ -44,6 +55,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true)
 
   // New user form state
   const [newUser, setNewUser] = useState({
@@ -59,33 +71,48 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     newPassword: "",
   })
 
-  // Load users on component mount and when operations complete
-  const loadUsers = () => {
+  // Load users function with proper error handling
+  const loadUsers = async () => {
+    setIsLoadingUsers(true)
+    setError("")
+
     try {
+      // Wait for auth service to be ready
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      if (!authService.isReady()) {
+        throw new Error("Authentication service not ready")
+      }
+
       const allUsers = authService.getAllUsers()
       setUsers(allUsers)
     } catch (err) {
-      setError("Failed to load users")
+      console.error("Failed to load users:", err)
+      setError("Failed to load users. Please refresh the page.")
+      setUsers([]) // Set empty array as fallback
+    } finally {
+      setIsLoadingUsers(false)
     }
   }
 
+  // Load users on component mount
   useEffect(() => {
     loadUsers()
   }, [])
 
-  // Clear messages after 3 seconds
+  // Clear messages after 5 seconds
   useEffect(() => {
     if (error || success) {
       const timer = setTimeout(() => {
         setError("")
         setSuccess("")
-      }, 3000)
+      }, 5000)
       return () => clearTimeout(timer)
     }
   }, [error, success])
 
   const handleAddUser = async () => {
-    if (!newUser.username || !newUser.password) {
+    if (!newUser.username.trim() || !newUser.password.trim()) {
       setError("Username and password are required")
       return
     }
@@ -99,11 +126,13 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     setError("")
 
     try {
-      const user = authService.createUser(newUser.username, newUser.password, newUser.role)
-      setSuccess(`User "${user.username}" created successfully! Password: ${newUser.password}`)
+      const user = authService.createUser(newUser.username.trim(), newUser.password, newUser.role)
+      setSuccess(
+        `User "${user.username}" created successfully!\n\nCredentials:\nUsername: ${user.username}\nPassword: ${newUser.password}\n\nPlease provide these credentials to the user.`,
+      )
       setNewUser({ username: "", password: "", role: "user" })
       setIsAddDialogOpen(false)
-      loadUsers() // Reload users to show the new user
+      await loadUsers() // Reload users to show the new user
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user")
     } finally {
@@ -119,10 +148,11 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       newPassword: "",
     })
     setIsEditDialogOpen(true)
+    setError("")
   }
 
   const handleUpdateUser = async () => {
-    if (!editingUser || !editUserData.username) {
+    if (!editingUser || !editUserData.username.trim()) {
       setError("Username is required")
       return
     }
@@ -133,26 +163,28 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     try {
       // Update user details
       authService.updateUser(editingUser.id, {
-        username: editUserData.username,
+        username: editUserData.username.trim(),
         role: editUserData.role,
       })
 
       // Update password if provided
-      if (editUserData.newPassword) {
+      if (editUserData.newPassword.trim()) {
         if (editUserData.newPassword.length < 6) {
           setError("Password must be at least 6 characters long")
           setIsLoading(false)
           return
         }
         authService.updatePassword(editingUser.id, editUserData.newPassword)
-        setSuccess(`User "${editUserData.username}" updated successfully! New password: ${editUserData.newPassword}`)
+        setSuccess(
+          `User "${editUserData.username}" updated successfully!\n\nNew password: ${editUserData.newPassword}\n\nPlease provide the new password to the user.`,
+        )
       } else {
         setSuccess(`User "${editUserData.username}" updated successfully!`)
       }
 
       setIsEditDialogOpen(false)
       setEditingUser(null)
-      loadUsers() // Reload users to show updates
+      await loadUsers() // Reload users to show updates
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update user")
     } finally {
@@ -177,12 +209,21 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       setSuccess(`User "${userToDelete?.username}" deleted successfully!`)
       setIsDeleteDialogOpen(false)
       setDeletingUserId(null)
-      loadUsers() // Reload users to reflect deletion
+      await loadUsers() // Reload users to reflect deletion
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user")
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const generatePassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    let password = ""
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    setNewUser({ ...newUser, password })
   }
 
   const getRoleBadge = (role: User["role"]) => {
@@ -214,7 +255,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-2xl font-bold text-gray-900">{isLoadingUsers ? "..." : stats.total}</p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
             </div>
@@ -225,7 +266,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Administrators</p>
-                <p className="text-2xl font-bold text-red-600">{stats.admins}</p>
+                <p className="text-2xl font-bold text-red-600">{isLoadingUsers ? "..." : stats.admins}</p>
               </div>
               <Shield className="h-8 w-8 text-red-600" />
             </div>
@@ -236,7 +277,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Regular Users</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.users}</p>
+                <p className="text-2xl font-bold text-blue-600">{isLoadingUsers ? "..." : stats.users}</p>
               </div>
               <UserCheck className="h-8 w-8 text-blue-600" />
             </div>
@@ -248,14 +289,14 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="whitespace-pre-line">{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">{success}</AlertDescription>
+          <AlertDescription className="text-green-800 whitespace-pre-line">{success}</AlertDescription>
         </Alert>
       )}
 
@@ -267,74 +308,107 @@ export function UserManagement({ currentUser }: UserManagementProps) {
               <CardTitle>User Management</CardTitle>
               <CardDescription>Manage system users and their permissions</CardDescription>
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                  <DialogDescription>Create a new user account for the system</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="new-username">Username</Label>
-                    <Input
-                      id="new-username"
-                      value={newUser.username}
-                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                      placeholder="Enter username"
-                      disabled={isLoading}
-                    />
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={loadUsers} disabled={isLoadingUsers}>
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingUsers ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New User</DialogTitle>
+                    <DialogDescription>Create a new user account for the system</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="new-username">Username</Label>
+                      <Input
+                        id="new-username"
+                        value={newUser.username}
+                        onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                        placeholder="Enter username"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="new-password">Password</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="new-password"
+                          type="text"
+                          value={newUser.password}
+                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                          placeholder="Enter password (min 6 characters)"
+                          disabled={isLoading}
+                        />
+                        <Button type="button" variant="outline" onClick={generatePassword} disabled={isLoading}>
+                          Generate
+                        </Button>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="new-role">Role</Label>
+                      <Select
+                        value={newUser.role}
+                        onValueChange={(value: "admin" | "user") => setNewUser({ ...newUser, role: value })}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="admin">Administrator</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="p-4 bg-yellow-50 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        <strong>Important:</strong> After creating the user, you must provide the username and password
+                        directly to them. This information will be shown in the success message.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleAddUser} className="flex-1" disabled={isLoading}>
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          "Create User"
+                        )}
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isLoading}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="new-password">Password</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newUser.password}
-                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                      placeholder="Enter password (min 6 characters)"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-role">Role</Label>
-                    <Select
-                      value={newUser.role}
-                      onValueChange={(value: "admin" | "user") => setNewUser({ ...newUser, role: value })}
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleAddUser} className="flex-1" disabled={isLoading}>
-                      {isLoading ? "Creating..." : "Create User"}
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isLoading}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          {users.length === 0 ? (
+          {isLoadingUsers ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-500">Loading users...</p>
+            </div>
+          ) : users.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No users found. Create your first user to get started.</p>
+              <p className="text-gray-500 mb-4">No users found. Create your first user to get started.</p>
+              <Button onClick={loadUsers} variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -357,7 +431,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                       <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}</TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
-                          <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
+                          <Button variant="outline" size="sm" onClick={() => handleEditUser(user)} disabled={isLoading}>
                             <Edit className="w-3 h-3" />
                           </Button>
                           <Button
@@ -365,6 +439,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                             size="sm"
                             onClick={() => handleDeleteUser(user.id)}
                             className="text-red-600 hover:text-red-700"
+                            disabled={isLoading}
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -418,7 +493,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                 <Label htmlFor="edit-password">New Password (optional)</Label>
                 <Input
                   id="edit-password"
-                  type="password"
+                  type="text"
                   value={editUserData.newPassword}
                   onChange={(e) => setEditUserData({ ...editUserData, newPassword: e.target.value })}
                   placeholder="Leave blank to keep current password"
@@ -427,7 +502,14 @@ export function UserManagement({ currentUser }: UserManagementProps) {
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleUpdateUser} className="flex-1" disabled={isLoading}>
-                  {isLoading ? "Updating..." : "Update User"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update User"
+                  )}
                 </Button>
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isLoading}>
                   Cancel
@@ -451,7 +533,14 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteUser} disabled={isLoading}>
-              {isLoading ? "Deleting..." : "Delete"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

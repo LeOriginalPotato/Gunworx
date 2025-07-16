@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, AlertCircle } from "lucide-react"
+import { Shield, AlertCircle, Loader2 } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
 interface LoginFormProps {
@@ -26,7 +26,16 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setError("")
     setIsLoading(true)
 
+    if (!username || !password) {
+      setError("Please enter both username and password")
+      setIsLoading(false)
+      return
+    }
+
     try {
+      // Small delay to show loading state
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       const user = authService.login(username, password)
       if (user) {
         onLogin(user)
@@ -44,8 +53,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <Shield className="mx-auto h-12 w-12 text-blue-600" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Gunworx Employee Portal</h2>
+          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-100">
+            <Shield className="h-8 w-8 text-blue-600" />
+          </div>
+          <h1 className="mt-6 text-3xl font-bold text-gray-900">Gunworx Employee Portal</h1>
           <p className="mt-2 text-sm text-gray-600">FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)</p>
         </div>
 
@@ -64,11 +75,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
-                  required
                   disabled={isLoading}
+                  autoComplete="username"
                 />
               </div>
-
               <div>
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -77,8 +87,8 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  required
                   disabled={isLoading}
+                  autoComplete="current-password"
                 />
               </div>
 
@@ -90,18 +100,29 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing In..." : "Sign In"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <h3 className="text-sm font-medium text-blue-800 mb-2">System Access</h3>
-              <p className="text-sm text-blue-600">
+              <p className="text-sm text-blue-700">
                 Contact your administrator if you need access credentials or have forgotten your login information.
               </p>
             </div>
           </CardContent>
         </Card>
+
+        <div className="text-center">
+          <p className="text-xs text-gray-500">Authorized personnel only. All activities are logged and monitored.</p>
+        </div>
       </div>
     </div>
   )
