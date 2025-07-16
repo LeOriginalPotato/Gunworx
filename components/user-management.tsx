@@ -6,8 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -27,8 +27,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Users, Edit, Trash2, Shield, UserIcon, Key, UserPlus } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
-import { Users, UserPlus, Edit, Trash2, Shield, UserIcon } from "lucide-react"
 
 interface UserManagementProps {
   currentUser: User
@@ -52,17 +52,21 @@ export function UserManagement({ currentUser }: UserManagementProps) {
   })
 
   // Edit user form state
-  const [editForm, setEditForm] = useState({
-    newPassword: "",
+  const [editUserForm, setEditUserForm] = useState({
+    username: "",
+    password: "",
     role: "user" as "admin" | "user",
   })
 
+  // Load users on component mount
   useEffect(() => {
     loadUsers()
   }, [])
 
   const loadUsers = () => {
-    setUsers(authService.getAllUsers())
+    // Get all users except the system admin (Jean-Mari)
+    const allUsers = authService.getAllUsers()
+    setUsers(allUsers)
   }
 
   const handleAddUser = () => {
@@ -70,7 +74,12 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     setSuccess("")
 
     if (!newUser.username.trim() || !newUser.password.trim()) {
-      setError("Username and password are required")
+      setError("Please fill in all required fields")
+      return
+    }
+
+    if (newUser.username.trim().length < 3) {
+      setError("Username must be at least 3 characters long")
       return
     }
 
@@ -79,99 +88,124 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       return
     }
 
-    const user = authService.createUser(newUser.username.trim(), newUser.password, newUser.role, currentUser.username)
+    const createdUser = authService.createUser(
+      newUser.username.trim(),
+      newUser.password,
+      newUser.role,
+      currentUser.username,
+    )
 
-    if (user) {
-      setSuccess(`User "${user.username}" created successfully`)
+    if (createdUser) {
+      setSuccess(`User "${createdUser.username}" created successfully. Please provide these credentials to the user.`)
       setNewUser({ username: "", password: "", role: "user" })
       setIsAddDialogOpen(false)
       loadUsers()
     } else {
-      setError("Username already exists")
+      setError("Username already exists. Please choose a different username.")
     }
   }
 
   const handleEditUser = (user: User) => {
     setEditingUser(user)
-    setEditForm({
-      newPassword: "",
+    setEditUserForm({
+      username: user.username,
+      password: "", // Don't pre-fill password for security
       role: user.role,
     })
     setIsEditDialogOpen(true)
+    setError("")
   }
 
   const handleUpdateUser = () => {
     if (!editingUser) return
 
     setError("")
-    setSuccess("")
 
-    let updated = false
+    if (!editUserForm.username.trim()) {
+      setError("Username is required")
+      return
+    }
+
+    if (editUserForm.username.trim().length < 3) {
+      setError("Username must be at least 3 characters long")
+      return
+    }
 
     // Update password if provided
-    if (editForm.newPassword.trim()) {
-      if (editForm.newPassword.length < 6) {
-        setError("Password must be at least 6 characters long")
+    if (editUserForm.password && editUserForm.password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      return
+    }
+
+    // Update username if changed
+    if (editUserForm.username.trim() !== editingUser.username) {
+      // Check if new username already exists
+      const existingUser = authService
+        .getAllUsersInternal()
+        .find((u) => u.username === editUserForm.username.trim() && u.id !== editingUser.id)
+      if (existingUser) {
+        setError("Username already exists. Please choose a different username.")
         return
       }
-      if (authService.updateUserPassword(editingUser.id, editForm.newPassword)) {
-        updated = true
-      }
+
+      // Update username
+      authService.updateUsername(editingUser.id, editUserForm.username.trim())
     }
 
-    // Update role if changed
-    if (editForm.role !== editingUser.role) {
-      if (authService.updateUserRole(editingUser.id, editForm.role)) {
-        updated = true
-      }
+    // Update password if provided
+    if (editUserForm.password) {
+      authService.updateUserPassword(editingUser.id, editUserForm.password)
     }
 
-    if (updated) {
-      setSuccess(`User "${editingUser.username}" updated successfully`)
-      setIsEditDialogOpen(false)
-      setEditingUser(null)
-      loadUsers()
-    }
+    // Update role
+    authService.updateUserRole(editingUser.id, editUserForm.role)
+
+    setSuccess(`User "${editUserForm.username}" updated successfully`)
+    setIsEditDialogOpen(false)
+    setEditingUser(null)
+    loadUsers()
   }
 
   const handleDeleteUser = (userId: string) => {
+    // Prevent deleting the current user
+    if (userId === currentUser.id) {
+      setError("You cannot delete your own account")
+      return
+    }
+
     setDeletingUserId(userId)
     setIsDeleteDialogOpen(true)
   }
 
   const confirmDeleteUser = () => {
-    if (!deletingUserId) return
-
-    setError("")
-    setSuccess("")
-
-    // Prevent deleting yourself
-    if (deletingUserId === currentUser.id) {
-      setError("You cannot delete your own account")
+    if (deletingUserId) {
+      const success = authService.deleteUser(deletingUserId)
+      if (success) {
+        setSuccess("User deleted successfully")
+        loadUsers()
+      } else {
+        setError("Failed to delete user")
+      }
       setIsDeleteDialogOpen(false)
       setDeletingUserId(null)
-      return
     }
+  }
 
-    const userToDelete = users.find((u) => u.id === deletingUserId)
-    if (authService.deleteUser(deletingUserId)) {
-      setSuccess(`User "${userToDelete?.username}" deleted successfully`)
-      loadUsers()
-    } else {
-      setError("Failed to delete user")
-    }
-
-    setIsDeleteDialogOpen(false)
-    setDeletingUserId(null)
+  const clearMessages = () => {
+    setError("")
+    setSuccess("")
   }
 
   const getRoleBadge = (role: string) => {
-    return role === "admin" ? (
-      <Badge className="bg-red-100 text-red-800">
-        <Shield className="w-3 h-3 mr-1" />
-        Admin
-      </Badge>
-    ) : (
+    if (role === "admin") {
+      return (
+        <Badge variant="destructive">
+          <Shield className="w-3 h-3 mr-1" />
+          Admin
+        </Badge>
+      )
+    }
+    return (
       <Badge variant="secondary">
         <UserIcon className="w-3 h-3 mr-1" />
         User
@@ -179,60 +213,54 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     )
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-ZA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            User Management
-          </h2>
-          <p className="text-gray-600">Manage system users and permissions</p>
-        </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Add User
-        </Button>
-      </div>
-
-      {/* Alerts */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert className="border-green-200 bg-green-50">
-          <AlertDescription className="text-green-800">{success}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>System Users ({users.length})</CardTitle>
-          <CardDescription>All registered users with their roles and creation details</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            User Management
+          </CardTitle>
+          <CardDescription>
+            Create and manage user accounts for the firearms tracking system. Only administrators can access this
+            section.
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {success && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <AlertDescription className="text-green-800">{success}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-lg font-semibold">Active Users ({users.length})</h3>
+              <p className="text-sm text-gray-600">Manage user accounts and access permissions</p>
+            </div>
+            <Button
+              onClick={() => {
+                setIsAddDialogOpen(true)
+                clearMessages()
+              }}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Create User
+            </Button>
+          </div>
+
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Username</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Created Date</TableHead>
                   <TableHead>Created By</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -242,31 +270,59 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.username}</TableCell>
                     <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell className="text-sm text-gray-600">{formatDate(user.createdAt)}</TableCell>
+                    <TableCell className="text-sm text-gray-600">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </TableCell>
                     <TableCell className="text-sm text-gray-600">{user.createdBy || "System"}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
-                          <Edit className="w-3 h-3 mr-1" />
-                          Edit
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            handleEditUser(user)
+                            clearMessages()
+                          }}
+                        >
+                          <Edit className="w-3 h-3" />
                         </Button>
-                        {user.id !== currentUser.id && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Delete
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                          disabled={user.id === currentUser.id}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
+                {users.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                      No users created yet. Click "Create User" to add the first user.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <Key className="w-4 h-4" />
+              Security Guidelines
+            </h4>
+            <ul className="text-sm space-y-1 text-gray-700">
+              <li>• Only administrators can create and manage user accounts</li>
+              <li>• Usernames must be at least 3 characters long and unique</li>
+              <li>• Passwords must be at least 6 characters long</li>
+              <li>• Provide login credentials directly to users - do not display them publicly</li>
+              <li>• Regular users can access firearms tracking, admins can manage users</li>
+              <li>• All user data is automatically saved and synchronized</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
@@ -275,8 +331,10 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-            <DialogDescription>Create a new user account with username and password</DialogDescription>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account. You will need to provide the username and password to the user directly.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -285,7 +343,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                 id="new-username"
                 value={newUser.username}
                 onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                placeholder="Enter username"
+                placeholder="Enter username (min 3 characters)"
               />
             </div>
             <div>
@@ -299,7 +357,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
               />
             </div>
             <div>
-              <Label htmlFor="new-role">Role</Label>
+              <Label htmlFor="new-role">Access Level</Label>
               <Select
                 value={newUser.role}
                 onValueChange={(value) => setNewUser({ ...newUser, role: value as "admin" | "user" })}
@@ -308,8 +366,8 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="user">User - Can access firearms tracking</SelectItem>
+                  <SelectItem value="admin">Admin - Can manage users and access all features</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -327,32 +385,43 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit User: {editingUser?.username}</DialogTitle>
-            <DialogDescription>Update user password and role</DialogDescription>
+            <DialogTitle>Edit User Account</DialogTitle>
+            <DialogDescription>
+              Update user account details. Leave password blank to keep the current password.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-password">New Password</Label>
+              <Label htmlFor="edit-username">Username *</Label>
               <Input
-                id="edit-password"
-                type="password"
-                value={editForm.newPassword}
-                onChange={(e) => setEditForm({ ...editForm, newPassword: e.target.value })}
-                placeholder="Leave empty to keep current password"
+                id="edit-username"
+                value={editUserForm.username}
+                onChange={(e) => setEditUserForm({ ...editUserForm, username: e.target.value })}
+                placeholder="Enter username (min 3 characters)"
               />
             </div>
             <div>
-              <Label htmlFor="edit-role">Role</Label>
+              <Label htmlFor="edit-password">New Password (optional)</Label>
+              <Input
+                id="edit-password"
+                type="password"
+                value={editUserForm.password}
+                onChange={(e) => setEditUserForm({ ...editUserForm, password: e.target.value })}
+                placeholder="Enter new password (min 6 characters) or leave blank"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-role">Access Level</Label>
               <Select
-                value={editForm.role}
-                onValueChange={(value) => setEditForm({ ...editForm, role: value as "admin" | "user" })}
+                value={editUserForm.role}
+                onValueChange={(value) => setEditUserForm({ ...editUserForm, role: value as "admin" | "user" })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="user">User - Can access firearms tracking</SelectItem>
+                  <SelectItem value="admin">Admin - Can manage users and access all features</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -366,14 +435,14 @@ export function UserManagement({ currentUser }: UserManagementProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete User Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account and remove their access to the
-              system.
+              Are you sure you want to delete this user account? This action cannot be undone and the user will lose
+              access to the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
