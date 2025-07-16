@@ -1,16 +1,33 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Users, Plus, Edit, Trash2, Shield, UserIcon, CheckCircle, AlertCircle } from "lucide-react"
+import { Plus, Edit, Trash2, Users, UserCheck, Shield, AlertCircle, CheckCircle } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
 interface UserManagementProps {
@@ -21,29 +38,53 @@ export function UserManagement({ currentUser }: UserManagementProps) {
   const [users, setUsers] = useState<User[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  // New user form state
   const [newUser, setNewUser] = useState({
     username: "",
     password: "",
     role: "user" as "admin" | "user",
   })
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
+
+  // Edit user form state
+  const [editUserData, setEditUserData] = useState({
+    username: "",
+    role: "user" as "admin" | "user",
+    newPassword: "",
+  })
+
+  // Load users on component mount and when operations complete
+  const loadUsers = () => {
+    try {
+      const allUsers = authService.getAllUsers()
+      setUsers(allUsers)
+    } catch (err) {
+      setError("Failed to load users")
+    }
+  }
 
   useEffect(() => {
     loadUsers()
   }, [])
 
-  const loadUsers = () => {
-    // Get ALL users created by admin - this will now show all users
-    const allUsers = authService.getAllUsers()
-    setUsers(allUsers)
-  }
+  // Clear messages after 3 seconds
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError("")
+        setSuccess("")
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [error, success])
 
-  const handleAddUser = () => {
-    setError("")
-    setSuccess("")
-
+  const handleAddUser = async () => {
     if (!newUser.username || !newUser.password) {
       setError("Username and password are required")
       return
@@ -54,74 +95,97 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       return
     }
 
-    try {
-      const createdUser = authService.createUser(newUser.username, newUser.password, newUser.role)
-      setSuccess(
-        `User "${newUser.username}" created successfully! Please provide the following credentials directly to the user:
+    setIsLoading(true)
+    setError("")
 
-Username: ${newUser.username}
-Password: ${newUser.password}`,
-      )
+    try {
+      const user = authService.createUser(newUser.username, newUser.password, newUser.role)
+      setSuccess(`User "${user.username}" created successfully! Password: ${newUser.password}`)
       setNewUser({ username: "", password: "", role: "user" })
       setIsAddDialogOpen(false)
-      loadUsers() // Reload to show the new user
+      loadUsers() // Reload users to show the new user
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user")
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleEditUser = (user: User) => {
-    setEditingUser({ ...user })
+    setEditingUser(user)
+    setEditUserData({
+      username: user.username,
+      role: user.role,
+      newPassword: "",
+    })
     setIsEditDialogOpen(true)
-    setError("")
   }
 
-  const handleUpdateUser = () => {
-    if (!editingUser) return
-
-    setError("")
-
-    try {
-      authService.updateUser(editingUser.id, {
-        username: editingUser.username,
-        role: editingUser.role,
-      })
-      setSuccess(`User "${editingUser.username}" updated successfully!`)
-      setIsEditDialogOpen(false)
-      setEditingUser(null)
-      loadUsers() // Reload to show updated user
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update user")
-    }
-  }
-
-  const handleDeleteUser = (user: User) => {
-    if (user.id === currentUser.id) {
-      setError("You cannot delete your own account")
+  const handleUpdateUser = async () => {
+    if (!editingUser || !editUserData.username) {
+      setError("Username is required")
       return
     }
 
-    if (confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
-      try {
-        authService.deleteUser(user.id)
-        setSuccess(`User "${user.username}" deleted successfully!`)
-        loadUsers() // Reload to remove deleted user from display
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to delete user")
+    setIsLoading(true)
+    setError("")
+
+    try {
+      // Update user details
+      authService.updateUser(editingUser.id, {
+        username: editUserData.username,
+        role: editUserData.role,
+      })
+
+      // Update password if provided
+      if (editUserData.newPassword) {
+        if (editUserData.newPassword.length < 6) {
+          setError("Password must be at least 6 characters long")
+          setIsLoading(false)
+          return
+        }
+        authService.updatePassword(editingUser.id, editUserData.newPassword)
+        setSuccess(`User "${editUserData.username}" updated successfully! New password: ${editUserData.newPassword}`)
+      } else {
+        setSuccess(`User "${editUserData.username}" updated successfully!`)
       }
+
+      setIsEditDialogOpen(false)
+      setEditingUser(null)
+      loadUsers() // Reload users to show updates
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update user")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const generatePassword = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    let password = ""
-    for (let i = 0; i < 8; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    setNewUser({ ...newUser, password })
+  const handleDeleteUser = (userId: string) => {
+    setDeletingUserId(userId)
+    setIsDeleteDialogOpen(true)
   }
 
-  const getRoleBadge = (role: string) => {
+  const confirmDeleteUser = async () => {
+    if (!deletingUserId) return
+
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const userToDelete = users.find((u) => u.id === deletingUserId)
+      authService.deleteUser(deletingUserId)
+      setSuccess(`User "${userToDelete?.username}" deleted successfully!`)
+      setIsDeleteDialogOpen(false)
+      setDeletingUserId(null)
+      loadUsers() // Reload users to reflect deletion
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete user")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const getRoleBadge = (role: User["role"]) => {
     return role === "admin" ? (
       <Badge className="bg-red-100 text-red-800">
         <Shield className="w-3 h-3 mr-1" />
@@ -129,22 +193,58 @@ Password: ${newUser.password}`,
       </Badge>
     ) : (
       <Badge className="bg-blue-100 text-blue-800">
-        <UserIcon className="w-3 h-3 mr-1" />
+        <UserCheck className="w-3 h-3 mr-1" />
         User
       </Badge>
     )
   }
 
+  const stats = {
+    total: users.length,
+    admins: users.filter((u) => u.role === "admin").length,
+    users: users.filter((u) => u.role === "user").length,
+  }
+
   return (
     <div className="space-y-6">
-      {/* Success/Error Messages */}
-      {success && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800 whitespace-pre-line">{success}</AlertDescription>
-        </Alert>
-      )}
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Administrators</p>
+                <p className="text-2xl font-bold text-red-600">{stats.admins}</p>
+              </div>
+              <Shield className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Regular Users</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.users}</p>
+              </div>
+              <UserCheck className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* Messages */}
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -152,63 +252,104 @@ Password: ${newUser.password}`,
         </Alert>
       )}
 
-      {/* User Management Header */}
+      {success && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">{success}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* User Management */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                User Management
-              </CardTitle>
+              <CardTitle>User Management</CardTitle>
               <CardDescription>Manage system users and their permissions</CardDescription>
             </div>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add User
-            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogDescription>Create a new user account for the system</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="new-username">Username</Label>
+                    <Input
+                      id="new-username"
+                      value={newUser.username}
+                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                      placeholder="Enter username"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="new-password">Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      placeholder="Enter password (min 6 characters)"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="new-role">Role</Label>
+                    <Select
+                      value={newUser.role}
+                      onValueChange={(value: "admin" | "user") => setNewUser({ ...newUser, role: value })}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddUser} className="flex-1" disabled={isLoading}>
+                      {isLoading ? "Creating..." : "Create User"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isLoading}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{users.length}</div>
-              <div className="text-sm text-blue-800">Total Users</div>
-              <div className="text-xs text-blue-600 mt-1">Excluding system admin</div>
+          {users.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">No users found. Create your first user to get started.</p>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">{users.filter((u) => u.role === "admin").length}</div>
-              <div className="text-sm text-red-800">Administrators</div>
-              <div className="text-xs text-red-600 mt-1">User-created admins</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{users.filter((u) => u.role === "user").length}</div>
-              <div className="text-sm text-green-800">Regular Users</div>
-              <div className="text-xs text-green-600 mt-1">Standard access</div>
-            </div>
-          </div>
-
-          {/* Users Table */}
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.length === 0 ? (
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-gray-500 py-8">
-                      No users created yet. Click "Add User" to create the first user.
-                    </TableCell>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Last Login</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  users.map((user) => (
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.username}</TableCell>
                       <TableCell>{getRoleBadge(user.role)}</TableCell>
@@ -222,104 +363,28 @@ Password: ${newUser.password}`,
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDeleteUser(user)}
+                            onClick={() => handleDeleteUser(user.id)}
                             className="text-red-600 hover:text-red-700"
-                            disabled={user.id === currentUser.id}
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {users.length > 0 && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                <strong>Note:</strong> The system administrator (Jean-Mari) is not shown in this list but has full
-                system access. All users created here will be displayed and can be managed.
-              </p>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Add User Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-            <DialogDescription>Create a new user account for the system</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="new-username">Username *</Label>
-              <Input
-                id="new-username"
-                value={newUser.username}
-                onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                placeholder="Enter username"
-              />
-            </div>
-            <div>
-              <Label htmlFor="new-password">Password *</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="new-password"
-                  type="text"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  placeholder="Enter password"
-                />
-                <Button type="button" variant="outline" onClick={generatePassword}>
-                  Generate
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
-            </div>
-            <div>
-              <Label htmlFor="new-role">Role</Label>
-              <Select
-                value={newUser.role}
-                onValueChange={(value: "admin" | "user") => setNewUser({ ...newUser, role: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="p-4 bg-yellow-50 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <strong>Important:</strong> After creating the user, you must provide the username and password directly
-                to them. This information will not be shown again.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleAddUser} className="flex-1">
-                Create User
-              </Button>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Update user information and permissions</DialogDescription>
+            <DialogDescription>Update user account information</DialogDescription>
           </DialogHeader>
           {editingUser && (
             <div className="space-y-4">
@@ -327,15 +392,18 @@ Password: ${newUser.password}`,
                 <Label htmlFor="edit-username">Username</Label>
                 <Input
                   id="edit-username"
-                  value={editingUser.username}
-                  onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                  value={editUserData.username}
+                  onChange={(e) => setEditUserData({ ...editUserData, username: e.target.value })}
+                  placeholder="Enter username"
+                  disabled={isLoading}
                 />
               </div>
               <div>
                 <Label htmlFor="edit-role">Role</Label>
                 <Select
-                  value={editingUser.role}
-                  onValueChange={(value: "admin" | "user") => setEditingUser({ ...editingUser, role: value })}
+                  value={editUserData.role}
+                  onValueChange={(value: "admin" | "user") => setEditUserData({ ...editUserData, role: value })}
+                  disabled={isLoading}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -346,11 +414,22 @@ Password: ${newUser.password}`,
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label htmlFor="edit-password">New Password (optional)</Label>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  value={editUserData.newPassword}
+                  onChange={(e) => setEditUserData({ ...editUserData, newPassword: e.target.value })}
+                  placeholder="Leave blank to keep current password"
+                  disabled={isLoading}
+                />
+              </div>
               <div className="flex gap-2">
-                <Button onClick={handleUpdateUser} className="flex-1">
-                  Update User
+                <Button onClick={handleUpdateUser} className="flex-1" disabled={isLoading}>
+                  {isLoading ? "Updating..." : "Update User"}
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isLoading}>
                   Cancel
                 </Button>
               </div>
@@ -358,6 +437,25 @@ Password: ${newUser.password}`,
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user account and remove their access to the
+              system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteUser} disabled={isLoading}>
+              {isLoading ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

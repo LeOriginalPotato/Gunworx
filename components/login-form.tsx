@@ -26,12 +26,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setError("")
     setIsLoading(true)
 
-    if (!username || !password) {
-      setError("Please enter both username and password")
-      setIsLoading(false)
-      return
-    }
-
     try {
       const user = authService.login(username, password)
       if (user) {
@@ -70,6 +64,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
+                  required
                   disabled={isLoading}
                 />
               </div>
@@ -82,6 +77,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
+                  required
                   disabled={isLoading}
                 />
               </div>
@@ -94,13 +90,13 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-800 mb-2">System Access</h4>
-              <p className="text-xs text-blue-700">
+              <h3 className="text-sm font-medium text-blue-800 mb-2">System Access</h3>
+              <p className="text-sm text-blue-600">
                 Contact your administrator if you need access credentials or have forgotten your login information.
               </p>
             </div>
