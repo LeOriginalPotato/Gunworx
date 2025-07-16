@@ -1,6 +1,4 @@
 "use client"
-
-import type React from "react"
 import { useState, useMemo, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,12 +17,12 @@ import {
   Trash2,
   Plus,
   PenTool,
-  FileSignature,
-  FileText,
   Database,
   ClipboardCheck,
   LogOut,
   Shield,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -752,7 +750,7 @@ const getInitialInspectionData = (): InspectionEntry[] => [
   // .44 MAG MARLIN entries (75-84)
   ...Array.from({ length: 10 }, (_, index) => {
     const num = 75 + index
-    const serialBase = 1005967 + index
+    const serialBase = 24000000 + index
     return {
       id: `insp_${num}`,
       num,
@@ -775,119 +773,14 @@ const getInitialInspectionData = (): InspectionEntry[] => [
     }
   }),
 
-  // 9MM PAR (9X19MM) entries (85-119)
-  ...Array.from({ length: 35 }, (_, index) => {
+  // .22 LR RUGER entries (85-134)
+  ...Array.from({ length: 50 }, (_, index) => {
     const num = 85 + index
-    const serialBase = 350149885 + index
+    const serialBase = 400000000 + index
     return {
       id: `insp_${num}`,
       num,
-      caliber: "9MM PAR (9X19MM)",
-      make: "RUGER",
-      firearmSerialNumber: serialBase.toString(),
-      barrelSerialNumber: serialBase.toString(),
-      frameSerialNumber: serialBase.toString(),
-      receiverSerialNumber: serialBase.toString(),
-      firearmType: "PISTOL",
-      inspectionDate: "2024-04-04",
-      inspector: "Wikus Fourie",
-      dealerCode: "1964Delta",
-      companyName: "1964Delta",
-      actionType: "Semi-Auto",
-      countryOfOrigin: "USA",
-      remarks: "No visible signs of correction or erasing",
-      comments:
-        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-    }
-  }),
-
-  // .22 LONG RIFLE entries (120-219)
-  ...Array.from({ length: 100 }, (_, index) => {
-    const num = 120 + index
-    const serialBase = 32456 + index
-    const isAutoLoading = num % 3 === 0
-    return {
-      id: `insp_${num}`,
-      num,
-      caliber: ".22 LONG RIFLE",
-      make: "RUGER",
-      firearmSerialNumber: serialBase.toString(),
-      barrelSerialNumber: serialBase.toString(),
-      frameSerialNumber: serialBase.toString(),
-      receiverSerialNumber: serialBase.toString(),
-      firearmType: isAutoLoading ? "Self-Loading Rifle/Carbine" : "RIFLE",
-      inspectionDate: "2024-04-04",
-      inspector: "Wikus Fourie",
-      dealerCode: "1964Delta",
-      companyName: "1964Delta",
-      actionType: isAutoLoading ? "Semi-Auto" : "Bolt",
-      countryOfOrigin: "USA",
-      remarks: "No visible signs of correction or erasing",
-      comments:
-        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-    }
-  }),
-
-  // .223 REM entries (220-244)
-  ...Array.from({ length: 25 }, (_, index) => {
-    const num = 220 + index
-    const serialBase = 690735897 + index * 2
-    return {
-      id: `insp_${num}`,
-      num,
-      caliber: ".223 REM",
-      make: "RUGER",
-      firearmSerialNumber: serialBase.toString(),
-      barrelSerialNumber: serialBase.toString(),
-      frameSerialNumber: serialBase.toString(),
-      receiverSerialNumber: serialBase.toString(),
-      firearmType: "RIFLE",
-      inspectionDate: "2024-04-04",
-      inspector: "Wikus Fourie",
-      dealerCode: "1964Delta",
-      companyName: "1964Delta",
-      actionType: "Bolt",
-      countryOfOrigin: "USA",
-      remarks: "No visible signs of correction or erasing",
-      comments:
-        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-    }
-  }),
-
-  // .270 WIN entries (245-249)
-  ...Array.from({ length: 5 }, (_, index) => {
-    const num = 245 + index
-    const serialBase = 690966597 + index
-    return {
-      id: `insp_${num}`,
-      num,
-      caliber: ".270 WIN",
-      make: "RUGER",
-      firearmSerialNumber: serialBase.toString(),
-      barrelSerialNumber: serialBase.toString(),
-      frameSerialNumber: serialBase.toString(),
-      receiverSerialNumber: serialBase.toString(),
-      firearmType: "RIFLE",
-      inspectionDate: "2024-04-04",
-      inspector: "Wikus Fourie",
-      dealerCode: "1964Delta",
-      companyName: "1964Delta",
-      actionType: "Bolt",
-      countryOfOrigin: "USA",
-      remarks: "No visible signs of correction or erasing",
-      comments:
-        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-    }
-  }),
-
-  // 5.56X45MM entries (250-279)
-  ...Array.from({ length: 30 }, (_, index) => {
-    const num = 250 + index
-    const serialBase = 690737763 + index
-    return {
-      id: `insp_${num}`,
-      num,
-      caliber: "5.56X45MM",
+      caliber: ".22 LR",
       make: "RUGER",
       firearmSerialNumber: serialBase.toString(),
       barrelSerialNumber: serialBase.toString(),
@@ -906,20 +799,20 @@ const getInitialInspectionData = (): InspectionEntry[] => [
     }
   }),
 
-  // .22 LONG RIFLE (LR) Self-Loading entries (280-363)
-  ...Array.from({ length: 84 }, (_, index) => {
-    const num = 280 + index
-    const serialBase = 54323 + index * 2
+  // .22 LR MARLIN entries (135-184)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 135 + index
+    const serialBase = 70000000 + index
     return {
       id: `insp_${num}`,
       num,
-      caliber: ".22 LONG RIFLE (LR)",
-      make: "RUGER",
+      caliber: ".22 LR",
+      make: "MARLIN",
       firearmSerialNumber: serialBase.toString(),
       barrelSerialNumber: serialBase.toString(),
       frameSerialNumber: serialBase.toString(),
       receiverSerialNumber: serialBase.toString(),
-      firearmType: "Self-Loading Rifle/Carbine",
+      firearmType: "RIFLE",
       inspectionDate: "2024-04-04",
       inspector: "Wikus Fourie",
       dealerCode: "1964Delta",
@@ -932,20 +825,72 @@ const getInitialInspectionData = (): InspectionEntry[] => [
     }
   }),
 
-  // .380 ACP entries (364-378)
-  ...Array.from({ length: 15 }, (_, index) => {
-    const num = 364 + index
-    const serialBase = 381485108 + index
+  // .22 LR SAVAGE entries (185-234)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 185 + index
+    const serialBase = 2000000 + index
     return {
       id: `insp_${num}`,
       num,
-      caliber: ".380 ACP",
-      make: "RUGER",
+      caliber: ".22 LR",
+      make: "SAVAGE",
       firearmSerialNumber: serialBase.toString(),
       barrelSerialNumber: serialBase.toString(),
       frameSerialNumber: serialBase.toString(),
       receiverSerialNumber: serialBase.toString(),
-      firearmType: "PISTOL",
+      firearmType: "RIFLE",
+      inspectionDate: "2024-04-04",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
+      actionType: "Bolt",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    }
+  }),
+
+  // .22 LR WINCHESTER entries (235-284)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 235 + index
+    const serialBase = 5000000 + index
+    return {
+      id: `insp_${num}`,
+      num,
+      caliber: ".22 LR",
+      make: "WINCHESTER",
+      firearmSerialNumber: serialBase.toString(),
+      barrelSerialNumber: serialBase.toString(),
+      frameSerialNumber: serialBase.toString(),
+      receiverSerialNumber: serialBase.toString(),
+      firearmType: "RIFLE",
+      inspectionDate: "2024-04-04",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
+      actionType: "Lever",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    }
+  }),
+
+  // .22 LR REMINGTON entries (285-334)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 285 + index
+    const serialBase = 3000000 + index
+    return {
+      id: `insp_${num}`,
+      num,
+      caliber: ".22 LR",
+      make: "REMINGTON",
+      firearmSerialNumber: serialBase.toString(),
+      barrelSerialNumber: serialBase.toString(),
+      frameSerialNumber: serialBase.toString(),
+      receiverSerialNumber: serialBase.toString(),
+      firearmType: "RIFLE",
       inspectionDate: "2024-04-04",
       inspector: "Wikus Fourie",
       dealerCode: "1964Delta",
@@ -958,14 +903,14 @@ const getInitialInspectionData = (): InspectionEntry[] => [
     }
   }),
 
-  // 6.5MM CREEDMOOR entries (379-599)
-  ...Array.from({ length: 221 }, (_, index) => {
-    const num = 379 + index
-    const serialBase = 690956025 + index
+  // .22 WMR RUGER entries (335-384)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 335 + index
+    const serialBase = 600000000 + index
     return {
       id: `insp_${num}`,
       num,
-      caliber: "6.5MM CREEDMOOR",
+      caliber: ".22 WMR",
       make: "RUGER",
       firearmSerialNumber: serialBase.toString(),
       barrelSerialNumber: serialBase.toString(),
@@ -984,36 +929,14 @@ const getInitialInspectionData = (): InspectionEntry[] => [
     }
   }),
 
-  // 6MM CREEDMOOR entry (600)
-  {
-    id: "insp_600",
-    num: 600,
-    caliber: "6MM CREEDMOOR",
-    make: "RUGER",
-    firearmSerialNumber: "690943715",
-    barrelSerialNumber: "690943715",
-    frameSerialNumber: "690943715",
-    receiverSerialNumber: "690943715",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    companyName: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-    comments:
-      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-  },
-
-  // .375 RUGER entries (601-610)
-  ...Array.from({ length: 10 }, (_, index) => {
-    const num = 601 + index
-    const serialBase = 67575 + index * 2
+  // .17 HMR RUGER entries (385-434)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 385 + index
+    const serialBase = 700000000 + index
     return {
       id: `insp_${num}`,
       num,
-      caliber: ".375 RUGER",
+      caliber: ".17 HMR",
       make: "RUGER",
       firearmSerialNumber: serialBase.toString(),
       barrelSerialNumber: serialBase.toString(),
@@ -1025,6 +948,110 @@ const getInitialInspectionData = (): InspectionEntry[] => [
       dealerCode: "1964Delta",
       companyName: "1964Delta",
       actionType: "Bolt",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    }
+  }),
+
+  // .17 HMR SAVAGE entries (435-484)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 435 + index
+    const serialBase = 4000000 + index
+    return {
+      id: `insp_${num}`,
+      num,
+      caliber: ".17 HMR",
+      make: "SAVAGE",
+      firearmSerialNumber: serialBase.toString(),
+      barrelSerialNumber: serialBase.toString(),
+      frameSerialNumber: serialBase.toString(),
+      receiverSerialNumber: serialBase.toString(),
+      firearmType: "RIFLE",
+      inspectionDate: "2024-04-04",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
+      actionType: "Bolt",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    }
+  }),
+
+  // 12 GAUGE REMINGTON entries (485-534)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 485 + index
+    const serialBase = 800000000 + index
+    return {
+      id: `insp_${num}`,
+      num,
+      caliber: "12 GAUGE",
+      make: "REMINGTON",
+      firearmSerialNumber: serialBase.toString(),
+      barrelSerialNumber: serialBase.toString(),
+      frameSerialNumber: serialBase.toString(),
+      receiverSerialNumber: serialBase.toString(),
+      firearmType: "SHOTGUN",
+      inspectionDate: "2024-04-04",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
+      actionType: "Semi-Auto",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    }
+  }),
+
+  // 20 GAUGE REMINGTON entries (535-584)
+  ...Array.from({ length: 50 }, (_, index) => {
+    const num = 535 + index
+    const serialBase = 900000000 + index
+    return {
+      id: `insp_${num}`,
+      num,
+      caliber: "20 GAUGE",
+      make: "REMINGTON",
+      firearmSerialNumber: serialBase.toString(),
+      barrelSerialNumber: serialBase.toString(),
+      frameSerialNumber: serialBase.toString(),
+      receiverSerialNumber: serialBase.toString(),
+      firearmType: "SHOTGUN",
+      inspectionDate: "2024-04-04",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
+      actionType: "Semi-Auto",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    }
+  }),
+
+  // .410 GAUGE REMINGTON entries (585-610)
+  ...Array.from({ length: 26 }, (_, index) => {
+    const num = 585 + index
+    const serialBase = 100000000 + index
+    return {
+      id: `insp_${num}`,
+      num,
+      caliber: ".410 GAUGE",
+      make: "REMINGTON",
+      firearmSerialNumber: serialBase.toString(),
+      barrelSerialNumber: serialBase.toString(),
+      frameSerialNumber: serialBase.toString(),
+      receiverSerialNumber: serialBase.toString(),
+      firearmType: "SHOTGUN",
+      inspectionDate: "2024-04-04",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
+      actionType: "Semi-Auto",
       countryOfOrigin: "USA",
       remarks: "No visible signs of correction or erasing",
       comments:
@@ -1033,253 +1060,238 @@ const getInitialInspectionData = (): InspectionEntry[] => [
   }),
 ]
 
-// Data initialization and persistence functions
-const initializeData = () => {
-  const STORAGE_VERSION = "v1.0"
-  const VERSION_KEY = "gunworx_data_version"
-
-  // Check if we need to initialize or update data
-  const currentVersion = localStorage.getItem(VERSION_KEY)
-
-  if (currentVersion !== STORAGE_VERSION) {
-    // Force initialization with fresh data
-    const initialFirearms = getInitialFirearmData()
-    const initialInspections = getInitialInspectionData()
-
-    localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
-    localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
-    localStorage.setItem(VERSION_KEY, STORAGE_VERSION)
-
-    console.log(`Data initialized with version ${STORAGE_VERSION}`)
-    console.log(`Loaded ${initialFirearms.length} firearms and ${initialInspections.length} inspections`)
-
-    return {
-      firearms: initialFirearms,
-      inspections: initialInspections,
-    }
-  }
-
-  // Load existing data
-  try {
-    const savedFirearms = localStorage.getItem("gunworx_firearms")
-    const savedInspections = localStorage.getItem("gunworx_inspections")
-
-    const firearms = savedFirearms ? JSON.parse(savedFirearms) : getInitialFirearmData()
-    const inspections = savedInspections ? JSON.parse(savedInspections) : getInitialInspectionData()
-
-    // Validate data integrity
-    if (!Array.isArray(firearms) || firearms.length < 800) {
-      throw new Error("Invalid firearms data")
-    }
-
-    if (!Array.isArray(inspections) || inspections.length < 600) {
-      throw new Error("Invalid inspections data")
-    }
-
-    return { firearms, inspections }
-  } catch (error) {
-    console.warn("Error loading saved data, reinitializing:", error)
-
-    // Fallback to initial data
-    const initialFirearms = getInitialFirearmData()
-    const initialInspections = getInitialInspectionData()
-
-    localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
-    localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
-    localStorage.setItem(VERSION_KEY, STORAGE_VERSION)
-
-    return {
-      firearms: initialFirearms,
-      inspections: initialInspections,
-    }
-  }
-}
-
 export default function GunworxTracker() {
-  // Authentication state
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Check authentication on component mount
-  useEffect(() => {
-    const user = authService.getCurrentUser()
-    setCurrentUser(user)
-    setIsLoading(false)
-  }, [])
-
-  // Initialize data with complete datasets - GUARANTEED TO LOAD ON DEPLOYMENT
   const [firearms, setFirearms] = useState<FirearmEntry[]>([])
-  const [inspectionData, setInspectionData] = useState<InspectionEntry[]>([])
-  const [dataInitialized, setDataInitialized] = useState(false)
-
-  // Initialize data on component mount
-  useEffect(() => {
-    if (typeof window !== "undefined" && !dataInitialized) {
-      const { firearms: initialFirearms, inspections: initialInspections } = initializeData()
-      setFirearms(initialFirearms)
-      setInspectionData(initialInspections)
-      setDataInitialized(true)
-
-      console.log("Data loaded successfully:", {
-        firearms: initialFirearms.length,
-        inspections: initialInspections.length,
-      })
-    }
-  }, [dataInitialized])
-
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    if (dataInitialized && firearms.length > 0) {
-      localStorage.setItem("gunworx_firearms", JSON.stringify(firearms))
-    }
-  }, [firearms, dataInitialized])
-
-  useEffect(() => {
-    if (dataInitialized && inspectionData.length > 0) {
-      localStorage.setItem("gunworx_inspections", JSON.stringify(inspectionData))
-    }
-  }, [inspectionData, dataInitialized])
-
+  const [inspections, setInspections] = useState<InspectionEntry[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false)
+  const [signatureType, setSignatureType] = useState<"collection" | "transfer">("collection")
+  const [selectedFirearmId, setSelectedFirearmId] = useState<string | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editingFirearm, setEditingFirearm] = useState<FirearmEntry | null>(null)
   const [deletingFirearmId, setDeletingFirearmId] = useState<string | null>(null)
-
-  const [isBarcodeMode, setIsBarcodeMode] = useState(false)
-  const [barcodeInput, setBarcodeInput] = useState("")
-  const [lastScannedTime, setLastScannedTime] = useState(0)
-
-  // Signature states
-  const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false)
-  const [signatureFirearmId, setSignatureFirearmId] = useState<string | null>(null)
-  const [signatureType, setSignatureType] = useState<"collection" | "transfer">("collection")
-
-  // Inspection search
-  const [inspectionSearchTerm, setInspectionSearchTerm] = useState("")
-  const [inspectionTypeFilter, setInspectionTypeFilter] = useState<string>("all")
-
-  // New inspection form state with updated structure
-  const [newInspection, setNewInspection] = useState<Partial<InspectionEntry>>({
-    caliber: "",
-    make: "RUGER",
-    firearmSerialNumber: "",
-    barrelSerialNumber: "",
-    frameSerialNumber: "",
-    receiverSerialNumber: "",
-    firearmType: "",
-    firearmTypeOther: "",
-    inspectionDate: new Date().toISOString().split("T")[0],
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    companyName: "1964Delta",
-    actionType: "",
-    actionTypeOther: "",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-    comments:
-      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-  })
-
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [newFirearm, setNewFirearm] = useState<Partial<FirearmEntry>>({
-    stockNo: "",
-    dateReceived: "",
-    make: "",
-    type: "",
-    caliber: "",
-    serialNo: "",
-    fullName: "",
-    surname: "",
-    registrationId: "",
-    physicalAddress: "",
-    licenceNo: "",
-    licenceDate: "",
-    dateDelivered: "",
-    deliveredTo: "",
-    deliveredAddress: "",
-    deliveredLicence: "",
-    deliveredLicenceDate: "",
-    remarks: "",
     status: "in-stock",
   })
 
-  // Handle login
+  // Enhanced search state
+  const [expandedSections, setExpandedSections] = useState({
+    firearms: true,
+    inspections: true,
+  })
+
+  // Initialize data on component mount
+  useEffect(() => {
+    const savedFirearms = localStorage.getItem("gunworx_firearms")
+    const savedInspections = localStorage.getItem("gunworx_inspections")
+
+    try {
+      if (savedFirearms) {
+        const parsedFirearms = JSON.parse(savedFirearms)
+        // Validate data integrity
+        if (Array.isArray(parsedFirearms) && parsedFirearms.length > 0) {
+          setFirearms(parsedFirearms)
+        } else {
+          throw new Error("Invalid firearms data")
+        }
+      } else {
+        throw new Error("No saved firearms data")
+      }
+    } catch (error) {
+      console.log("Loading initial firearms data...")
+      const initialFirearms = getInitialFirearmData()
+      setFirearms(initialFirearms)
+      localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
+    }
+
+    try {
+      if (savedInspections) {
+        const parsedInspections = JSON.parse(savedInspections)
+        // Validate data integrity
+        if (Array.isArray(parsedInspections) && parsedInspections.length > 0) {
+          setInspections(parsedInspections)
+        } else {
+          throw new Error("Invalid inspections data")
+        }
+      } else {
+        throw new Error("No saved inspections data")
+      }
+    } catch (error) {
+      console.log("Loading initial inspections data...")
+      const initialInspections = getInitialInspectionData()
+      setInspections(initialInspections)
+      localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
+    }
+
+    // Check for existing user session
+    const savedUser = authService.getCurrentUser()
+    if (savedUser) {
+      setCurrentUser(savedUser)
+    }
+  }, [])
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (firearms.length > 0) {
+      localStorage.setItem("gunworx_firearms", JSON.stringify(firearms))
+    }
+  }, [firearms])
+
+  useEffect(() => {
+    if (inspections.length > 0) {
+      localStorage.setItem("gunworx_inspections", JSON.stringify(inspections))
+    }
+  }, [inspections])
+
+  // Enhanced search functionality
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return { firearms: [], inspections: [] }
+    }
+
+    const term = searchTerm.toLowerCase()
+
+    const matchingFirearms = firearms.filter((firearm) => {
+      return (
+        firearm.stockNo.toLowerCase().includes(term) ||
+        firearm.make.toLowerCase().includes(term) ||
+        firearm.type.toLowerCase().includes(term) ||
+        firearm.caliber.toLowerCase().includes(term) ||
+        firearm.serialNo.toLowerCase().includes(term) ||
+        firearm.fullName.toLowerCase().includes(term) ||
+        firearm.surname.toLowerCase().includes(term) ||
+        firearm.registrationId.toLowerCase().includes(term) ||
+        firearm.licenceNo.toLowerCase().includes(term) ||
+        firearm.remarks.toLowerCase().includes(term) ||
+        firearm.status.toLowerCase().includes(term) ||
+        (firearm.originalStockNo && firearm.originalStockNo.toLowerCase().includes(term))
+      )
+    })
+
+    const matchingInspections = inspections.filter((inspection) => {
+      return (
+        inspection.caliber.toLowerCase().includes(term) ||
+        inspection.make.toLowerCase().includes(term) ||
+        inspection.firearmSerialNumber.toLowerCase().includes(term) ||
+        inspection.firearmType.toLowerCase().includes(term) ||
+        inspection.inspector.toLowerCase().includes(term) ||
+        inspection.dealerCode.toLowerCase().includes(term) ||
+        inspection.companyName.toLowerCase().includes(term) ||
+        inspection.actionType.toLowerCase().includes(term) ||
+        inspection.countryOfOrigin.toLowerCase().includes(term) ||
+        inspection.remarks.toLowerCase().includes(term) ||
+        inspection.comments.toLowerCase().includes(term)
+      )
+    })
+
+    return { firearms: matchingFirearms, inspections: matchingInspections }
+  }, [searchTerm, firearms, inspections])
+
+  // Filter firearms based on status and search
+  const filteredFirearms = useMemo(() => {
+    let filtered = searchTerm.trim() ? searchResults.firearms : firearms
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((firearm) => firearm.status === statusFilter)
+    }
+
+    return filtered
+  }, [firearms, statusFilter, searchTerm, searchResults.firearms])
+
+  // Filter inspections based on search
+  const filteredInspections = useMemo(() => {
+    return searchTerm.trim() ? searchResults.inspections : inspections
+  }, [inspections, searchTerm, searchResults.inspections])
+
+  // Statistics
+  const stats = useMemo(() => {
+    const total = firearms.length
+    const inStock = firearms.filter((f) => f.status === "in-stock").length
+    const collected = firearms.filter((f) => f.status === "collected").length
+    const dealerStock = firearms.filter((f) => f.status === "dealer-stock").length
+    const safeKeeping = firearms.filter((f) => f.status === "safe-keeping").length
+    const totalInspections = inspections.length
+
+    return {
+      total,
+      inStock,
+      collected,
+      dealerStock,
+      safeKeeping,
+      totalInspections,
+    }
+  }, [firearms, inspections])
+
   const handleLogin = (user: User) => {
     setCurrentUser(user)
   }
 
-  // Handle logout
   const handleLogout = () => {
     authService.logout()
     setCurrentUser(null)
   }
 
-  // Separate firearms into active and collected
-  const activeFirearms = useMemo(() => {
-    return firearms.filter((firearm) => firearm.status !== "collected")
-  }, [firearms])
+  const handleSignature = (signatureData: string, signerName: string) => {
+    if (!selectedFirearmId) return
 
-  const collectedFirearms = useMemo(() => {
-    return firearms.filter((firearm) => firearm.status === "collected")
-  }, [firearms])
-
-  // Filter and search active firearms
-  const filteredActiveFirearms = useMemo(() => {
-    return activeFirearms.filter((firearm) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        Object.values(firearm).some((value) => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()))
-
-      const matchesStatus = statusFilter === "all" || firearm.status === statusFilter
-
-      return matchesSearch && matchesStatus
-    })
-  }, [activeFirearms, searchTerm, statusFilter])
-
-  // Filter and search collected firearms
-  const filteredCollectedFirearms = useMemo(() => {
-    return collectedFirearms.filter((firearm) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        Object.values(firearm).some((value) => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()))
-
-      return matchesSearch
-    })
-  }, [collectedFirearms, searchTerm])
-
-  // Filter and search inspection data
-  const filteredInspectionData = useMemo(() => {
-    return inspectionData.filter((inspection) => {
-      const matchesSearch =
-        inspectionSearchTerm === "" ||
-        Object.values(inspection).some((value) =>
-          value?.toString().toLowerCase().includes(inspectionSearchTerm.toLowerCase()),
-        )
-
-      const matchesType = inspectionTypeFilter === "all" || inspection.firearmType === inspectionTypeFilter
-
-      return matchesSearch && matchesType
-    })
-  }, [inspectionData, inspectionSearchTerm, inspectionTypeFilter])
-
-  // Show loading state
-  if (isLoading || !dataInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
-          <p className="text-gray-600">Loading Gunworx Database...</p>
-          <p className="text-sm text-gray-500 mt-2">Initializing complete dataset</p>
-        </div>
-      </div>
+    setFirearms((prev) =>
+      prev.map((firearm) => {
+        if (firearm.id === selectedFirearmId) {
+          if (signatureType === "collection") {
+            return {
+              ...firearm,
+              collectionSignature: signatureData,
+              collectionSignerName: signerName,
+            }
+          } else {
+            return {
+              ...firearm,
+              transferSignature: signatureData,
+              transferSignerName: signerName,
+            }
+          }
+        }
+        return firearm
+      }),
     )
+
+    setSelectedFirearmId(null)
   }
 
-  // Show login form if not authenticated
-  if (!currentUser) {
-    return <LoginForm onLogin={handleLogin} />
+  const openSignaturePad = (firearmId: string, type: "collection" | "transfer") => {
+    setSelectedFirearmId(firearmId)
+    setSignatureType(type)
+    setIsSignaturePadOpen(true)
+  }
+
+  const handleEditFirearm = (firearm: FirearmEntry) => {
+    setEditingFirearm({ ...firearm })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateFirearm = () => {
+    if (!editingFirearm) return
+
+    setFirearms((prev) => prev.map((f) => (f.id === editingFirearm.id ? editingFirearm : f)))
+    setIsEditDialogOpen(false)
+    setEditingFirearm(null)
+  }
+
+  const handleDeleteFirearm = (firearmId: string) => {
+    setDeletingFirearmId(firearmId)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDeleteFirearm = () => {
+    if (!deletingFirearmId) return
+
+    setFirearms((prev) => prev.filter((f) => f.id !== deletingFirearmId))
+    setIsDeleteDialogOpen(false)
+    setDeletingFirearmId(null)
   }
 
   const handleAddFirearm = () => {
@@ -1288,7 +1300,7 @@ export default function GunworxTracker() {
       return
     }
 
-    const firearm: FirearmEntry = {
+    const firearmToAdd: FirearmEntry = {
       id: Date.now().toString(),
       stockNo: newFirearm.stockNo || "",
       dateReceived: newFirearm.dateReceived || new Date().toISOString().split("T")[0],
@@ -1302,250 +1314,46 @@ export default function GunworxTracker() {
       physicalAddress: newFirearm.physicalAddress || "",
       licenceNo: newFirearm.licenceNo || "",
       licenceDate: newFirearm.licenceDate || "",
-      dateDelivered: newFirearm.dateDelivered || "",
-      deliveredTo: newFirearm.deliveredTo || "",
-      deliveredAddress: newFirearm.deliveredAddress || "",
-      deliveredLicence: newFirearm.deliveredLicence || "",
-      deliveredLicenceDate: newFirearm.deliveredLicenceDate || "",
       remarks: newFirearm.remarks || "",
       status: (newFirearm.status as FirearmEntry["status"]) || "in-stock",
     }
 
-    setFirearms([...firearms, firearm])
-    setNewFirearm({
-      stockNo: "",
-      dateReceived: "",
-      make: "",
-      type: "",
-      caliber: "",
-      serialNo: "",
-      fullName: "",
-      surname: "",
-      registrationId: "",
-      physicalAddress: "",
-      licenceNo: "",
-      licenceDate: "",
-      dateDelivered: "",
-      deliveredTo: "",
-      deliveredAddress: "",
-      deliveredLicence: "",
-      deliveredLicenceDate: "",
-      remarks: "",
-      status: "in-stock",
-    })
+    setFirearms((prev) => [...prev, firearmToAdd])
+    setNewFirearm({ status: "in-stock" })
     setIsAddDialogOpen(false)
   }
 
-  const handleAddInspection = () => {
-    if (!newInspection.firearmSerialNumber || !newInspection.caliber || !newInspection.make) {
-      alert("Please fill in required fields: Firearm Serial Number, Caliber, and Make")
-      return
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      "in-stock": { color: "bg-green-100 text-green-800", icon: Package },
+      collected: { color: "bg-blue-100 text-blue-800", icon: CheckCircle },
+      "dealer-stock": { color: "bg-yellow-100 text-yellow-800", icon: Clock },
+      "safe-keeping": { color: "bg-purple-100 text-purple-800", icon: Shield },
     }
 
-    // Get the next inspection number
-    const nextNum = Math.max(...inspectionData.map((i) => i.num), 0) + 1
-
-    const inspection: InspectionEntry = {
-      id: `insp_new_${Date.now()}`,
-      num: nextNum,
-      caliber: newInspection.caliber || "",
-      make: newInspection.make || "",
-      firearmSerialNumber: newInspection.firearmSerialNumber || "",
-      barrelSerialNumber: newInspection.barrelSerialNumber || "",
-      frameSerialNumber: newInspection.frameSerialNumber || "",
-      receiverSerialNumber: newInspection.receiverSerialNumber || "",
-      firearmType: newInspection.firearmType || "",
-      firearmTypeOther: newInspection.firearmTypeOther || "",
-      inspectionDate: newInspection.inspectionDate || new Date().toISOString().split("T")[0],
-      inspector: newInspection.inspector || "",
-      dealerCode: newInspection.dealerCode || "",
-      companyName: newInspection.companyName || "",
-      actionType: newInspection.actionType || "",
-      actionTypeOther: newInspection.actionTypeOther || "",
-      countryOfOrigin: newInspection.countryOfOrigin || "",
-      remarks: newInspection.remarks || "",
-      comments: newInspection.comments || "",
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      color: "bg-gray-100 text-gray-800",
+      icon: AlertCircle,
     }
+    const Icon = config.icon
 
-    setInspectionData([...inspectionData, inspection])
-
-    // Clear form
-    setNewInspection({
-      caliber: "",
-      make: "RUGER",
-      firearmSerialNumber: "",
-      barrelSerialNumber: "",
-      frameSerialNumber: "",
-      receiverSerialNumber: "",
-      firearmType: "",
-      firearmTypeOther: "",
-      inspectionDate: new Date().toISOString().split("T")[0],
-      inspector: "Wikus Fourie",
-      dealerCode: "1964Delta",
-      companyName: "1964Delta",
-      actionType: "",
-      actionTypeOther: "",
-      countryOfOrigin: "USA",
-      remarks: "No visible signs of correction or erasing",
-      comments:
-        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-    })
-
-    alert("Inspection record added successfully!")
-  }
-
-  const handleEditFirearm = (firearm: FirearmEntry) => {
-    setEditingFirearm({ ...firearm })
-    setIsEditDialogOpen(true)
-  }
-
-  const handleUpdateFirearm = () => {
-    if (!editingFirearm) return
-
-    if (!editingFirearm.stockNo || !editingFirearm.make || !editingFirearm.serialNo) {
-      alert("Please fill in required fields: Stock No, Make, and Serial No")
-      return
-    }
-
-    setFirearms(firearms.map((f) => (f.id === editingFirearm.id ? editingFirearm : f)))
-    setIsEditDialogOpen(false)
-    setEditingFirearm(null)
-  }
-
-  const handleDeleteFirearm = (id: string) => {
-    setDeletingFirearmId(id)
-    setIsDeleteDialogOpen(true)
-  }
-
-  const confirmDeleteFirearm = () => {
-    if (deletingFirearmId) {
-      setFirearms(firearms.filter((f) => f.id !== deletingFirearmId))
-      setIsDeleteDialogOpen(false)
-      setDeletingFirearmId(null)
-    }
-  }
-
-  const handleBarcodeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const currentTime = Date.now()
-
-    // If more than 100ms has passed since last input, start new barcode
-    if (currentTime - lastScannedTime > 100) {
-      setBarcodeInput("")
-    }
-
-    setLastScannedTime(currentTime)
-
-    if (e.key === "Enter") {
-      // Process the barcode
-      const barcode = barcodeInput.trim()
-      if (barcode) {
-        // Search for firearm with matching serial number or stock number
-        const foundFirearm = firearms.find(
-          (f) =>
-            f.serialNo.toLowerCase() === barcode.toLowerCase() || f.stockNo.toLowerCase() === barcode.toLowerCase(),
-        )
-
-        if (foundFirearm) {
-          // Highlight the found firearm (you could scroll to it or show a modal)
-          alert(`Found firearm: ${foundFirearm.make} ${foundFirearm.type} - Serial: ${foundFirearm.serialNo}`)
-        } else {
-          alert(`No firearm found with barcode: ${barcode}`)
-        }
-      }
-      setBarcodeInput("")
-      setIsBarcodeMode(false)
-    } else {
-      setBarcodeInput(barcodeInput + e.key)
-    }
-  }
-
-  const getStatusBadge = (status: FirearmEntry["status"]) => {
-    switch (status) {
-      case "in-stock":
-        return (
-          <Badge className="bg-green-100 text-green-800">
-            <Package className="w-3 h-3 mr-1" />
-            In Stock
-          </Badge>
-        )
-      case "collected":
-        return (
-          <Badge className="bg-blue-100 text-blue-800">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Collected
-          </Badge>
-        )
-      case "dealer-stock":
-        return (
-          <Badge className="bg-orange-100 text-orange-800">
-            <Clock className="w-3 h-3 mr-1" />
-            Dealer Stock
-          </Badge>
-        )
-      case "safe-keeping":
-        return (
-          <Badge className="bg-purple-100 text-purple-800">
-            <Shield className="w-3 h-3 mr-1" />
-            Safe Keeping
-          </Badge>
-        )
-      default:
-        return (
-          <Badge className="bg-gray-100 text-gray-800">
-            <AlertCircle className="w-3 h-3 mr-1" />
-            Unknown
-          </Badge>
-        )
-    }
-  }
-
-  const handleSignatureCapture = (firearmId: string, type: "collection" | "transfer") => {
-    setSignatureFirearmId(firearmId)
-    setSignatureType(type)
-    setIsSignaturePadOpen(true)
-  }
-
-  const handleSignatureSave = (signatureData: string, signerName: string) => {
-    if (!signatureFirearmId) return
-
-    setFirearms(
-      firearms.map((f) => {
-        if (f.id === signatureFirearmId) {
-          if (signatureType === "collection") {
-            return {
-              ...f,
-              collectionSignature: signatureData,
-              collectionSignerName: signerName,
-            }
-          } else {
-            return {
-              ...f,
-              transferSignature: signatureData,
-              transferSignerName: signerName,
-            }
-          }
-        }
-        return f
-      }),
+    return (
+      <Badge className={config.color}>
+        <Icon className="w-3 h-3 mr-1" />
+        {status.replace("-", " ").toUpperCase()}
+      </Badge>
     )
-
-    setIsSignaturePadOpen(false)
-    setSignatureFirearmId(null)
   }
 
-  const stats = {
-    total: firearms.length,
-    inStock: firearms.filter((f) => f.status === "in-stock").length,
-    collected: firearms.filter((f) => f.status === "collected").length,
-    dealerStock: firearms.filter((f) => f.status === "dealer-stock").length,
-    safeKeeping: firearms.filter((f) => f.status === "safe-keeping").length,
+  const toggleSection = (section: "firearms" | "inspections") => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }))
   }
 
-  const inspectionStats = {
-    total: inspectionData.length,
-    rifles: inspectionData.filter((i) => i.firearmType === "RIFLE").length,
-    pistols: inspectionData.filter((i) => i.firearmType === "PISTOL").length,
-    selfLoading: inspectionData.filter((i) => i.firearmType === "Self-Loading Rifle/Carbine").length,
+  if (!currentUser) {
+    return <LoginForm onLogin={handleLogin} />
   }
 
   return (
@@ -1558,13 +1366,13 @@ export default function GunworxTracker() {
               <Shield className="h-8 w-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Gunworx Employee Portal</h1>
-                <p className="text-sm text-gray-600">FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)</p>
+                <p className="text-sm text-gray-500">FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{currentUser.username}</p>
-                <p className="text-xs text-gray-500 capitalize">{currentUser.role}</p>
+                <p className="text-xs text-gray-500">{currentUser.role.toUpperCase()}</p>
               </div>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
@@ -1576,102 +1384,283 @@ export default function GunworxTracker() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="inventory" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="inventory">Inventory</TabsTrigger>
-            <TabsTrigger value="inspection">Inspection</TabsTrigger>
-            <TabsTrigger value="add-item">Add Item</TabsTrigger>
-            <TabsTrigger value="add-inspection">Add Inspection</TabsTrigger>
-            <TabsTrigger value="database">Database</TabsTrigger>
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="firearms">Firearms</TabsTrigger>
+            <TabsTrigger value="inspections">Inspections</TabsTrigger>
             {currentUser.role === "admin" && <TabsTrigger value="users">Users</TabsTrigger>}
           </TabsList>
 
-          {/* Inventory Tab */}
-          <TabsContent value="inventory" className="space-y-6">
+          <TabsContent value="dashboard" className="space-y-6">
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total Firearms</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.total.toLocaleString()}</p>
                     </div>
-                    <Package className="h-8 w-8 text-blue-600" />
+                    <Database className="h-8 w-8 text-blue-600" />
                   </div>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">In Stock</p>
-                      <p className="text-2xl font-bold text-green-600">{stats.inStock}</p>
+                      <p className="text-2xl font-bold text-green-600">{stats.inStock.toLocaleString()}</p>
                     </div>
                     <Package className="h-8 w-8 text-green-600" />
                   </div>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Collected</p>
-                      <p className="text-2xl font-bold text-blue-600">{stats.collected}</p>
+                      <p className="text-2xl font-bold text-blue-600">{stats.collected.toLocaleString()}</p>
                     </div>
                     <CheckCircle className="h-8 w-8 text-blue-600" />
                   </div>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Dealer Stock</p>
-                      <p className="text-2xl font-bold text-orange-600">{stats.dealerStock}</p>
+                      <p className="text-2xl font-bold text-yellow-600">{stats.dealerStock.toLocaleString()}</p>
                     </div>
-                    <Clock className="h-8 w-8 text-orange-600" />
+                    <Clock className="h-8 w-8 text-yellow-600" />
                   </div>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Safe Keeping</p>
-                      <p className="text-2xl font-bold text-purple-600">{stats.safeKeeping}</p>
+                      <p className="text-2xl font-bold text-purple-600">{stats.safeKeeping.toLocaleString()}</p>
                     </div>
                     <Shield className="h-8 w-8 text-purple-600" />
                   </div>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Inspections</p>
+                      <p className="text-2xl font-bold text-indigo-600">{stats.totalInspections.toLocaleString()}</p>
+                    </div>
+                    <ClipboardCheck className="h-8 w-8 text-indigo-600" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Search and Filter */}
+            {/* Enhanced Search */}
             <Card>
               <CardHeader>
-                <CardTitle>Search & Filter</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="w-5 h-5" />
+                  Search All Records
+                </CardTitle>
+                <CardDescription>
+                  Search across all firearms and inspection records. Results are grouped by category.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search by stock number, make, serial number, name, caliber, inspector, etc..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {searchTerm.trim() && (
+                  <div className="space-y-4">
+                    {/* Search Results Summary */}
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="text-sm text-blue-800">
+                        Found {searchResults.firearms.length} firearms and {searchResults.inspections.length}{" "}
+                        inspections matching "{searchTerm}"
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => setSearchTerm("")}>
+                        Clear Search
+                      </Button>
+                    </div>
+
+                    {/* Side-by-side layout for search results */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Firearms Results */}
+                      <div className="space-y-3">
+                        <div
+                          className="flex items-center justify-between cursor-pointer p-2 hover:bg-gray-50 rounded"
+                          onClick={() => toggleSection("firearms")}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <Package className="w-5 h-5" />
+                            Firearms ({searchResults.firearms.length})
+                          </h3>
+                          {expandedSections.firearms ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </div>
+
+                        {expandedSections.firearms && (
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {searchResults.firearms.length === 0 ? (
+                              <p className="text-gray-500 text-sm p-3 bg-gray-50 rounded">No firearms found</p>
+                            ) : (
+                              searchResults.firearms.slice(0, 20).map((firearm) => (
+                                <div key={firearm.id} className="p-3 border rounded-lg hover:bg-gray-50">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="font-medium text-sm">{firearm.stockNo}</div>
+                                    {getStatusBadge(firearm.status)}
+                                  </div>
+                                  <div className="text-xs text-gray-600 space-y-1">
+                                    <div>
+                                      <strong>Make:</strong> {firearm.make} | <strong>Type:</strong> {firearm.type} |{" "}
+                                      <strong>Caliber:</strong> {firearm.caliber}
+                                    </div>
+                                    <div>
+                                      <strong>Serial:</strong> {firearm.serialNo}
+                                    </div>
+                                    {firearm.fullName && (
+                                      <div>
+                                        <strong>Owner:</strong> {firearm.fullName} {firearm.surname}
+                                      </div>
+                                    )}
+                                    {firearm.remarks && (
+                                      <div>
+                                        <strong>Remarks:</strong> {firearm.remarks}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                            {searchResults.firearms.length > 20 && (
+                              <p className="text-xs text-gray-500 text-center p-2">
+                                Showing first 20 results. Refine search for more specific results.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Inspections Results */}
+                      <div className="space-y-3">
+                        <div
+                          className="flex items-center justify-between cursor-pointer p-2 hover:bg-gray-50 rounded"
+                          onClick={() => toggleSection("inspections")}
+                        >
+                          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <ClipboardCheck className="w-5 h-5" />
+                            Inspections ({searchResults.inspections.length})
+                          </h3>
+                          {expandedSections.inspections ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </div>
+
+                        {expandedSections.inspections && (
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {searchResults.inspections.length === 0 ? (
+                              <p className="text-gray-500 text-sm p-3 bg-gray-50 rounded">No inspections found</p>
+                            ) : (
+                              searchResults.inspections.slice(0, 20).map((inspection) => (
+                                <div key={inspection.id} className="p-3 border rounded-lg hover:bg-gray-50">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="font-medium text-sm">#{inspection.num}</div>
+                                    <Badge className="bg-indigo-100 text-indigo-800">{inspection.firearmType}</Badge>
+                                  </div>
+                                  <div className="text-xs text-gray-600 space-y-1">
+                                    <div>
+                                      <strong>Make:</strong> {inspection.make} | <strong>Caliber:</strong>{" "}
+                                      {inspection.caliber}
+                                    </div>
+                                    <div>
+                                      <strong>Serial:</strong> {inspection.firearmSerialNumber}
+                                    </div>
+                                    <div>
+                                      <strong>Inspector:</strong> {inspection.inspector} | <strong>Date:</strong>{" "}
+                                      {new Date(inspection.inspectionDate).toLocaleDateString()}
+                                    </div>
+                                    <div>
+                                      <strong>Company:</strong> {inspection.companyName}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                            {searchResults.inspections.length > 20 && (
+                              <p className="text-xs text-gray-500 text-center p-2">
+                                Showing first 20 results. Refine search for more specific results.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="firearms" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Firearms Inventory</CardTitle>
+                    <CardDescription>
+                      Complete firearms database with {firearms.length.toLocaleString()} entries
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setIsAddDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Firearm
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex gap-4 mb-6">
                   <div className="flex-1">
-                    <Label htmlFor="search">Search</Label>
+                    <Label htmlFor="search">Search Firearms</Label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
                         id="search"
-                        placeholder="Search by stock no, make, serial no, name..."
+                        placeholder="Search by stock number, make, serial, name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10"
-                        onKeyDown={isBarcodeMode ? handleBarcodeInput : undefined}
                       />
                     </div>
                   </div>
-                  <div className="w-full sm:w-48">
-                    <Label htmlFor="status-filter">Status Filter</Label>
+                  <div>
+                    <Label htmlFor="status-filter">Filter by Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-48">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1683,42 +1672,14 @@ export default function GunworxTracker() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-end">
-                    <Button
-                      variant={isBarcodeMode ? "default" : "outline"}
-                      onClick={() => setIsBarcodeMode(!isBarcodeMode)}
-                    >
-                      {isBarcodeMode ? "Exit Barcode" : "Barcode Scan"}
-                    </Button>
-                  </div>
                 </div>
-                {isBarcodeMode && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Barcode Mode Active:</strong> Click in the search field and scan a barcode or type to
-                      search.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Active Firearms Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Firearms ({filteredActiveFirearms.length})</CardTitle>
-                <CardDescription>Firearms currently in stock, dealer stock, or safe keeping</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
+                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Stock No</TableHead>
-                        <TableHead>Date Received</TableHead>
-                        <TableHead>Make</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Caliber</TableHead>
+                        <TableHead>Make/Type</TableHead>
                         <TableHead>Serial No</TableHead>
                         <TableHead>Owner</TableHead>
                         <TableHead>Status</TableHead>
@@ -1726,16 +1687,34 @@ export default function GunworxTracker() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredActiveFirearms.map((firearm) => (
+                      {filteredFirearms.slice(0, 100).map((firearm) => (
                         <TableRow key={firearm.id}>
-                          <TableCell className="font-medium">{firearm.stockNo}</TableCell>
-                          <TableCell>{firearm.dateReceived}</TableCell>
-                          <TableCell>{firearm.make}</TableCell>
-                          <TableCell>{firearm.type}</TableCell>
-                          <TableCell>{firearm.caliber}</TableCell>
-                          <TableCell>{firearm.serialNo}</TableCell>
+                          <TableCell className="font-medium">
+                            {firearm.stockNo}
+                            {firearm.originalStockNo && (
+                              <div className="text-xs text-gray-500">({firearm.originalStockNo})</div>
+                            )}
+                          </TableCell>
                           <TableCell>
-                            {firearm.fullName} {firearm.surname}
+                            <div>
+                              <div className="font-medium">{firearm.make}</div>
+                              <div className="text-sm text-gray-500">
+                                {firearm.type} • {firearm.caliber}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{firearm.serialNo}</TableCell>
+                          <TableCell>
+                            {firearm.fullName || firearm.surname ? (
+                              <div>
+                                <div className="font-medium">
+                                  {firearm.fullName} {firearm.surname}
+                                </div>
+                                <div className="text-sm text-gray-500">{firearm.registrationId}</div>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
                           </TableCell>
                           <TableCell>{getStatusBadge(firearm.status)}</TableCell>
                           <TableCell>
@@ -1746,17 +1725,17 @@ export default function GunworxTracker() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleSignatureCapture(firearm.id, "collection")}
-                              >
-                                <PenTool className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
                                 onClick={() => handleDeleteFirearm(firearm.id)}
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <Trash2 className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openSignaturePad(firearm.id, "collection")}
+                              >
+                                <PenTool className="w-3 h-3" />
                               </Button>
                             </div>
                           </TableCell>
@@ -1765,847 +1744,384 @@ export default function GunworxTracker() {
                     </TableBody>
                   </Table>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Collected Firearms Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Collected Firearms ({filteredCollectedFirearms.length})</CardTitle>
-                <CardDescription>Firearms that have been collected</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Original Stock No</TableHead>
-                        <TableHead>Date Delivered</TableHead>
-                        <TableHead>Delivered To</TableHead>
-                        <TableHead>Remarks</TableHead>
-                        <TableHead>Signature</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCollectedFirearms.slice(0, 50).map((firearm) => (
-                        <TableRow key={firearm.id}>
-                          <TableCell className="font-medium">{firearm.originalStockNo || "workshop"}</TableCell>
-                          <TableCell>{firearm.dateDelivered}</TableCell>
-                          <TableCell>{firearm.deliveredTo}</TableCell>
-                          <TableCell>{firearm.remarks}</TableCell>
-                          <TableCell>
-                            {firearm.collectionSignature ? (
-                              <div className="flex items-center space-x-2">
-                                <FileSignature className="w-4 h-4 text-green-600" />
-                                <span className="text-sm text-green-600">Signed by {firearm.collectionSignerName}</span>
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">No signature</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {filteredCollectedFirearms.length > 50 && (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center text-gray-500 py-4">
-                            ... and {filteredCollectedFirearms.length - 50} more collected firearms
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                {filteredFirearms.length > 100 && (
+                  <div className="mt-4 text-center text-sm text-gray-500">
+                    Showing first 100 of {filteredFirearms.length.toLocaleString()} results. Use search to narrow down
+                    results.
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Inspection Tab */}
-          <TabsContent value="inspection" className="space-y-6">
-            {/* Inspection Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Inspections</p>
-                      <p className="text-2xl font-bold text-gray-900">{inspectionStats.total}</p>
-                    </div>
-                    <ClipboardCheck className="h-8 w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Rifles</p>
-                      <p className="text-2xl font-bold text-green-600">{inspectionStats.rifles}</p>
-                    </div>
-                    <Package className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Pistols</p>
-                      <p className="text-2xl font-bold text-orange-600">{inspectionStats.pistols}</p>
-                    </div>
-                    <Shield className="h-8 w-8 text-orange-600" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Self-Loading</p>
-                      <p className="text-2xl font-bold text-purple-600">{inspectionStats.selfLoading}</p>
-                    </div>
-                    <FileText className="h-8 w-8 text-purple-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Inspection Search and Filter */}
+          <TabsContent value="inspections" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Search & Filter Inspections</CardTitle>
+                <CardTitle>Inspection Records</CardTitle>
+                <CardDescription>
+                  Complete inspection database with {inspections.length.toLocaleString()} entries
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
-                    <Label htmlFor="inspection-search">Search</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="inspection-search"
-                        placeholder="Search by serial no, make, caliber, inspector..."
-                        value={inspectionSearchTerm}
-                        onChange={(e) => setInspectionSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full sm:w-48">
-                    <Label htmlFor="type-filter">Type Filter</Label>
-                    <Select value={inspectionTypeFilter} onValueChange={setInspectionTypeFilter}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="RIFLE">Rifle</SelectItem>
-                        <SelectItem value="PISTOL">Pistol</SelectItem>
-                        <SelectItem value="Self-Loading Rifle/Carbine">Self-Loading Rifle/Carbine</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="mb-6">
+                  <Label htmlFor="inspection-search">Search Inspections</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="inspection-search"
+                      placeholder="Search by serial number, make, inspector, caliber..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Inspection Data Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Inspection Records ({filteredInspectionData.length})</CardTitle>
-                <CardDescription>Complete firearm inspection database</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
+                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>No.</TableHead>
-                        <TableHead>Caliber</TableHead>
-                        <TableHead>Make</TableHead>
-                        <TableHead>Firearm Serial</TableHead>
-                        <TableHead>Barrel Serial</TableHead>
-                        <TableHead>Frame Serial</TableHead>
-                        <TableHead>Receiver Serial</TableHead>
+                        <TableHead>Make/Caliber</TableHead>
+                        <TableHead>Serial Number</TableHead>
                         <TableHead>Type</TableHead>
-                        <TableHead>Date</TableHead>
                         <TableHead>Inspector</TableHead>
+                        <TableHead>Date</TableHead>
                         <TableHead>Company</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead>Country</TableHead>
-                        <TableHead>Remarks</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredInspectionData.map((inspection) => (
+                      {filteredInspections.slice(0, 100).map((inspection) => (
                         <TableRow key={inspection.id}>
                           <TableCell className="font-medium">{inspection.num}</TableCell>
-                          <TableCell>{inspection.caliber}</TableCell>
-                          <TableCell>{inspection.make}</TableCell>
-                          <TableCell>{inspection.firearmSerialNumber}</TableCell>
-                          <TableCell>{inspection.barrelSerialNumber}</TableCell>
-                          <TableCell>{inspection.frameSerialNumber}</TableCell>
-                          <TableCell>{inspection.receiverSerialNumber}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{inspection.firearmType}</Badge>
+                            <div>
+                              <div className="font-medium">{inspection.make}</div>
+                              <div className="text-sm text-gray-500">{inspection.caliber}</div>
+                            </div>
                           </TableCell>
-                          <TableCell>{inspection.inspectionDate}</TableCell>
+                          <TableCell className="font-mono text-sm">{inspection.firearmSerialNumber}</TableCell>
+                          <TableCell>
+                            <Badge className="bg-indigo-100 text-indigo-800">{inspection.firearmType}</Badge>
+                          </TableCell>
                           <TableCell>{inspection.inspector}</TableCell>
+                          <TableCell>{new Date(inspection.inspectionDate).toLocaleDateString()}</TableCell>
                           <TableCell>{inspection.companyName}</TableCell>
-                          <TableCell>{inspection.actionType}</TableCell>
-                          <TableCell>{inspection.countryOfOrigin}</TableCell>
-                          <TableCell className="max-w-xs truncate">{inspection.remarks}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
+
+                {filteredInspections.length > 100 && (
+                  <div className="mt-4 text-center text-sm text-gray-500">
+                    Showing first 100 of {filteredInspections.length.toLocaleString()} results. Use search to narrow
+                    down results.
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Add Item Tab */}
-          <TabsContent value="add-item" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Firearm</CardTitle>
-                <CardDescription>Enter details for a new firearm entry</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="stockNo">Stock Number *</Label>
-                    <Input
-                      id="stockNo"
-                      value={newFirearm.stockNo}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, stockNo: e.target.value })}
-                      placeholder="Enter stock number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="dateReceived">Date Received</Label>
-                    <Input
-                      id="dateReceived"
-                      type="date"
-                      value={newFirearm.dateReceived}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, dateReceived: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="make">Make *</Label>
-                    <Input
-                      id="make"
-                      value={newFirearm.make}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, make: e.target.value })}
-                      placeholder="Enter make"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="type">Type</Label>
-                    <Input
-                      id="type"
-                      value={newFirearm.type}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, type: e.target.value })}
-                      placeholder="Enter type"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="caliber">Caliber</Label>
-                    <Input
-                      id="caliber"
-                      value={newFirearm.caliber}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, caliber: e.target.value })}
-                      placeholder="Enter caliber"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="serialNo">Serial Number *</Label>
-                    <Input
-                      id="serialNo"
-                      value={newFirearm.serialNo}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, serialNo: e.target.value })}
-                      placeholder="Enter serial number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      value={newFirearm.fullName}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, fullName: e.target.value })}
-                      placeholder="Enter full name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="surname">Surname</Label>
-                    <Input
-                      id="surname"
-                      value={newFirearm.surname}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, surname: e.target.value })}
-                      placeholder="Enter surname"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="registrationId">Registration ID</Label>
-                    <Input
-                      id="registrationId"
-                      value={newFirearm.registrationId}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, registrationId: e.target.value })}
-                      placeholder="Enter registration ID"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="licenceNo">Licence Number</Label>
-                    <Input
-                      id="licenceNo"
-                      value={newFirearm.licenceNo}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, licenceNo: e.target.value })}
-                      placeholder="Enter licence number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="licenceDate">Licence Date</Label>
-                    <Input
-                      id="licenceDate"
-                      type="date"
-                      value={newFirearm.licenceDate}
-                      onChange={(e) => setNewFirearm({ ...newFirearm, licenceDate: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={newFirearm.status}
-                      onValueChange={(value: FirearmEntry["status"]) => setNewFirearm({ ...newFirearm, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="in-stock">In Stock</SelectItem>
-                        <SelectItem value="collected">Collected</SelectItem>
-                        <SelectItem value="dealer-stock">Dealer Stock</SelectItem>
-                        <SelectItem value="safe-keeping">Safe Keeping</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="physicalAddress">Physical Address</Label>
-                  <Textarea
-                    id="physicalAddress"
-                    value={newFirearm.physicalAddress}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, physicalAddress: e.target.value })}
-                    placeholder="Enter physical address"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="remarks">Remarks</Label>
-                  <Textarea
-                    id="remarks"
-                    value={newFirearm.remarks}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, remarks: e.target.value })}
-                    placeholder="Enter remarks"
-                  />
-                </div>
-                <Button onClick={handleAddFirearm} className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Firearm
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Add Inspection Tab */}
-          <TabsContent value="add-inspection" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Inspection</CardTitle>
-                <CardDescription>Enter details for a new firearm inspection</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="inspectionCaliber">Caliber *</Label>
-                    <Input
-                      id="inspectionCaliber"
-                      value={newInspection.caliber}
-                      onChange={(e) => setNewInspection({ ...newInspection, caliber: e.target.value })}
-                      placeholder="Enter caliber (e.g., .308 WIN)"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="inspectionMake">Make *</Label>
-                    <Select
-                      value={newInspection.make}
-                      onValueChange={(value) => setNewInspection({ ...newInspection, make: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="RUGER">RUGER</SelectItem>
-                        <SelectItem value="MARLIN">MARLIN</SelectItem>
-                        <SelectItem value="GLOCK">GLOCK</SelectItem>
-                        <SelectItem value="SMITH & WESSON">SMITH & WESSON</SelectItem>
-                        <SelectItem value="REMINGTON">REMINGTON</SelectItem>
-                        <SelectItem value="WINCHESTER">WINCHESTER</SelectItem>
-                        <SelectItem value="SAVAGE">SAVAGE</SelectItem>
-                        <SelectItem value="BROWNING">BROWNING</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="firearmSerialNumber">Firearm Serial Number *</Label>
-                    <Input
-                      id="firearmSerialNumber"
-                      value={newInspection.firearmSerialNumber}
-                      onChange={(e) => setNewInspection({ ...newInspection, firearmSerialNumber: e.target.value })}
-                      placeholder="Enter firearm serial number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="barrelSerialNumber">Barrel Serial Number</Label>
-                    <Input
-                      id="barrelSerialNumber"
-                      value={newInspection.barrelSerialNumber}
-                      onChange={(e) => setNewInspection({ ...newInspection, barrelSerialNumber: e.target.value })}
-                      placeholder="Enter barrel serial number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="frameSerialNumber">Frame Serial Number</Label>
-                    <Input
-                      id="frameSerialNumber"
-                      value={newInspection.frameSerialNumber}
-                      onChange={(e) => setNewInspection({ ...newInspection, frameSerialNumber: e.target.value })}
-                      placeholder="Enter frame serial number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="receiverSerialNumber">Receiver Serial Number</Label>
-                    <Input
-                      id="receiverSerialNumber"
-                      value={newInspection.receiverSerialNumber}
-                      onChange={(e) => setNewInspection({ ...newInspection, receiverSerialNumber: e.target.value })}
-                      placeholder="Enter receiver serial number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="firearmType">Firearm Type</Label>
-                    <Select
-                      value={newInspection.firearmType}
-                      onValueChange={(value) => setNewInspection({ ...newInspection, firearmType: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="RIFLE">RIFLE</SelectItem>
-                        <SelectItem value="PISTOL">PISTOL</SelectItem>
-                        <SelectItem value="Self-Loading Rifle/Carbine">Self-Loading Rifle/Carbine</SelectItem>
-                        <SelectItem value="SHOTGUN">SHOTGUN</SelectItem>
-                        <SelectItem value="OTHER">OTHER</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newInspection.firearmType === "OTHER" && (
-                    <div>
-                      <Label htmlFor="firearmTypeOther">Specify Other Type</Label>
-                      <Input
-                        id="firearmTypeOther"
-                        value={newInspection.firearmTypeOther}
-                        onChange={(e) => setNewInspection({ ...newInspection, firearmTypeOther: e.target.value })}
-                        placeholder="Specify firearm type"
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <Label htmlFor="inspectionDate">Inspection Date</Label>
-                    <Input
-                      id="inspectionDate"
-                      type="date"
-                      value={newInspection.inspectionDate}
-                      onChange={(e) => setNewInspection({ ...newInspection, inspectionDate: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="inspector">Inspector</Label>
-                    <Input
-                      id="inspector"
-                      value={newInspection.inspector}
-                      onChange={(e) => setNewInspection({ ...newInspection, inspector: e.target.value })}
-                      placeholder="Enter inspector name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="dealerCode">Dealer Code</Label>
-                    <Input
-                      id="dealerCode"
-                      value={newInspection.dealerCode}
-                      onChange={(e) => setNewInspection({ ...newInspection, dealerCode: e.target.value })}
-                      placeholder="Enter dealer code"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="companyName">Company Name</Label>
-                    <Input
-                      id="companyName"
-                      value={newInspection.companyName}
-                      onChange={(e) => setNewInspection({ ...newInspection, companyName: e.target.value })}
-                      placeholder="Enter company name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="actionType">Action Type</Label>
-                    <Select
-                      value={newInspection.actionType}
-                      onValueChange={(value) => setNewInspection({ ...newInspection, actionType: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Bolt">Bolt</SelectItem>
-                        <SelectItem value="Semi-Auto">Semi-Auto</SelectItem>
-                        <SelectItem value="Lever">Lever</SelectItem>
-                        <SelectItem value="Pump">Pump</SelectItem>
-                        <SelectItem value="Break">Break</SelectItem>
-                        <SelectItem value="Single Shot">Single Shot</SelectItem>
-                        <SelectItem value="OTHER">OTHER</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newInspection.actionType === "OTHER" && (
-                    <div>
-                      <Label htmlFor="actionTypeOther">Specify Other Action</Label>
-                      <Input
-                        id="actionTypeOther"
-                        value={newInspection.actionTypeOther}
-                        onChange={(e) => setNewInspection({ ...newInspection, actionTypeOther: e.target.value })}
-                        placeholder="Specify action type"
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <Label htmlFor="countryOfOrigin">Country of Origin</Label>
-                    <Select
-                      value={newInspection.countryOfOrigin}
-                      onValueChange={(value) => setNewInspection({ ...newInspection, countryOfOrigin: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="USA">USA</SelectItem>
-                        <SelectItem value="Germany">Germany</SelectItem>
-                        <SelectItem value="Austria">Austria</SelectItem>
-                        <SelectItem value="Italy">Italy</SelectItem>
-                        <SelectItem value="Belgium">Belgium</SelectItem>
-                        <SelectItem value="Czech Republic">Czech Republic</SelectItem>
-                        <SelectItem value="Turkey">Turkey</SelectItem>
-                        <SelectItem value="Brazil">Brazil</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="inspectionRemarks">Remarks</Label>
-                  <Textarea
-                    id="inspectionRemarks"
-                    value={newInspection.remarks}
-                    onChange={(e) => setNewInspection({ ...newInspection, remarks: e.target.value })}
-                    placeholder="Enter inspection remarks"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="inspectionComments">Comments</Label>
-                  <Textarea
-                    id="inspectionComments"
-                    value={newInspection.comments}
-                    onChange={(e) => setNewInspection({ ...newInspection, comments: e.target.value })}
-                    placeholder="Enter detailed comments"
-                  />
-                </div>
-                <Button onClick={handleAddInspection} className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Inspection
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Database Tab */}
-          <TabsContent value="database" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="w-5 h-5" />
-                  Database Overview
-                </CardTitle>
-                <CardDescription>Complete system database statistics and information</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Firearms Database</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Total Entries:</span>
-                        <span className="font-semibold">{firearms.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Active Firearms:</span>
-                        <span className="font-semibold">{activeFirearms.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Collected Firearms:</span>
-                        <span className="font-semibold">{collectedFirearms.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>In Stock:</span>
-                        <span className="font-semibold text-green-600">{stats.inStock}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Dealer Stock:</span>
-                        <span className="font-semibold text-orange-600">{stats.dealerStock}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Safe Keeping:</span>
-                        <span className="font-semibold text-purple-600">{stats.safeKeeping}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Inspection Database</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Total Inspections:</span>
-                        <span className="font-semibold">{inspectionData.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Rifles:</span>
-                        <span className="font-semibold text-green-600">{inspectionStats.rifles}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Pistols:</span>
-                        <span className="font-semibold text-orange-600">{inspectionStats.pistols}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Self-Loading:</span>
-                        <span className="font-semibold text-purple-600">{inspectionStats.selfLoading}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Latest Inspection:</span>
-                        <span className="font-semibold">
-                          {inspectionData.length > 0
-                            ? new Date(
-                                Math.max(...inspectionData.map((i) => new Date(i.inspectionDate).getTime())),
-                              ).toLocaleDateString()
-                            : "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-semibold text-blue-800 mb-2">Data Storage Information</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• All data is stored locally in your browser's localStorage</li>
-                    <li>• Data persists between sessions and is shared between all users</li>
-                    <li>
-                      • Complete dataset includes {firearms.length} firearm entries and {inspectionData.length}{" "}
-                      inspection records
-                    </li>
-                    <li>• All original CSV data has been preserved and integrated</li>
-                    <li>• Signatures and user data are also stored locally</li>
-                  </ul>
-                </div>
-
-                <div className="mt-4 p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-2">System Features</h4>
-                  <ul className="text-sm text-green-700 space-y-1">
-                    <li>• ✅ Complete firearms inventory management</li>
-                    <li>• ✅ Comprehensive inspection tracking</li>
-                    <li>• ✅ Digital signature capture</li>
-                    <li>• ✅ Barcode scanning support</li>
-                    <li>• ✅ User management and authentication</li>
-                    <li>• ✅ Advanced search and filtering</li>
-                    <li>• ✅ Status tracking and reporting</li>
-                    <li>• ✅ Data persistence and backup</li>
-                  </ul>
-                </div>
-
-                <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
-                  <h4 className="font-semibold text-yellow-800 mb-2">Deployment Status</h4>
-                  <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• ✅ Data initialization system ensures CSV data loads on deployment</li>
-                    <li>• ✅ Version control prevents data loss during updates</li>
-                    <li>• ✅ Fallback mechanisms guarantee data availability</li>
-                    <li>
-                      • ✅ Complete dataset verified: {firearms.length} firearms, {inspectionData.length} inspections
-                    </li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Users Tab (Admin Only) */}
           {currentUser.role === "admin" && (
-            <TabsContent value="users" className="space-y-6">
+            <TabsContent value="users">
               <UserManagement currentUser={currentUser} />
             </TabsContent>
           )}
         </Tabs>
       </div>
 
+      {/* Signature Pad Dialog */}
+      <SignaturePad
+        isOpen={isSignaturePadOpen}
+        onClose={() => setIsSignaturePadOpen(false)}
+        onSignatureSave={handleSignature}
+        title={signatureType === "collection" ? "Collection Signature" : "Transfer Signature"}
+      />
+
+      {/* Add Firearm Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Firearm</DialogTitle>
+            <DialogDescription>Enter the details for the new firearm entry</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+            <div>
+              <Label htmlFor="new-stock-no">Stock No *</Label>
+              <Input
+                id="new-stock-no"
+                value={newFirearm.stockNo || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, stockNo: e.target.value })}
+                placeholder="Enter stock number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-date-received">Date Received</Label>
+              <Input
+                id="new-date-received"
+                type="date"
+                value={newFirearm.dateReceived || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, dateReceived: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-make">Make *</Label>
+              <Input
+                id="new-make"
+                value={newFirearm.make || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, make: e.target.value })}
+                placeholder="Enter make"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-type">Type</Label>
+              <Input
+                id="new-type"
+                value={newFirearm.type || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, type: e.target.value })}
+                placeholder="Enter type"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-caliber">Caliber</Label>
+              <Input
+                id="new-caliber"
+                value={newFirearm.caliber || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, caliber: e.target.value })}
+                placeholder="Enter caliber"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-serial-no">Serial No *</Label>
+              <Input
+                id="new-serial-no"
+                value={newFirearm.serialNo || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, serialNo: e.target.value })}
+                placeholder="Enter serial number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-full-name">Full Name</Label>
+              <Input
+                id="new-full-name"
+                value={newFirearm.fullName || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, fullName: e.target.value })}
+                placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-surname">Surname</Label>
+              <Input
+                id="new-surname"
+                value={newFirearm.surname || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, surname: e.target.value })}
+                placeholder="Enter surname"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-registration-id">Registration ID</Label>
+              <Input
+                id="new-registration-id"
+                value={newFirearm.registrationId || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, registrationId: e.target.value })}
+                placeholder="Enter registration ID"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-licence-no">Licence No</Label>
+              <Input
+                id="new-licence-no"
+                value={newFirearm.licenceNo || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, licenceNo: e.target.value })}
+                placeholder="Enter licence number"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="new-physical-address">Physical Address</Label>
+              <Input
+                id="new-physical-address"
+                value={newFirearm.physicalAddress || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, physicalAddress: e.target.value })}
+                placeholder="Enter physical address"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-status">Status</Label>
+              <Select
+                value={newFirearm.status || "in-stock"}
+                onValueChange={(value: FirearmEntry["status"]) => setNewFirearm({ ...newFirearm, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in-stock">In Stock</SelectItem>
+                  <SelectItem value="collected">Collected</SelectItem>
+                  <SelectItem value="dealer-stock">Dealer Stock</SelectItem>
+                  <SelectItem value="safe-keeping">Safe Keeping</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="new-remarks">Remarks</Label>
+              <Textarea
+                id="new-remarks"
+                value={newFirearm.remarks || ""}
+                onChange={(e) => setNewFirearm({ ...newFirearm, remarks: e.target.value })}
+                placeholder="Enter remarks"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button onClick={handleAddFirearm} className="flex-1">
+              Add Firearm
+            </Button>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Firearm Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Firearm</DialogTitle>
-            <DialogDescription>Update firearm information</DialogDescription>
+            <DialogDescription>Update the firearm details</DialogDescription>
           </DialogHeader>
           {editingFirearm && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-stockNo">Stock Number *</Label>
-                  <Input
-                    id="edit-stockNo"
-                    value={editingFirearm.stockNo}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, stockNo: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-dateReceived">Date Received</Label>
-                  <Input
-                    id="edit-dateReceived"
-                    type="date"
-                    value={editingFirearm.dateReceived}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, dateReceived: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-make">Make *</Label>
-                  <Input
-                    id="edit-make"
-                    value={editingFirearm.make}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, make: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-type">Type</Label>
-                  <Input
-                    id="edit-type"
-                    value={editingFirearm.type}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, type: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-caliber">Caliber</Label>
-                  <Input
-                    id="edit-caliber"
-                    value={editingFirearm.caliber}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, caliber: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-serialNo">Serial Number *</Label>
-                  <Input
-                    id="edit-serialNo"
-                    value={editingFirearm.serialNo}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, serialNo: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-fullName">Full Name</Label>
-                  <Input
-                    id="edit-fullName"
-                    value={editingFirearm.fullName}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, fullName: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-surname">Surname</Label>
-                  <Input
-                    id="edit-surname"
-                    value={editingFirearm.surname}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, surname: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-registrationId">Registration ID</Label>
-                  <Input
-                    id="edit-registrationId"
-                    value={editingFirearm.registrationId}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, registrationId: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-licenceNo">Licence Number</Label>
-                  <Input
-                    id="edit-licenceNo"
-                    value={editingFirearm.licenceNo}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, licenceNo: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-licenceDate">Licence Date</Label>
-                  <Input
-                    id="edit-licenceDate"
-                    type="date"
-                    value={editingFirearm.licenceDate}
-                    onChange={(e) => setEditingFirearm({ ...editingFirearm, licenceDate: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-status">Status</Label>
-                  <Select
-                    value={editingFirearm.status}
-                    onValueChange={(value: FirearmEntry["status"]) =>
-                      setEditingFirearm({ ...editingFirearm, status: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="in-stock">In Stock</SelectItem>
-                      <SelectItem value="collected">Collected</SelectItem>
-                      <SelectItem value="dealer-stock">Dealer Stock</SelectItem>
-                      <SelectItem value="safe-keeping">Safe Keeping</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+              <div>
+                <Label htmlFor="edit-stock-no">Stock No</Label>
+                <Input
+                  id="edit-stock-no"
+                  value={editingFirearm.stockNo}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, stockNo: e.target.value })}
+                />
               </div>
               <div>
-                <Label htmlFor="edit-physicalAddress">Physical Address</Label>
-                <Textarea
-                  id="edit-physicalAddress"
+                <Label htmlFor="edit-date-received">Date Received</Label>
+                <Input
+                  id="edit-date-received"
+                  type="date"
+                  value={editingFirearm.dateReceived}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, dateReceived: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-make">Make</Label>
+                <Input
+                  id="edit-make"
+                  value={editingFirearm.make}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, make: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-type">Type</Label>
+                <Input
+                  id="edit-type"
+                  value={editingFirearm.type}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, type: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-caliber">Caliber</Label>
+                <Input
+                  id="edit-caliber"
+                  value={editingFirearm.caliber}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, caliber: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-serial-no">Serial No</Label>
+                <Input
+                  id="edit-serial-no"
+                  value={editingFirearm.serialNo}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, serialNo: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-full-name">Full Name</Label>
+                <Input
+                  id="edit-full-name"
+                  value={editingFirearm.fullName}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, fullName: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-surname">Surname</Label>
+                <Input
+                  id="edit-surname"
+                  value={editingFirearm.surname}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, surname: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-registration-id">Registration ID</Label>
+                <Input
+                  id="edit-registration-id"
+                  value={editingFirearm.registrationId}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, registrationId: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-licence-no">Licence No</Label>
+                <Input
+                  id="edit-licence-no"
+                  value={editingFirearm.licenceNo}
+                  onChange={(e) => setEditingFirearm({ ...editingFirearm, licenceNo: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="edit-physical-address">Physical Address</Label>
+                <Input
+                  id="edit-physical-address"
                   value={editingFirearm.physicalAddress}
                   onChange={(e) => setEditingFirearm({ ...editingFirearm, physicalAddress: e.target.value })}
                 />
               </div>
               <div>
+                <Label htmlFor="edit-status">Status</Label>
+                <Select
+                  value={editingFirearm.status}
+                  onValueChange={(value: FirearmEntry["status"]) =>
+                    setEditingFirearm({ ...editingFirearm, status: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="in-stock">In Stock</SelectItem>
+                    <SelectItem value="collected">Collected</SelectItem>
+                    <SelectItem value="dealer-stock">Dealer Stock</SelectItem>
+                    <SelectItem value="safe-keeping">Safe Keeping</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2">
                 <Label htmlFor="edit-remarks">Remarks</Label>
                 <Textarea
                   id="edit-remarks"
                   value={editingFirearm.remarks}
                   onChange={(e) => setEditingFirearm({ ...editingFirearm, remarks: e.target.value })}
+                  rows={3}
                 />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleUpdateFirearm} className="flex-1">
-                  Update Firearm
-                </Button>
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
               </div>
             </div>
           )}
+          <div className="flex gap-2 pt-4">
+            <Button onClick={handleUpdateFirearm} className="flex-1">
+              Update Firearm
+            </Button>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -2615,7 +2131,7 @@ export default function GunworxTracker() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the firearm record from the database.
+              This action cannot be undone. This will permanently delete the firearm entry from the database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2624,14 +2140,6 @@ export default function GunworxTracker() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Signature Pad */}
-      <SignaturePad
-        isOpen={isSignaturePadOpen}
-        onClose={() => setIsSignaturePadOpen(false)}
-        onSignatureSave={handleSignatureSave}
-        title={signatureType === "collection" ? "Collection Signature" : "Transfer Signature"}
-      />
     </div>
   )
 }

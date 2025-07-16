@@ -1,51 +1,57 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// In-memory storage for users (in production, use a real database)
-let usersData: Record<string, { user: any; password: string }> = {
-  "Jean-Mari": {
-    user: {
-      id: "system_admin",
-      username: "Jean-Mari",
-      role: "admin",
-      createdAt: new Date().toISOString(),
-    },
-    password: "Password123",
-  },
-  JP: {
-    user: {
-      id: "user_jp_admin_001",
-      username: "JP",
-      role: "admin",
-      createdAt: "2024-01-15T10:30:00.000Z",
-    },
-    password: "xNgU7ADa",
-  },
+interface User {
+  id: string
+  username: string
+  password: string
+  role: "admin" | "user"
+  createdAt: string
+  isSystemAdmin?: boolean
 }
 
-export async function GET() {
-  try {
-    return NextResponse.json(usersData)
-  } catch (error) {
-    console.error("Error getting users:", error)
-    return NextResponse.json({ error: "Failed to get users" }, { status: 500 })
-  }
+// Server-side user storage (in production, this would be a database)
+const serverUsers: User[] = [
+  {
+    id: "system_admin_001",
+    username: "Jean-Mari",
+    password: "Password123",
+    role: "admin",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    isSystemAdmin: true,
+  },
+  {
+    id: "user_jp_admin_001",
+    username: "JP",
+    password: "xNgU7ADa",
+    role: "admin",
+    createdAt: "2024-01-15T10:30:00.000Z",
+  },
+]
+
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    message: "User management is handled client-side",
+    status: "info",
+  })
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const userData = await request.json()
+  return NextResponse.json({
+    message: "User management is handled client-side",
+    status: "info",
+  })
+}
 
-    // Validate the data structure
-    if (!userData || typeof userData !== "object") {
-      return NextResponse.json({ error: "Invalid user data" }, { status: 400 })
-    }
+export async function PUT(request: NextRequest) {
+  return NextResponse.json({
+    message: "User management is handled client-side",
+    status: "info",
+  })
+}
 
-    // Update the in-memory storage
-    usersData = userData
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Error saving users:", error)
-    return NextResponse.json({ error: "Failed to save users" }, { status: 500 })
-  }
+export async function DELETE(request: NextRequest) {
+  return NextResponse.json({
+    message: "User management is handled client-side",
+    status: "info",
+  })
 }

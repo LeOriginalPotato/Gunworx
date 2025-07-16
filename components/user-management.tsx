@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -25,22 +26,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Users,
-  UserCheck,
-  Shield,
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  RefreshCw,
-  Server,
-  Lock,
-} from "lucide-react"
+import { Plus, Edit, Trash2, Shield, UserIcon, Eye, EyeOff } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
 interface UserManagementProps {
@@ -56,89 +43,35 @@ export function UserManagement({ currentUser }: UserManagementProps) {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true)
-  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({})
 
-  // New user form state
   const [newUser, setNewUser] = useState({
     username: "",
     password: "",
     role: "user" as "admin" | "user",
   })
 
-  // Edit user form state
-  const [editUserData, setEditUserData] = useState({
-    username: "",
-    role: "user" as "admin" | "user",
-    newPassword: "",
-  })
-
-  // Load users function with server-side data
-  const loadUsers = useCallback(async () => {
-    setIsLoadingUsers(true)
-    setError("")
-
-    try {
-      // Wait for auth service to be ready
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      if (!authService.isReady()) {
-        throw new Error("Authentication service not ready")
-      }
-
-      // Get users from server (now includes system admin)
-      const allUsers = await authService.getAllUsers()
-      setUsers(allUsers)
-      setLastSyncTime(new Date())
-    } catch (err) {
-      console.error("Failed to load users:", err)
-      setError("Failed to load users from server. Please refresh the page.")
-      setUsers([])
-    } finally {
-      setIsLoadingUsers(false)
-    }
-  }, [])
-
-  // Set up sync listener for real-time updates
-  useEffect(() => {
-    const unsubscribe = authService.onSync(() => {
-      loadUsers()
-    })
-
-    return unsubscribe
-  }, [loadUsers])
-
   // Load users on component mount
   useEffect(() => {
     loadUsers()
-  }, [loadUsers])
+  }, [])
 
-  // Auto-refresh users every 15 seconds to ensure sync across devices
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isLoading && !isLoadingUsers) {
-        loadUsers()
-      }
-    }, 15000) // 15 seconds
+  const loadUsers = () => {
+    const allUsers = authService.getUsers()
+    setUsers(allUsers)
+  }
 
-    return () => clearInterval(interval)
-  }, [loadUsers, isLoading, isLoadingUsers])
+  const handleAddUser = () => {
+    setError("")
+    setSuccess("")
 
-  // Clear messages after 5 seconds
-  useEffect(() => {
-    if (error || success) {
-      const timer = setTimeout(() => {
-        setError("")
-        setSuccess("")
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [error, success])
-
-  const handleAddUser = async () => {
-    if (!newUser.username.trim() || !newUser.password.trim()) {
+    if (!newUser.username || !newUser.password) {
       setError("Username and password are required")
+      return
+    }
+
+    if (newUser.username.length < 3) {
+      setError("Username must be at least 3 characters long")
       return
     }
 
@@ -147,138 +80,117 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       return
     }
 
-    setIsLoading(true)
-    setError("")
+    if (authService.userExists(newUser.username)) {
+      setError("Username already exists")
+      return
+    }
 
     try {
-      const user = await authService.createUser(newUser.username.trim(), newUser.password, newUser.role)
-      setSuccess(
-        `User "${user.username}" created successfully!\n\nCredentials:\nUsername: ${user.username}\nPassword: ${newUser.password}\n\nPlease provide these credentials to the user.\n\nThis user is now available on all devices globally.`,
-      )
+      const createdUser = authService.createUser(newUser)
+      loadUsers()
       setNewUser({ username: "", password: "", role: "user" })
       setIsAddDialogOpen(false)
-
-      // Force sync and reload
-      await authService.forceSync()
-      await loadUsers()
+      setSuccess(`User "${createdUser.username}" created successfully. Password: ${newUser.password}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create user")
-    } finally {
-      setIsLoading(false)
+      setError("Failed to create user")
     }
   }
 
   const handleEditUser = (user: User) => {
-    setEditingUser(user)
-    setEditUserData({
-      username: user.username,
-      role: user.role,
-      newPassword: "",
-    })
+    // Prevent editing the system admin user
+    if (user.username === "admin" && user.id === "1") {
+      setError("Cannot edit the system administrator account")
+      return
+    }
+
+    setEditingUser({ ...user })
     setIsEditDialogOpen(true)
     setError("")
   }
 
-  const handleUpdateUser = async () => {
-    if (!editingUser || !editUserData.username.trim()) {
-      setError("Username is required")
+  const handleUpdateUser = () => {
+    if (!editingUser) return
+
+    setError("")
+
+    if (!editingUser.username || !editingUser.password) {
+      setError("Username and password are required")
       return
     }
 
-    setIsLoading(true)
-    setError("")
+    if (editingUser.username.length < 3) {
+      setError("Username must be at least 3 characters long")
+      return
+    }
+
+    if (editingUser.password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      return
+    }
+
+    // Check if username exists for other users
+    const existingUser = authService
+      .getUsers()
+      .find((u) => u.username === editingUser.username && u.id !== editingUser.id)
+    if (existingUser) {
+      setError("Username already exists")
+      return
+    }
 
     try {
-      // Update user details
-      await authService.updateUser(editingUser.id, {
-        username: editUserData.username.trim(),
-        role: editUserData.role,
-      })
-
-      // Update password if provided
-      if (editUserData.newPassword.trim()) {
-        if (editUserData.newPassword.length < 6) {
-          setError("Password must be at least 6 characters long")
-          setIsLoading(false)
-          return
-        }
-        await authService.updatePassword(editingUser.id, editUserData.newPassword)
-        setSuccess(
-          `User "${editUserData.username}" updated successfully!\n\nNew password: ${editUserData.newPassword}\n\nPlease provide the new password to the user.\n\nChanges are synced globally across all devices.`,
-        )
-      } else {
-        setSuccess(
-          `User "${editUserData.username}" updated successfully!\n\nChanges are synced globally across all devices.`,
-        )
-      }
-
+      authService.updateUser(editingUser)
+      loadUsers()
       setIsEditDialogOpen(false)
       setEditingUser(null)
-
-      // Force sync and reload
-      await authService.forceSync()
-      await loadUsers()
+      setSuccess(`User "${editingUser.username}" updated successfully`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update user")
-    } finally {
-      setIsLoading(false)
+      setError("Failed to update user")
     }
   }
 
   const handleDeleteUser = (userId: string) => {
+    const user = users.find((u) => u.id === userId)
+
+    // Prevent deleting the system admin user
+    if (user && user.username === "admin" && user.id === "1") {
+      setError("Cannot delete the system administrator account")
+      return
+    }
+
+    // Prevent users from deleting themselves
+    if (userId === currentUser.id) {
+      setError("You cannot delete your own account")
+      return
+    }
+
     setDeletingUserId(userId)
     setIsDeleteDialogOpen(true)
+    setError("")
   }
 
-  const confirmDeleteUser = async () => {
+  const confirmDeleteUser = () => {
     if (!deletingUserId) return
-
-    setIsLoading(true)
-    setError("")
 
     try {
       const userToDelete = users.find((u) => u.id === deletingUserId)
-      await authService.deleteUser(deletingUserId)
-      setSuccess(
-        `User "${userToDelete?.username}" deleted successfully!\n\nDeletion is synced globally across all devices.`,
-      )
+      authService.deleteUser(deletingUserId)
+      loadUsers()
       setIsDeleteDialogOpen(false)
       setDeletingUserId(null)
-
-      // Force sync and reload
-      await authService.forceSync()
-      await loadUsers()
+      setSuccess(`User "${userToDelete?.username}" deleted successfully`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete user")
-    } finally {
-      setIsLoading(false)
+      setError("Failed to delete user")
     }
   }
 
-  const handleForceSync = async () => {
-    setIsLoadingUsers(true)
-    await authService.forceSync()
-    await loadUsers()
+  const togglePasswordVisibility = (userId: string) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }))
   }
 
-  const generatePassword = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    let password = ""
-    for (let i = 0; i < 8; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    setNewUser({ ...newUser, password })
-  }
-
-  const getRoleBadge = (role: User["role"], isSystemAdmin = false) => {
-    if (isSystemAdmin) {
-      return (
-        <Badge className="bg-purple-100 text-purple-800">
-          <Lock className="w-3 h-3 mr-1" />
-          System Admin
-        </Badge>
-      )
-    }
+  const getRoleBadge = (role: string) => {
     return role === "admin" ? (
       <Badge className="bg-red-100 text-red-800">
         <Shield className="w-3 h-3 mr-1" />
@@ -286,299 +198,173 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       </Badge>
     ) : (
       <Badge className="bg-blue-100 text-blue-800">
-        <UserCheck className="w-3 h-3 mr-1" />
+        <UserIcon className="w-3 h-3 mr-1" />
         User
       </Badge>
     )
   }
 
-  const stats = {
-    total: users.length,
-    admins: users.filter((u) => u.role === "admin").length,
-    users: users.filter((u) => u.role === "user").length,
-    systemAdmins: users.filter((u) => authService.isSystemAdmin(u.id)).length,
+  const isSystemAdmin = (user: User) => {
+    return user.username === "admin" && user.id === "1"
   }
 
   return (
     <div className="space-y-6">
-      {/* Server Sync Status */}
-      <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Server className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium text-green-800">
-                Server Sync: {lastSyncTime.toLocaleTimeString()}
-              </span>
-              <Badge variant="outline" className="text-green-700 border-green-300">
-                Global Storage
-              </Badge>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleForceSync} disabled={isLoadingUsers}>
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingUsers ? "animate-spin" : ""}`} />
-              Sync Now
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{isLoadingUsers ? "..." : stats.total}</p>
-                <p className="text-xs text-gray-500">Stored on server</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">System Admins</p>
-                <p className="text-2xl font-bold text-purple-600">{isLoadingUsers ? "..." : stats.systemAdmins}</p>
-                <p className="text-xs text-gray-500">Protected accounts</p>
-              </div>
-              <Lock className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Administrators</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {isLoadingUsers ? "..." : stats.admins - stats.systemAdmins}
-                </p>
-                <p className="text-xs text-gray-500">Admin privileges</p>
-              </div>
-              <Shield className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Regular Users</p>
-                <p className="text-2xl font-bold text-blue-600">{isLoadingUsers ? "..." : stats.users}</p>
-                <p className="text-xs text-gray-500">Standard access</p>
-              </div>
-              <UserCheck className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Messages */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="whitespace-pre-line">{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800 whitespace-pre-line">{success}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* User Management */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
               <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Manage system users stored on the server. All changes are immediately available on all devices globally.
-              </CardDescription>
+              <CardDescription>Manage system users and their permissions</CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={loadUsers} disabled={isLoadingUsers}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingUsers ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add User
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New User</DialogTitle>
-                    <DialogDescription>
-                      Create a new user account. This user will be stored on the server and accessible from any device
-                      globally.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="new-username">Username</Label>
-                      <Input
-                        id="new-username"
-                        value={newUser.username}
-                        onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                        placeholder="Enter username"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="new-password">Password</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="new-password"
-                          type="text"
-                          value={newUser.password}
-                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                          placeholder="Enter password (min 6 characters)"
-                          disabled={isLoading}
-                        />
-                        <Button type="button" variant="outline" onClick={generatePassword} disabled={isLoading}>
-                          Generate
-                        </Button>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="new-role">Role</Label>
-                      <Select
-                        value={newUser.role}
-                        onValueChange={(value: "admin" | "user") => setNewUser({ ...newUser, role: value })}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">User</SelectItem>
-                          <SelectItem value="admin">Administrator</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                      <p className="text-sm text-yellow-800">
-                        <strong>Important:</strong> After creating the user, you must provide the username and password
-                        directly to them. This user will be stored on the server and accessible from any device
-                        globally.
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={handleAddUser} className="flex-1" disabled={isLoading}>
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating...
-                          </>
-                        ) : (
-                          "Create User"
-                        )}
-                      </Button>
-                      <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isLoading}>
-                        Cancel
-                      </Button>
-                    </div>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogDescription>Create a new user account for the system</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="new-username">Username *</Label>
+                    <Input
+                      id="new-username"
+                      value={newUser.username}
+                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                      placeholder="Enter username (min 3 characters)"
+                    />
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+                  <div>
+                    <Label htmlFor="new-password">Password *</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      placeholder="Enter password (min 6 characters)"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="new-role">Role</Label>
+                    <Select
+                      value={newUser.role}
+                      onValueChange={(value: "admin" | "user") => setNewUser({ ...newUser, role: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddUser} className="flex-1">
+                      Create User
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          {isLoadingUsers ? (
-            <div className="text-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">Loading users from server...</p>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-2">No users found. Create your first user to get started.</p>
-              <p className="text-xs text-gray-400 mb-4">
-                Users created here will be stored on the server and accessible from any device globally.
-              </p>
-              <Button onClick={loadUsers} variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Try Again
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Last Login</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => {
-                    const isSystemAdmin = authService.isSystemAdmin(user.id)
-                    return (
-                      <TableRow key={user.id} className={isSystemAdmin ? "bg-purple-50" : ""}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            {user.username}
-                            {isSystemAdmin && <Lock className="w-3 h-3 text-purple-600" />}
-                          </div>
-                        </TableCell>
-                        <TableCell>{getRoleBadge(user.role, isSystemAdmin)}</TableCell>
-                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditUser(user)}
-                              disabled={isLoading || isSystemAdmin}
-                              title={isSystemAdmin ? "System administrator cannot be modified" : "Edit user"}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-red-600 hover:text-red-700"
-                              disabled={isLoading || isSystemAdmin}
-                              title={isSystemAdmin ? "System administrator cannot be deleted" : "Delete user"}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-              <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                <p className="text-sm text-green-700">
-                  <strong>Global Server Storage:</strong> All users shown here are stored on the server and
-                  automatically synchronized across all devices and locations. Changes made anywhere will be reflected
-                  everywhere immediately.
-                </p>
-                <p className="text-sm text-purple-700 mt-2">
-                  <strong>System Administrator Protection:</strong> System administrators (marked with{" "}
-                  <Lock className="w-3 h-3 inline" />) cannot be modified or deleted to ensure system security.
-                </p>
-              </div>
-            </div>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
+          {success && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <AlertDescription className="text-green-800">{success}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Password</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id} className={isSystemAdmin(user) ? "bg-yellow-50" : ""}>
+                    <TableCell className="font-medium">
+                      {user.username}
+                      {isSystemAdmin(user) && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          System Admin
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono text-sm">{showPasswords[user.id] ? user.password : "••••••••"}</span>
+                        <Button variant="ghost" size="sm" onClick={() => togglePasswordVisibility(user.id)}>
+                          {showPasswords[user.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                          disabled={isSystemAdmin(user)}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="text-red-600 hover:text-red-700"
+                          disabled={isSystemAdmin(user) || user.id === currentUser.id}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+            <h4 className="font-semibold text-blue-900 mb-2">User Management Notes</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• System administrator account cannot be edited or deleted</li>
+              <li>• Users cannot delete their own accounts</li>
+              <li>• Passwords are stored locally and visible to administrators</li>
+              <li>• Provide credentials directly to users when creating accounts</li>
+              <li>• Admin users have full system access including user management</li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
 
@@ -587,61 +373,54 @@ export function UserManagement({ currentUser }: UserManagementProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Update user account information. Changes will be saved to the server and synced globally.
-            </DialogDescription>
+            <DialogDescription>Update user account information</DialogDescription>
           </DialogHeader>
           {editingUser && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-username">Username</Label>
+                <Label htmlFor="edit-username">Username *</Label>
                 <Input
                   id="edit-username"
-                  value={editUserData.username}
-                  onChange={(e) => setEditUserData({ ...editUserData, username: e.target.value })}
+                  value={editingUser.username}
+                  onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
                   placeholder="Enter username"
-                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-password">Password *</Label>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  value={editingUser.password}
+                  onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                  placeholder="Enter password"
                 />
               </div>
               <div>
                 <Label htmlFor="edit-role">Role</Label>
                 <Select
-                  value={editUserData.role}
-                  onValueChange={(value: "admin" | "user") => setEditUserData({ ...editUserData, role: value })}
-                  disabled={isLoading}
+                  value={editingUser.role}
+                  onValueChange={(value: "admin" | "user") => setEditingUser({ ...editingUser, role: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="edit-password">New Password (optional)</Label>
-                <Input
-                  id="edit-password"
-                  type="text"
-                  value={editUserData.newPassword}
-                  onChange={(e) => setEditUserData({ ...editUserData, newPassword: e.target.value })}
-                  placeholder="Leave blank to keep current password"
-                  disabled={isLoading}
-                />
-              </div>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="flex gap-2">
-                <Button onClick={handleUpdateUser} className="flex-1" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    "Update User"
-                  )}
+                <Button onClick={handleUpdateUser} className="flex-1">
+                  Update User
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isLoading}>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Cancel
                 </Button>
               </div>
@@ -656,22 +435,12 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account from the server and remove
-              their access globally across all devices.
+              This action cannot be undone. This will permanently delete the user account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteUser} disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete"
-              )}
-            </AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteUser}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

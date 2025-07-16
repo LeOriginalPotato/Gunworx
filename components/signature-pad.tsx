@@ -2,40 +2,43 @@
 
 import type React from "react"
 
-import { useRef, useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { PenTool, RotateCcw, Save } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Card, CardContent } from "@/components/ui/card"
+import { PenTool, RotateCcw, Save, X } from "lucide-react"
 
 interface SignaturePadProps {
-  onSave: (signature: string, signerName: string, fullName: string) => void
-  trigger?: React.ReactNode
+  isOpen: boolean
+  onClose: () => void
+  onSignatureSave: (signatureData: string, signerName: string) => void
+  title?: string
 }
 
-export function SignaturePad({ onSave, trigger }: SignaturePadProps) {
+export function SignaturePad({ isOpen, onClose, onSignatureSave, title = "Digital Signature" }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
   const [signerName, setSignerName] = useState("")
-  const [fullName, setFullName] = useState("")
+  const [hasSignature, setHasSignature] = useState(false)
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Reset state when dialog opens
+      setSignerName("")
+      setHasSignature(false)
+      clearCanvas()
+    }
+  }, [isOpen])
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const x = "touches" in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left
+    const y = "touches" in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
@@ -43,17 +46,18 @@ export function SignaturePad({ onSave, trigger }: SignaturePadProps) {
     ctx.beginPath()
     ctx.moveTo(x, y)
     setIsDrawing(true)
+    setHasSignature(true)
   }
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return
 
     const canvas = canvasRef.current
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const x = "touches" in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left
+    const y = "touches" in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
@@ -74,109 +78,138 @@ export function SignaturePad({ onSave, trigger }: SignaturePadProps) {
     if (!ctx) return
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-  }
 
-  const saveSignature = () => {
-    if (!signerName.trim()) {
-      alert("Please enter the signer's name")
-      return
-    }
-
-    if (!fullName.trim()) {
-      alert("Please enter the full name")
-      return
-    }
-
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const dataURL = canvas.toDataURL()
-    onSave(dataURL, signerName.trim(), fullName.trim())
-    setIsOpen(false)
-    setSignerName("")
-    setFullName("")
-    clearCanvas()
-  }
-
-  const setupCanvas = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
+    // Set up canvas for drawing
     ctx.strokeStyle = "#000000"
     ctx.lineWidth = 2
     ctx.lineCap = "round"
     ctx.lineJoin = "round"
+
+    setHasSignature(false)
+  }
+
+  const saveSignature = () => {
+    if (!hasSignature) {
+      alert("Please provide a signature")
+      return
+    }
+
+    if (!signerName.trim()) {
+      alert("Please enter the signer's full name")
+      return
+    }
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const signatureData = canvas.toDataURL("image/png")
+    onSignatureSave(signatureData, signerName.trim())
+    onClose()
+  }
+
+  const handleClose = () => {
+    setSignerName("")
+    setHasSignature(false)
+    clearCanvas()
+    onClose()
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline">
-            <PenTool className="w-4 h-4 mr-2" />
-            Add Signature
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Digital Signature</DialogTitle>
-          <DialogDescription>Sign your name in the area below and provide your details</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <PenTool className="w-5 h-5" />
+            {title}
+          </DialogTitle>
+          <DialogDescription>Please enter your full name and provide your digital signature below</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="signer-name">Signer Name *</Label>
-              <Input
-                id="signer-name"
-                value={signerName}
-                onChange={(e) => setSignerName(e.target.value)}
-                placeholder="Enter signer's name"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="full-name">Full Name *</Label>
-              <Input
-                id="full-name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter full name"
-                required
-              />
-            </div>
+          {/* Signer Name Input */}
+          <div>
+            <Label htmlFor="signer-name">Full Name *</Label>
+            <Input
+              id="signer-name"
+              value={signerName}
+              onChange={(e) => setSignerName(e.target.value)}
+              placeholder="Enter your full name"
+              className="mt-1"
+            />
           </div>
 
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-            <canvas
-              ref={canvasRef}
-              width={600}
-              height={200}
-              className="border border-gray-200 rounded cursor-crosshair w-full"
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-              onLoad={setupCanvas}
-            />
-            <p className="text-sm text-gray-500 mt-2 text-center">Click and drag to sign above</p>
+          {/* Signature Canvas */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-center mb-2">
+                <Label>Digital Signature *</Label>
+                <p className="text-sm text-gray-500">Sign in the box below using your mouse or touch</p>
+              </div>
+
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 bg-white">
+                <canvas
+                  ref={canvasRef}
+                  width={600}
+                  height={200}
+                  className="w-full h-48 cursor-crosshair touch-none"
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={(e) => {
+                    e.preventDefault()
+                    startDrawing(e)
+                  }}
+                  onTouchMove={(e) => {
+                    e.preventDefault()
+                    draw(e)
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault()
+                    stopDrawing()
+                  }}
+                />
+              </div>
+
+              <div className="flex justify-center mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearCanvas}
+                  className="flex items-center gap-2 bg-transparent"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Clear Signature
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-4">
+            <Button onClick={saveSignature} className="flex-1">
+              <Save className="w-4 h-4 mr-2" />
+              Save Signature
+            </Button>
+            <Button variant="outline" onClick={handleClose}>
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+
+          {/* Instructions */}
+          <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+            <p>
+              <strong>Instructions:</strong>
+            </p>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>Enter your full legal name in the field above</li>
+              <li>Sign your name in the signature box using your mouse or finger</li>
+              <li>Use the "Clear Signature" button to start over if needed</li>
+              <li>Click "Save Signature" when you're satisfied with your signature</li>
+            </ul>
           </div>
         </div>
-
-        <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={clearCanvas}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Clear
-          </Button>
-          <Button onClick={saveSignature}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Signature
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
