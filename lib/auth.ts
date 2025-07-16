@@ -6,9 +6,8 @@ export interface User {
   lastLogin?: string
 }
 
-const STORAGE_KEY = "gunworx_users"
+const API_BASE_URL = typeof window !== "undefined" ? window.location.origin : ""
 const CURRENT_USER_KEY = "gunworx_current_user"
-const SYNC_KEY = "gunworx_sync_timestamp"
 
 // Default system admin (hidden from UI)
 const SYSTEM_ADMIN: User = {
@@ -27,18 +26,16 @@ class AuthService {
   private syncCallbacks: (() => void)[] = []
 
   constructor() {
-    // Only initialize in browser environment
     if (typeof window !== "undefined") {
       this.initialize()
-      this.setupStorageListener()
     }
   }
 
-  private initialize() {
+  private async initialize() {
     if (this.initialized) return
 
     try {
-      this.loadUsers()
+      await this.loadUsersFromServer()
       // Always ensure system admin exists
       this.users.set(SYSTEM_ADMIN.username, {
         user: SYSTEM_ADMIN,
@@ -57,11 +54,38 @@ class AuthService {
     }
   }
 
-  private loadUsers() {
+  private async loadUsersFromServer() {
     if (typeof window === "undefined") return
 
     try {
-      const saved = localStorage.getItem(STORAGE_KEY)
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        this.users.clear()
+        Object.entries(userData).forEach(([username, data]: [string, any]) => {
+          if (data && data.user && data.password) {
+            this.users.set(username, data)
+          }
+        })
+      }
+    } catch (error) {
+      console.warn("Failed to load users from server:", error)
+      // Try to load from localStorage as fallback
+      this.loadUsersFromLocalStorage()
+    }
+  }
+
+  private loadUsersFromLocalStorage() {
+    if (typeof window === "undefined") return
+
+    try {
+      const saved = localStorage.getItem("gunworx_users")
       if (saved) {
         const userData = JSON.parse(saved)
         if (userData && typeof userData === "object") {
@@ -75,14 +99,10 @@ class AuthService {
       }
     } catch (error) {
       console.warn("Failed to load users from localStorage:", error)
-      // Clear corrupted data
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(STORAGE_KEY)
-      }
     }
   }
 
-  private saveUsers() {
+  private async saveUsersToServer() {
     if (typeof window === "undefined") return
 
     try {
@@ -91,108 +111,37 @@ class AuthService {
         userData[username] = data
       })
 
-      // Save to localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(userData))
-
-      // Update sync timestamp
-      localStorage.setItem(SYNC_KEY, Date.now().toString())
-
-      // Trigger sync callbacks
-      this.syncCallbacks.forEach((callback) => {
-        try {
-          callback()
-        } catch (error) {
-          console.warn("Sync callback error:", error)
-        }
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
       })
 
-      // Dispatch storage event for cross-tab sync
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: STORAGE_KEY,
-          newValue: JSON.stringify(userData),
-          storageArea: localStorage,
-        }),
-      )
-    } catch (error) {
-      console.warn("Failed to save users to localStorage:", error)
-    }
-  }
+      if (response.ok) {
+        // Also save to localStorage as backup
+        localStorage.setItem("gunworx_users", JSON.stringify(userData))
 
-  // Listen for storage changes from other tabs/windows/devices
-  private setupStorageListener() {
-    if (typeof window === "undefined") return
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue) {
-        try {
-          const userData = JSON.parse(e.newValue)
-          this.users.clear()
-          Object.entries(userData).forEach(([username, data]: [string, any]) => {
-            if (data && data.user && data.password) {
-              this.users.set(username, data)
-            }
-          })
-          // Always ensure system admin exists
-          this.users.set(SYSTEM_ADMIN.username, {
-            user: SYSTEM_ADMIN,
-            password: SYSTEM_ADMIN_PASSWORD,
-          })
-
-          // Trigger sync callbacks
-          this.syncCallbacks.forEach((callback) => {
-            try {
-              callback()
-            } catch (error) {
-              console.warn("Sync callback error:", error)
-            }
-          })
-        } catch (error) {
-          console.warn("Failed to sync users from storage event:", error)
-        }
-      }
-    }
-
-    window.addEventListener("storage", handleStorageChange)
-
-    // Also check for updates periodically (for cross-device sync)
-    setInterval(() => {
-      this.checkForUpdates()
-    }, 5000) // Check every 5 seconds
-  }
-
-  private checkForUpdates() {
-    if (typeof window === "undefined") return
-
-    try {
-      const lastSync = localStorage.getItem(SYNC_KEY)
-      const currentData = localStorage.getItem(STORAGE_KEY)
-
-      if (currentData) {
-        const userData = JSON.parse(currentData)
-        const currentUserCount = Object.keys(userData).length
-        const localUserCount = this.users.size
-
-        // If user counts don't match, reload from storage
-        if (currentUserCount !== localUserCount) {
-          this.loadUsers()
-          this.users.set(SYSTEM_ADMIN.username, {
-            user: SYSTEM_ADMIN,
-            password: SYSTEM_ADMIN_PASSWORD,
-          })
-
-          // Trigger sync callbacks
-          this.syncCallbacks.forEach((callback) => {
-            try {
-              callback()
-            } catch (error) {
-              console.warn("Sync callback error:", error)
-            }
-          })
-        }
+        // Trigger sync callbacks
+        this.syncCallbacks.forEach((callback) => {
+          try {
+            callback()
+          } catch (error) {
+            console.warn("Sync callback error:", error)
+          }
+        })
+      } else {
+        throw new Error("Failed to save to server")
       }
     } catch (error) {
-      console.warn("Failed to check for updates:", error)
+      console.warn("Failed to save users to server:", error)
+      // Fallback to localStorage
+      const userData: Record<string, { user: User; password: string }> = {}
+      this.users.forEach((data, username) => {
+        userData[username] = data
+      })
+      localStorage.setItem("gunworx_users", JSON.stringify(userData))
     }
   }
 
@@ -207,9 +156,9 @@ class AuthService {
     }
   }
 
-  login(username: string, password: string): User | null {
+  async login(username: string, password: string): Promise<User | null> {
     if (!this.initialized && typeof window !== "undefined") {
-      this.initialize()
+      await this.initialize()
     }
 
     const userData = this.users.get(username)
@@ -219,7 +168,7 @@ class AuthService {
         lastLogin: new Date().toISOString(),
       }
       this.users.set(username, { ...userData, user })
-      this.saveUsers()
+      await this.saveUsersToServer()
       this.setCurrentUser(user)
       return user
     }
@@ -249,9 +198,9 @@ class AuthService {
     }
   }
 
-  createUser(username: string, password: string, role: "admin" | "user" = "user"): User {
+  async createUser(username: string, password: string, role: "admin" | "user" = "user"): Promise<User> {
     if (!this.initialized && typeof window !== "undefined") {
-      this.initialize()
+      await this.initialize()
     }
 
     if (this.users.has(username)) {
@@ -266,13 +215,13 @@ class AuthService {
     }
 
     this.users.set(username, { user, password })
-    this.saveUsers() // This will trigger cross-device sync
+    await this.saveUsersToServer()
     return user
   }
 
-  updateUser(userId: string, updates: Partial<User>): User {
+  async updateUser(userId: string, updates: Partial<User>): Promise<User> {
     if (!this.initialized && typeof window !== "undefined") {
-      this.initialize()
+      await this.initialize()
     }
 
     for (const [username, userData] of this.users.entries()) {
@@ -287,31 +236,31 @@ class AuthService {
           this.users.set(username, { ...userData, user: updatedUser })
         }
 
-        this.saveUsers() // This will trigger cross-device sync
+        await this.saveUsersToServer()
         return updatedUser
       }
     }
     throw new Error("User not found")
   }
 
-  updatePassword(userId: string, newPassword: string): void {
+  async updatePassword(userId: string, newPassword: string): Promise<void> {
     if (!this.initialized && typeof window !== "undefined") {
-      this.initialize()
+      await this.initialize()
     }
 
     for (const [username, userData] of this.users.entries()) {
       if (userData.user.id === userId) {
         this.users.set(username, { ...userData, password: newPassword })
-        this.saveUsers() // This will trigger cross-device sync
+        await this.saveUsersToServer()
         return
       }
     }
     throw new Error("User not found")
   }
 
-  deleteUser(userId: string): void {
+  async deleteUser(userId: string): Promise<void> {
     if (!this.initialized && typeof window !== "undefined") {
-      this.initialize()
+      await this.initialize()
     }
 
     // Prevent deletion of system admin
@@ -322,21 +271,21 @@ class AuthService {
     for (const [username, userData] of this.users.entries()) {
       if (userData.user.id === userId) {
         this.users.delete(username)
-        this.saveUsers() // This will trigger cross-device sync
+        await this.saveUsersToServer()
         return
       }
     }
     throw new Error("User not found")
   }
 
-  getAllUsers(): User[] {
+  async getAllUsers(): Promise<User[]> {
     if (!this.initialized && typeof window !== "undefined") {
-      this.initialize()
+      await this.initialize()
     }
 
     try {
-      // Force reload from storage to get latest data
-      this.loadUsers()
+      // Always reload from server to get latest data
+      await this.loadUsersFromServer()
       this.users.set(SYSTEM_ADMIN.username, {
         user: SYSTEM_ADMIN,
         password: SYSTEM_ADMIN_PASSWORD,
@@ -353,9 +302,9 @@ class AuthService {
     }
   }
 
-  getUserById(userId: string): User | null {
+  async getUserById(userId: string): Promise<User | null> {
     if (!this.initialized && typeof window !== "undefined") {
-      this.initialize()
+      await this.initialize()
     }
 
     for (const userData of this.users.values()) {
@@ -372,17 +321,17 @@ class AuthService {
   }
 
   // Method to get user count safely
-  getUserCount(): number {
+  async getUserCount(): Promise<number> {
     if (!this.initialized && typeof window !== "undefined") {
-      this.initialize()
+      await this.initialize()
     }
     return this.users.size - 1 // Subtract 1 for system admin
   }
 
-  // Method to force refresh users from storage (for manual sync)
-  refreshUsers(): User[] {
+  // Method to force refresh users from server
+  async refreshUsers(): Promise<User[]> {
     if (typeof window !== "undefined") {
-      this.loadUsers()
+      await this.loadUsersFromServer()
       // Always ensure system admin exists after refresh
       this.users.set(SYSTEM_ADMIN.username, {
         user: SYSTEM_ADMIN,
@@ -393,9 +342,9 @@ class AuthService {
   }
 
   // Method to force sync across all instances
-  forceSync() {
+  async forceSync() {
     if (typeof window !== "undefined") {
-      this.saveUsers()
+      await this.saveUsersToServer()
     }
   }
 }

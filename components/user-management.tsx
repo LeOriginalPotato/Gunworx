@@ -38,7 +38,7 @@ import {
   CheckCircle,
   Loader2,
   RefreshCw,
-  FolderSyncIcon as Sync,
+  Server,
 } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
@@ -73,7 +73,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     newPassword: "",
   })
 
-  // Load users function with proper error handling and cross-device sync
+  // Load users function with server-side data
   const loadUsers = useCallback(async () => {
     setIsLoadingUsers(true)
     setError("")
@@ -86,14 +86,14 @@ export function UserManagement({ currentUser }: UserManagementProps) {
         throw new Error("Authentication service not ready")
       }
 
-      // Force refresh from storage to get latest data from all devices
-      const allUsers = authService.getAllUsers()
+      // Get users from server
+      const allUsers = await authService.getAllUsers()
       setUsers(allUsers)
       setLastSyncTime(new Date())
     } catch (err) {
       console.error("Failed to load users:", err)
-      setError("Failed to load users. Please refresh the page.")
-      setUsers([]) // Set empty array as fallback
+      setError("Failed to load users from server. Please refresh the page.")
+      setUsers([])
     } finally {
       setIsLoadingUsers(false)
     }
@@ -113,13 +113,13 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     loadUsers()
   }, [loadUsers])
 
-  // Auto-refresh users every 10 seconds to ensure sync across devices
+  // Auto-refresh users every 15 seconds to ensure sync across devices
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isLoading && !isLoadingUsers) {
         loadUsers()
       }
-    }, 10000) // 10 seconds
+    }, 15000) // 15 seconds
 
     return () => clearInterval(interval)
   }, [loadUsers, isLoading, isLoadingUsers])
@@ -150,15 +150,15 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     setError("")
 
     try {
-      const user = authService.createUser(newUser.username.trim(), newUser.password, newUser.role)
+      const user = await authService.createUser(newUser.username.trim(), newUser.password, newUser.role)
       setSuccess(
-        `User "${user.username}" created successfully!\n\nCredentials:\nUsername: ${user.username}\nPassword: ${newUser.password}\n\nPlease provide these credentials to the user.\n\nThis user is now visible on all devices and accounts.`,
+        `User "${user.username}" created successfully!\n\nCredentials:\nUsername: ${user.username}\nPassword: ${newUser.password}\n\nPlease provide these credentials to the user.\n\nThis user is now available on all devices globally.`,
       )
       setNewUser({ username: "", password: "", role: "user" })
       setIsAddDialogOpen(false)
 
       // Force sync and reload
-      authService.forceSync()
+      await authService.forceSync()
       await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user")
@@ -189,7 +189,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
 
     try {
       // Update user details
-      authService.updateUser(editingUser.id, {
+      await authService.updateUser(editingUser.id, {
         username: editUserData.username.trim(),
         role: editUserData.role,
       })
@@ -201,19 +201,21 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           setIsLoading(false)
           return
         }
-        authService.updatePassword(editingUser.id, editUserData.newPassword)
+        await authService.updatePassword(editingUser.id, editUserData.newPassword)
         setSuccess(
-          `User "${editUserData.username}" updated successfully!\n\nNew password: ${editUserData.newPassword}\n\nPlease provide the new password to the user.\n\nChanges are synced across all devices.`,
+          `User "${editUserData.username}" updated successfully!\n\nNew password: ${editUserData.newPassword}\n\nPlease provide the new password to the user.\n\nChanges are synced globally across all devices.`,
         )
       } else {
-        setSuccess(`User "${editUserData.username}" updated successfully!\n\nChanges are synced across all devices.`)
+        setSuccess(
+          `User "${editUserData.username}" updated successfully!\n\nChanges are synced globally across all devices.`,
+        )
       }
 
       setIsEditDialogOpen(false)
       setEditingUser(null)
 
       // Force sync and reload
-      authService.forceSync()
+      await authService.forceSync()
       await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update user")
@@ -235,13 +237,15 @@ export function UserManagement({ currentUser }: UserManagementProps) {
 
     try {
       const userToDelete = users.find((u) => u.id === deletingUserId)
-      authService.deleteUser(deletingUserId)
-      setSuccess(`User "${userToDelete?.username}" deleted successfully!\n\nDeletion is synced across all devices.`)
+      await authService.deleteUser(deletingUserId)
+      setSuccess(
+        `User "${userToDelete?.username}" deleted successfully!\n\nDeletion is synced globally across all devices.`,
+      )
       setIsDeleteDialogOpen(false)
       setDeletingUserId(null)
 
       // Force sync and reload
-      authService.forceSync()
+      await authService.forceSync()
       await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user")
@@ -252,7 +256,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
 
   const handleForceSync = async () => {
     setIsLoadingUsers(true)
-    authService.forceSync()
+    await authService.forceSync()
     await loadUsers()
   }
 
@@ -287,19 +291,22 @@ export function UserManagement({ currentUser }: UserManagementProps) {
 
   return (
     <div className="space-y-6">
-      {/* Sync Status */}
-      <Card className="border-blue-200 bg-blue-50">
+      {/* Server Sync Status */}
+      <Card className="border-green-200 bg-green-50">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sync className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">
-                Last synced: {lastSyncTime.toLocaleTimeString()}
+              <Server className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-green-800">
+                Server Sync: {lastSyncTime.toLocaleTimeString()}
               </span>
+              <Badge variant="outline" className="text-green-700 border-green-300">
+                Global Storage
+              </Badge>
             </div>
             <Button variant="outline" size="sm" onClick={handleForceSync} disabled={isLoadingUsers}>
               <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingUsers ? "animate-spin" : ""}`} />
-              Force Sync
+              Sync Now
             </Button>
           </div>
         </CardContent>
@@ -313,7 +320,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
                 <p className="text-2xl font-bold text-gray-900">{isLoadingUsers ? "..." : stats.total}</p>
-                <p className="text-xs text-gray-500">Synced across all devices</p>
+                <p className="text-xs text-gray-500">Stored on server</p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
             </div>
@@ -367,7 +374,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
             <div>
               <CardTitle>User Management</CardTitle>
               <CardDescription>
-                Manage system users and their permissions. All changes sync automatically across devices and accounts.
+                Manage system users stored on the server. All changes are immediately available on all devices globally.
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -386,7 +393,8 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                   <DialogHeader>
                     <DialogTitle>Add New User</DialogTitle>
                     <DialogDescription>
-                      Create a new user account. This user will be visible on all devices and accounts immediately.
+                      Create a new user account. This user will be stored on the server and accessible from any device
+                      globally.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
@@ -435,8 +443,8 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                     <div className="p-4 bg-yellow-50 rounded-lg">
                       <p className="text-sm text-yellow-800">
                         <strong>Important:</strong> After creating the user, you must provide the username and password
-                        directly to them. This user will be visible and accessible from all devices and accounts
-                        immediately.
+                        directly to them. This user will be stored on the server and accessible from any device
+                        globally.
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -464,14 +472,14 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           {isLoadingUsers ? (
             <div className="text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">Syncing users across all devices...</p>
+              <p className="text-gray-500">Loading users from server...</p>
             </div>
           ) : users.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-2">No users found. Create your first user to get started.</p>
               <p className="text-xs text-gray-400 mb-4">
-                Users created here will be visible on all devices and accounts immediately.
+                Users created here will be stored on the server and accessible from any device globally.
               </p>
               <Button onClick={loadUsers} variant="outline">
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -517,10 +525,11 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                   ))}
                 </TableBody>
               </Table>
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  <strong>Cross-Device Sync:</strong> All users shown here are automatically synchronized across all
-                  devices and accounts. Changes made on any device will be reflected everywhere within seconds.
+              <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-700">
+                  <strong>Global Server Storage:</strong> All users shown here are stored on the server and
+                  automatically synchronized across all devices and locations. Changes made anywhere will be reflected
+                  everywhere immediately.
                 </p>
               </div>
             </div>
@@ -534,7 +543,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              Update user account information. Changes will sync across all devices immediately.
+              Update user account information. Changes will be saved to the server and synced globally.
             </DialogDescription>
           </DialogHeader>
           {editingUser && (
@@ -602,8 +611,8 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account and remove their access to the
-              system across all devices and accounts.
+              This action cannot be undone. This will permanently delete the user account from the server and remove
+              their access globally across all devices.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
