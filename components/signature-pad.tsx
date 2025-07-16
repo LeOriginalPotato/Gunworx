@@ -2,58 +2,53 @@
 
 import type React from "react"
 
-import { useRef, useEffect, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { PenTool, RotateCcw, Save, AlertCircle, CheckCircle } from "lucide-react"
+import { Pen, RotateCcw, Save, AlertCircle } from "lucide-react"
 
 interface SignaturePadProps {
-  onSave?: (signature: string, signerName: string, fullName: string) => void
+  isOpen: boolean
+  onClose: () => void
+  onSave: (signature: string, signerName: string, fullName: string) => void
+  title?: string
 }
 
-export function SignaturePad({ onSave }: SignaturePadProps) {
+export function SignaturePad({ isOpen, onClose, onSave, title = "Digital Signature" }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [signerName, setSignerName] = useState("")
   const [fullName, setFullName] = useState("")
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [hasSignature, setHasSignature] = useState(false)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    if (isOpen) {
+      // Reset form when dialog opens
+      setSignerName("")
+      setFullName("")
+      setError("")
+      setHasSignature(false)
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    // Set canvas size
-    canvas.width = 400
-    canvas.height = 200
-
-    // Set drawing styles
-    ctx.strokeStyle = "#000000"
-    ctx.lineWidth = 2
-    ctx.lineCap = "round"
-    ctx.lineJoin = "round"
-
-    // Fill with white background
-    ctx.fillStyle = "#ffffff"
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-  }, [isDialogOpen])
+      // Clear canvas
+      const canvas = canvasRef.current
+      if (canvas) {
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          ctx.fillStyle = "white"
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+        }
+      }
+    }
+  }, [isOpen])
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true)
+    setHasSignature(true)
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -61,9 +56,9 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    setIsDrawing(true)
+    let clientX: number
+    let clientY: number
 
-    let clientX, clientY
     if ("touches" in e) {
       clientX = e.touches[0].clientX
       clientY = e.touches[0].clientY
@@ -89,7 +84,9 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    let clientX, clientY
+    let clientX: number
+    let clientY: number
+
     if ("touches" in e) {
       e.preventDefault()
       clientX = e.touches[0].clientX
@@ -102,6 +99,9 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
     const x = clientX - rect.left
     const y = clientY - rect.top
 
+    ctx.lineWidth = 2
+    ctx.lineCap = "round"
+    ctx.strokeStyle = "#000000"
     ctx.lineTo(x, y)
     ctx.stroke()
   }
@@ -117,8 +117,10 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    ctx.fillStyle = "#ffffff"
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = "white"
     ctx.fillRect(0, 0, canvas.width, canvas.height)
+    setHasSignature(false)
   }
 
   const saveSignature = () => {
@@ -134,79 +136,36 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
       return
     }
 
+    if (!hasSignature) {
+      setError("Please provide a signature")
+      return
+    }
+
     const canvas = canvasRef.current
-    if (!canvas) {
-      setError("Canvas not available")
-      return
-    }
-
-    // Check if canvas is blank
-    const ctx = canvas.getContext("2d")
-    if (!ctx) {
-      setError("Canvas context not available")
-      return
-    }
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    const isBlank = imageData.data.every((value, index) => {
-      // Check if pixel is white (255, 255, 255, 255) or transparent
-      return index % 4 === 3 ? value === 255 : value === 255
-    })
-
-    if (isBlank) {
-      setError("Please provide a signature before saving")
-      return
-    }
+    if (!canvas) return
 
     try {
-      const signatureDataURL = canvas.toDataURL("image/png")
-      setSuccess(`Signature saved successfully for ${fullName}`)
-
-      if (onSave) {
-        onSave(signatureDataURL, signerName.trim(), fullName.trim())
-      }
-
-      // Reset form
-      setSignerName("")
-      setFullName("")
-      clearCanvas()
-
-      // Close dialog after a short delay
-      setTimeout(() => {
-        setIsDialogOpen(false)
-        setSuccess("")
-      }, 2000)
+      const dataURL = canvas.toDataURL("image/png")
+      onSave(dataURL, signerName.trim(), fullName.trim())
+      onClose()
     } catch (err) {
-      setError("Failed to save signature")
+      setError("Failed to save signature. Please try again.")
     }
   }
 
-  // Clear messages when dialog opens/closes
-  useEffect(() => {
-    if (!isDialogOpen) {
-      setError("")
-      setSuccess("")
-      setSignerName("")
-      setFullName("")
-    }
-  }, [isDialogOpen])
-
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <PenTool className="w-4 h-4 mr-2" />
-          Digital Signature
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Digital Signature Capture</DialogTitle>
-          <DialogDescription>Please provide your signature and required information below</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Pen className="w-5 h-5" />
+            {title}
+          </DialogTitle>
+          <DialogDescription>Please enter your details and provide your digital signature below.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Signer Information */}
+          {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="signer-name">Signer Name *</Label>
@@ -223,37 +182,12 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
                 id="full-name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter full legal name"
+                placeholder="Enter full name"
               />
             </div>
           </div>
 
-          {/* Signature Canvas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Signature Area</CardTitle>
-              <CardDescription>
-                Draw your signature using mouse or touch. Use the clear button to start over.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
-                <canvas
-                  ref={canvasRef}
-                  className="border border-gray-300 rounded bg-white cursor-crosshair touch-none"
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Messages */}
+          {/* Error Message */}
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -261,28 +195,43 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
             </Alert>
           )}
 
-          {success && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">{success}</AlertDescription>
-            </Alert>
-          )}
+          {/* Signature Canvas */}
+          <div className="space-y-2">
+            <Label>Digital Signature *</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <canvas
+                ref={canvasRef}
+                width={600}
+                height={200}
+                className="w-full h-48 border border-gray-200 rounded cursor-crosshair touch-none"
+                style={{ backgroundColor: "white" }}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+              />
+              <p className="text-sm text-gray-500 mt-2 text-center">Sign above using your mouse or touch screen</p>
+            </div>
+          </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={clearCanvas}>
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={clearCanvas} disabled={!hasSignature}>
               <RotateCcw className="w-4 h-4 mr-2" />
               Clear
             </Button>
-            <Button onClick={saveSignature}>
-              <Save className="w-4 h-4 mr-2" />
-              Save Signature
-            </Button>
-          </div>
-
-          <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded">
-            <strong>Note:</strong> By providing your digital signature, you acknowledge that this signature has the same
-            legal effect as a handwritten signature.
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={saveSignature}>
+                <Save className="w-4 h-4 mr-2" />
+                Save Signature
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

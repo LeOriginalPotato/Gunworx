@@ -38,6 +38,7 @@ import {
   CheckCircle,
   Loader2,
   RefreshCw,
+  FolderSyncIcon as Sync,
 } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
@@ -56,6 +57,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
   const [success, setSuccess] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingUsers, setIsLoadingUsers] = useState(true)
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date())
 
   // New user form state
   const [newUser, setNewUser] = useState({
@@ -71,7 +73,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     newPassword: "",
   })
 
-  // Load users function with proper error handling and cross-tab sync
+  // Load users function with proper error handling and cross-device sync
   const loadUsers = useCallback(async () => {
     setIsLoadingUsers(true)
     setError("")
@@ -84,9 +86,10 @@ export function UserManagement({ currentUser }: UserManagementProps) {
         throw new Error("Authentication service not ready")
       }
 
-      // Force refresh from storage to get latest data from all devices/tabs
-      const allUsers = authService.refreshUsers()
+      // Force refresh from storage to get latest data from all devices
+      const allUsers = authService.getAllUsers()
       setUsers(allUsers)
+      setLastSyncTime(new Date())
     } catch (err) {
       console.error("Failed to load users:", err)
       setError("Failed to load users. Please refresh the page.")
@@ -96,28 +99,13 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     }
   }, [])
 
-  // Set up storage listener for cross-tab synchronization
+  // Set up sync listener for real-time updates
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "gunworx_users") {
-        // Reload users when storage changes from another tab/device
-        loadUsers()
-      }
-    }
-
-    // Listen for storage changes
-    window.addEventListener("storage", handleStorageChange)
-
-    // Also listen for custom storage events (for same-tab updates)
-    const handleCustomStorageChange = () => {
+    const unsubscribe = authService.onSync(() => {
       loadUsers()
-    }
-    window.addEventListener("storage", handleCustomStorageChange)
+    })
 
-    return () => {
-      window.removeEventListener("storage", handleStorageChange)
-      window.removeEventListener("storage", handleCustomStorageChange)
-    }
+    return unsubscribe
   }, [loadUsers])
 
   // Load users on component mount
@@ -125,13 +113,13 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     loadUsers()
   }, [loadUsers])
 
-  // Auto-refresh users every 30 seconds to ensure sync across devices
+  // Auto-refresh users every 10 seconds to ensure sync across devices
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isLoading && !isLoadingUsers) {
         loadUsers()
       }
-    }, 30000) // 30 seconds
+    }, 10000) // 10 seconds
 
     return () => clearInterval(interval)
   }, [loadUsers, isLoading, isLoadingUsers])
@@ -164,11 +152,14 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     try {
       const user = authService.createUser(newUser.username.trim(), newUser.password, newUser.role)
       setSuccess(
-        `User "${user.username}" created successfully!\n\nCredentials:\nUsername: ${user.username}\nPassword: ${newUser.password}\n\nPlease provide these credentials to the user.\n\nThis user will be visible on all devices and accounts.`,
+        `User "${user.username}" created successfully!\n\nCredentials:\nUsername: ${user.username}\nPassword: ${newUser.password}\n\nPlease provide these credentials to the user.\n\nThis user is now visible on all devices and accounts.`,
       )
       setNewUser({ username: "", password: "", role: "user" })
       setIsAddDialogOpen(false)
-      await loadUsers() // Reload users to show the new user across all devices
+
+      // Force sync and reload
+      authService.forceSync()
+      await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user")
     } finally {
@@ -220,7 +211,10 @@ export function UserManagement({ currentUser }: UserManagementProps) {
 
       setIsEditDialogOpen(false)
       setEditingUser(null)
-      await loadUsers() // Reload users to show updates across all devices
+
+      // Force sync and reload
+      authService.forceSync()
+      await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update user")
     } finally {
@@ -245,12 +239,21 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       setSuccess(`User "${userToDelete?.username}" deleted successfully!\n\nDeletion is synced across all devices.`)
       setIsDeleteDialogOpen(false)
       setDeletingUserId(null)
-      await loadUsers() // Reload users to reflect deletion across all devices
+
+      // Force sync and reload
+      authService.forceSync()
+      await loadUsers()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete user")
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleForceSync = async () => {
+    setIsLoadingUsers(true)
+    authService.forceSync()
+    await loadUsers()
   }
 
   const generatePassword = () => {
@@ -284,6 +287,24 @@ export function UserManagement({ currentUser }: UserManagementProps) {
 
   return (
     <div className="space-y-6">
+      {/* Sync Status */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sync className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-800">
+                Last synced: {lastSyncTime.toLocaleTimeString()}
+              </span>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleForceSync} disabled={isLoadingUsers}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingUsers ? "animate-spin" : ""}`} />
+              Force Sync
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -346,7 +367,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
             <div>
               <CardTitle>User Management</CardTitle>
               <CardDescription>
-                Manage system users and their permissions. All changes sync across devices and accounts.
+                Manage system users and their permissions. All changes sync automatically across devices and accounts.
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -365,7 +386,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                   <DialogHeader>
                     <DialogTitle>Add New User</DialogTitle>
                     <DialogDescription>
-                      Create a new user account. This user will be visible on all devices and accounts.
+                      Create a new user account. This user will be visible on all devices and accounts immediately.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
@@ -414,7 +435,8 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                     <div className="p-4 bg-yellow-50 rounded-lg">
                       <p className="text-sm text-yellow-800">
                         <strong>Important:</strong> After creating the user, you must provide the username and password
-                        directly to them. This user will be visible and accessible from all devices and accounts.
+                        directly to them. This user will be visible and accessible from all devices and accounts
+                        immediately.
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -442,14 +464,14 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           {isLoadingUsers ? (
             <div className="text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">Loading users from all devices...</p>
+              <p className="text-gray-500">Syncing users across all devices...</p>
             </div>
           ) : users.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-2">No users found. Create your first user to get started.</p>
               <p className="text-xs text-gray-400 mb-4">
-                Users created here will be visible on all devices and accounts.
+                Users created here will be visible on all devices and accounts immediately.
               </p>
               <Button onClick={loadUsers} variant="outline">
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -497,8 +519,8 @@ export function UserManagement({ currentUser }: UserManagementProps) {
               </Table>
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  <strong>Cross-Device Sync:</strong> All users shown here are synchronized across all devices and
-                  accounts. Changes made on any device will be reflected everywhere.
+                  <strong>Cross-Device Sync:</strong> All users shown here are automatically synchronized across all
+                  devices and accounts. Changes made on any device will be reflected everywhere within seconds.
                 </p>
               </div>
             </div>
@@ -512,7 +534,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              Update user account information. Changes will sync across all devices.
+              Update user account information. Changes will sync across all devices immediately.
             </DialogDescription>
           </DialogHeader>
           {editingUser && (

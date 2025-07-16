@@ -33,9 +33,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     }
 
     try {
-      // Small delay to show loading state
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
       const user = authService.login(username.trim(), password)
       if (user) {
         onLogin(user)
@@ -53,10 +50,8 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-100">
-            <Shield className="h-8 w-8 text-blue-600" />
-          </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Gunworx Employee Portal</h2>
+          <Shield className="mx-auto h-12 w-12 text-blue-600" />
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Gunworx Employee Portal</h2>
           <p className="mt-2 text-sm text-gray-600">FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)</p>
         </div>
 
@@ -76,7 +71,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
                   disabled={isLoading}
-                  autoComplete="username"
+                  required
                 />
               </div>
               <div>
@@ -88,7 +83,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   disabled={isLoading}
-                  autoComplete="current-password"
+                  required
                 />
               </div>
 
