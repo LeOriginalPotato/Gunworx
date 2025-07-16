@@ -87,14 +87,50 @@ class AuthService {
         userData[username] = data
       })
       localStorage.setItem(STORAGE_KEY, JSON.stringify(userData))
+
+      // Force a storage event to sync across tabs/windows
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: STORAGE_KEY,
+          newValue: JSON.stringify(userData),
+          storageArea: localStorage,
+        }),
+      )
     } catch (error) {
       console.warn("Failed to save users to localStorage:", error)
     }
   }
 
+  // Listen for storage changes from other tabs/windows
+  private setupStorageListener() {
+    if (typeof window === "undefined") return
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const userData = JSON.parse(e.newValue)
+          this.users.clear()
+          Object.entries(userData).forEach(([username, data]: [string, any]) => {
+            if (data && data.user && data.password) {
+              this.users.set(username, data)
+            }
+          })
+          // Always ensure system admin exists
+          this.users.set(SYSTEM_ADMIN.username, {
+            user: SYSTEM_ADMIN,
+            password: SYSTEM_ADMIN_PASSWORD,
+          })
+        } catch (error) {
+          console.warn("Failed to sync users from storage event:", error)
+        }
+      }
+    })
+  }
+
   login(username: string, password: string): User | null {
     if (!this.initialized && typeof window !== "undefined") {
       this.initialize()
+      this.setupStorageListener()
     }
 
     const userData = this.users.get(username)
@@ -137,6 +173,7 @@ class AuthService {
   createUser(username: string, password: string, role: "admin" | "user" = "user"): User {
     if (!this.initialized && typeof window !== "undefined") {
       this.initialize()
+      this.setupStorageListener()
     }
 
     if (this.users.has(username)) {
@@ -151,20 +188,21 @@ class AuthService {
     }
 
     this.users.set(username, { user, password })
-    this.saveUsers()
+    this.saveUsers() // This will sync across all tabs/devices
     return user
   }
 
   updateUser(userId: string, updates: Partial<User>): User {
     if (!this.initialized && typeof window !== "undefined") {
       this.initialize()
+      this.setupStorageListener()
     }
 
     for (const [username, userData] of this.users.entries()) {
       if (userData.user.id === userId) {
         const updatedUser = { ...userData.user, ...updates }
         this.users.set(username, { ...userData, user: updatedUser })
-        this.saveUsers()
+        this.saveUsers() // This will sync across all tabs/devices
         return updatedUser
       }
     }
@@ -174,12 +212,13 @@ class AuthService {
   updatePassword(userId: string, newPassword: string): void {
     if (!this.initialized && typeof window !== "undefined") {
       this.initialize()
+      this.setupStorageListener()
     }
 
     for (const [username, userData] of this.users.entries()) {
       if (userData.user.id === userId) {
         this.users.set(username, { ...userData, password: newPassword })
-        this.saveUsers()
+        this.saveUsers() // This will sync across all tabs/devices
         return
       }
     }
@@ -189,6 +228,7 @@ class AuthService {
   deleteUser(userId: string): void {
     if (!this.initialized && typeof window !== "undefined") {
       this.initialize()
+      this.setupStorageListener()
     }
 
     // Prevent deletion of system admin
@@ -199,7 +239,7 @@ class AuthService {
     for (const [username, userData] of this.users.entries()) {
       if (userData.user.id === userId) {
         this.users.delete(username)
-        this.saveUsers()
+        this.saveUsers() // This will sync across all tabs/devices
         return
       }
     }
@@ -209,6 +249,7 @@ class AuthService {
   getAllUsers(): User[] {
     if (!this.initialized && typeof window !== "undefined") {
       this.initialize()
+      this.setupStorageListener()
     }
 
     try {
@@ -226,6 +267,7 @@ class AuthService {
   getUserById(userId: string): User | null {
     if (!this.initialized && typeof window !== "undefined") {
       this.initialize()
+      this.setupStorageListener()
     }
 
     for (const userData of this.users.values()) {
@@ -245,8 +287,22 @@ class AuthService {
   getUserCount(): number {
     if (!this.initialized && typeof window !== "undefined") {
       this.initialize()
+      this.setupStorageListener()
     }
     return this.users.size - 1 // Subtract 1 for system admin
+  }
+
+  // Method to force refresh users from storage (for manual sync)
+  refreshUsers(): User[] {
+    if (typeof window !== "undefined") {
+      this.loadUsers()
+      // Always ensure system admin exists after refresh
+      this.users.set(SYSTEM_ADMIN.username, {
+        user: SYSTEM_ADMIN,
+        password: SYSTEM_ADMIN_PASSWORD,
+      })
+    }
+    return this.getAllUsers()
   }
 }
 

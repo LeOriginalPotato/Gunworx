@@ -26,7 +26,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setError("")
     setIsLoading(true)
 
-    if (!username || !password) {
+    if (!username.trim() || !password.trim()) {
       setError("Please enter both username and password")
       setIsLoading(false)
       return
@@ -36,7 +36,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       // Small delay to show loading state
       await new Promise((resolve) => setTimeout(resolve, 500))
 
-      const user = authService.login(username, password)
+      const user = authService.login(username.trim(), password)
       if (user) {
         onLogin(user)
       } else {
@@ -56,7 +56,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-100">
             <Shield className="h-8 w-8 text-blue-600" />
           </div>
-          <h1 className="mt-6 text-3xl font-bold text-gray-900">Gunworx Employee Portal</h1>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">Gunworx Employee Portal</h2>
           <p className="mt-2 text-sm text-gray-600">FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)</p>
         </div>
 
@@ -119,10 +119,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             </div>
           </CardContent>
         </Card>
-
-        <div className="text-center">
-          <p className="text-xs text-gray-500">Authorized personnel only. All activities are logged and monitored.</p>
-        </div>
       </div>
     </div>
   )
