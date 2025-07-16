@@ -2,37 +2,25 @@
 
 import type React from "react"
 
-import { useState, useRef, useEffect } from "react"
+import { useRef, useEffect, useState } from "react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { PenTool, RotateCcw, Save } from "lucide-react"
+import { Trash2, Save } from "lucide-react"
 
 interface SignaturePadProps {
   isOpen: boolean
   onClose: () => void
   onSignatureSave: (signatureData: string, signerName: string) => void
   title: string
-  signerName?: string
 }
 
-export function SignaturePad({ isOpen, onClose, onSignatureSave, title, signerName = "" }: SignaturePadProps) {
+export function SignaturePad({ isOpen, onClose, onSignatureSave, title }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
-  const [currentSignerName, setCurrentSignerName] = useState(signerName)
+  const [signerName, setSignerName] = useState("")
   const [hasSignature, setHasSignature] = useState(false)
-
-  useEffect(() => {
-    setCurrentSignerName(signerName)
-  }, [signerName])
 
   useEffect(() => {
     if (isOpen && canvasRef.current) {
@@ -57,19 +45,16 @@ export function SignaturePad({ isOpen, onClose, onSignatureSave, title, signerNa
   }, [isOpen])
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true)
+    setHasSignature(true)
     const canvas = canvasRef.current
-    if (!canvas) return
-
-    const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-
-    const ctx = canvas.getContext("2d")
-    if (ctx) {
-      ctx.beginPath()
-      ctx.moveTo(x, y)
-      setIsDrawing(true)
-      setHasSignature(true)
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect()
+      const ctx = canvas.getContext("2d")
+      if (ctx) {
+        ctx.beginPath()
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
+      }
     }
   }
 
@@ -77,16 +62,13 @@ export function SignaturePad({ isOpen, onClose, onSignatureSave, title, signerNa
     if (!isDrawing) return
 
     const canvas = canvasRef.current
-    if (!canvas) return
-
-    const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-
-    const ctx = canvas.getContext("2d")
-    if (ctx) {
-      ctx.lineTo(x, y)
-      ctx.stroke()
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect()
+      const ctx = canvas.getContext("2d")
+      if (ctx) {
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
+        ctx.stroke()
+      }
     }
   }
 
@@ -96,35 +78,36 @@ export function SignaturePad({ isOpen, onClose, onSignatureSave, title, signerNa
 
   const clearSignature = () => {
     const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext("2d")
-    if (ctx) {
-      ctx.fillStyle = "#ffffff"
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-      setHasSignature(false)
+    if (canvas) {
+      const ctx = canvas.getContext("2d")
+      if (ctx) {
+        ctx.fillStyle = "#ffffff"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        setHasSignature(false)
+      }
     }
   }
 
   const saveSignature = () => {
-    const canvas = canvasRef.current
-    if (!canvas || !hasSignature) return
-
-    if (!currentSignerName.trim()) {
-      alert("Please enter the signer's name")
+    if (!hasSignature || !signerName.trim()) {
+      alert("Please provide a signature and signer name")
       return
     }
 
-    const signatureData = canvas.toDataURL("image/png")
-    onSignatureSave(signatureData, currentSignerName.trim())
-    onClose()
-    clearSignature()
-    setCurrentSignerName("")
+    const canvas = canvasRef.current
+    if (canvas) {
+      const signatureData = canvas.toDataURL("image/png")
+      onSignatureSave(signatureData, signerName.trim())
+      setSignerName("")
+      setHasSignature(false)
+      onClose()
+    }
   }
 
   const handleClose = () => {
+    setSignerName("")
+    setHasSignature(false)
     clearSignature()
-    setCurrentSignerName("")
     onClose()
   }
 
@@ -132,55 +115,57 @@ export function SignaturePad({ isOpen, onClose, onSignatureSave, title, signerNa
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <PenTool className="w-5 h-5" />
-            {title}
-          </DialogTitle>
-          <DialogDescription>
-            Please sign below to confirm the transaction. Enter your name and draw your signature.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>Please sign below and provide your name to confirm the transaction.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="signer-name">Full Name *</Label>
+            <Label htmlFor="signer-name">Signer Name *</Label>
             <Input
               id="signer-name"
-              value={currentSignerName}
-              onChange={(e) => setCurrentSignerName(e.target.value)}
+              value={signerName}
+              onChange={(e) => setSignerName(e.target.value)}
               placeholder="Enter your full name"
             />
           </div>
 
           <div>
-            <Label>Digital Signature *</Label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-2">
+            <Label>Signature *</Label>
+            <div className="border border-gray-300 rounded-md p-2 bg-white">
               <canvas
                 ref={canvasRef}
-                className="w-full h-32 border border-gray-200 rounded cursor-crosshair bg-white"
+                className="border border-gray-200 cursor-crosshair w-full"
                 onMouseDown={startDrawing}
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseLeave={stopDrawing}
+                style={{ maxWidth: "100%", height: "150px" }}
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">Click and drag to draw your signature above</p>
+            <p className="text-xs text-gray-500 mt-1">Click and drag to sign above</p>
           </div>
-        </div>
 
-        <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={clearSignature} disabled={!hasSignature}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Clear
-          </Button>
-          <Button variant="outline" onClick={handleClose}>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={clearSignature}
+              className="flex-1 bg-transparent"
+              disabled={!hasSignature}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
+            <Button onClick={saveSignature} className="flex-1" disabled={!hasSignature || !signerName.trim()}>
+              <Save className="w-4 h-4 mr-2" />
+              Save Signature
+            </Button>
+          </div>
+
+          <Button variant="outline" onClick={handleClose} className="w-full bg-transparent">
             Cancel
           </Button>
-          <Button onClick={saveSignature} disabled={!hasSignature || !currentSignerName.trim()}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Signature
-          </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -1,268 +1,176 @@
 export interface User {
   id: string
   username: string
-  password: string
   role: "admin" | "user"
   createdAt: string
-  createdBy?: string
+  lastLogin?: string
 }
 
-export interface AuthState {
-  isAuthenticated: boolean
-  user: User | null
+const STORAGE_KEY = "gunworx_users"
+const CURRENT_USER_KEY = "gunworx_current_user"
+
+// Default system admin (hidden from UI)
+const SYSTEM_ADMIN: User = {
+  id: "system_admin",
+  username: "Jean-Mari",
+  role: "admin",
+  createdAt: new Date().toISOString(),
 }
 
-// Storage keys
-const USERS_STORAGE_KEY = "gunworx_users"
-const CURRENT_USER_STORAGE_KEY = "gunworx_current_user"
+// Default password for system admin
+const SYSTEM_ADMIN_PASSWORD = "Password123"
 
-// Initial admin user (hidden from UI)
-const initialUsers: User[] = [
-  {
-    id: "1",
-    username: "Jean-Mari",
-    password: "Password123",
-    role: "admin",
-    createdAt: new Date().toISOString(),
-  },
-]
+class AuthService {
+  private users: Map<string, { user: User; password: string }> = new Map()
 
-// Load users from localStorage or use initial users
-const loadUsers = (): User[] => {
-  if (typeof window === "undefined") return initialUsers
+  constructor() {
+    this.loadUsers()
+    // Always ensure system admin exists
+    this.users.set(SYSTEM_ADMIN.username, {
+      user: SYSTEM_ADMIN,
+      password: SYSTEM_ADMIN_PASSWORD,
+    })
+  }
 
-  try {
-    const stored = localStorage.getItem(USERS_STORAGE_KEY)
-    if (stored) {
-      const users = JSON.parse(stored)
-      // Ensure we always have the initial admin user
-      const hasInitialAdmin = users.some((u: User) => u.username === "Jean-Mari")
-      if (!hasInitialAdmin) {
-        users.unshift(initialUsers[0])
+  private loadUsers() {
+    if (typeof window === "undefined") return
+
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const userData = JSON.parse(saved)
+        Object.entries(userData).forEach(([username, data]: [string, any]) => {
+          this.users.set(username, data)
+        })
       }
-      return users
+    } catch (error) {
+      console.warn("Failed to load users from localStorage:", error)
     }
-  } catch (error) {
-    console.warn("Could not load users from localStorage:", error)
   }
 
-  return initialUsers
-}
+  private saveUsers() {
+    if (typeof window === "undefined") return
 
-// Save users to localStorage
-const saveUsers = (users: User[]): void => {
-  if (typeof window === "undefined") return
-
-  try {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
-  } catch (error) {
-    console.warn("Could not save users to localStorage:", error)
+    try {
+      const userData: Record<string, { user: User; password: string }> = {}
+      this.users.forEach((data, username) => {
+        userData[username] = data
+      })
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(userData))
+    } catch (error) {
+      console.warn("Failed to save users to localStorage:", error)
+    }
   }
-}
 
-// Initialize users
-let users: User[] = loadUsers()
-
-export const authService = {
-  // Login function
-  login: (username: string, password: string): User | null => {
-    // Reload users from storage to get latest data
-    users = loadUsers()
-
-    const user = users.find((u) => u.username === username && u.password === password)
-    if (user) {
-      // Store in localStorage for persistence
-      try {
-        localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(user))
-      } catch (error) {
-        console.warn("Could not save current user:", error)
+  login(username: string, password: string): User | null {
+    const userData = this.users.get(username)
+    if (userData && userData.password === password) {
+      const user = {
+        ...userData.user,
+        lastLogin: new Date().toISOString(),
       }
+      this.users.set(username, { ...userData, user })
+      this.saveUsers()
+      this.setCurrentUser(user)
       return user
     }
     return null
-  },
+  }
 
-  // Logout function
-  logout: (): void => {
-    if (typeof window === "undefined") return
-    localStorage.removeItem(CURRENT_USER_STORAGE_KEY)
-  },
+  logout() {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(CURRENT_USER_KEY)
+    }
+  }
 
-  // Get current user from localStorage
-  getCurrentUser: (): User | null => {
+  getCurrentUser(): User | null {
     if (typeof window === "undefined") return null
 
     try {
-      const stored = localStorage.getItem(CURRENT_USER_STORAGE_KEY)
-      return stored ? JSON.parse(stored) : null
-    } catch (error) {
-      console.warn("Could not load current user:", error)
+      const saved = localStorage.getItem(CURRENT_USER_KEY)
+      return saved ? JSON.parse(saved) : null
+    } catch {
       return null
     }
-  },
+  }
 
-  // Set current user (for login)
-  setCurrentUser: (user: User): void => {
-    if (typeof window === "undefined") return
-    try {
-      localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(user))
-    } catch (error) {
-      console.warn("Could not save current user:", error)
+  setCurrentUser(user: User) {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user))
     }
-  },
+  }
 
-  // Check if user is authenticated
-  isAuthenticated: (): boolean => {
-    return authService.getCurrentUser() !== null
-  },
-
-  // Check if current user is admin
-  isAdmin: (): boolean => {
-    const user = authService.getCurrentUser()
-    return user?.role === "admin"
-  },
-
-  // Get all users (admin only) - excludes system admin from display
-  getAllUsers: (): User[] => {
-    users = loadUsers() // Reload to get latest data
-    // Filter out the initial system admin from the display list
-    return users.filter((u) => u.id !== "1")
-  },
-
-  // Get all users including system admin (for internal operations)
-  getAllUsersInternal: (): User[] => {
-    users = loadUsers()
-    return users
-  },
-
-  // Create new user (admin only)
-  createUser: (username: string, password: string, role: "admin" | "user", createdBy: string): User | null => {
-    // Reload users to get latest data
-    users = loadUsers()
-
-    // Check if username already exists
-    if (users.find((u) => u.username === username)) {
-      return null
+  createUser(username: string, password: string, role: "admin" | "user" = "user"): User {
+    if (this.users.has(username)) {
+      throw new Error("Username already exists")
     }
 
-    const newUser: User = {
-      id: Date.now().toString(),
+    const user: User = {
+      id: `user_${Date.now()}`,
       username,
-      password,
       role,
       createdAt: new Date().toISOString(),
-      createdBy,
     }
 
-    users.push(newUser)
-    saveUsers(users)
-    return newUser
-  },
+    this.users.set(username, { user, password })
+    this.saveUsers()
+    return user
+  }
 
-  // Delete user (admin only) - cannot delete system admin
-  deleteUser: (userId: string): boolean => {
+  updateUser(userId: string, updates: Partial<User>): User {
+    for (const [username, userData] of this.users.entries()) {
+      if (userData.user.id === userId) {
+        const updatedUser = { ...userData.user, ...updates }
+        this.users.set(username, { ...userData, user: updatedUser })
+        this.saveUsers()
+        return updatedUser
+      }
+    }
+    throw new Error("User not found")
+  }
+
+  updatePassword(userId: string, newPassword: string): void {
+    for (const [username, userData] of this.users.entries()) {
+      if (userData.user.id === userId) {
+        this.users.set(username, { ...userData, password: newPassword })
+        this.saveUsers()
+        return
+      }
+    }
+    throw new Error("User not found")
+  }
+
+  deleteUser(userId: string): void {
     // Prevent deletion of system admin
-    if (userId === "1") {
-      return false
+    if (userId === SYSTEM_ADMIN.id) {
+      throw new Error("Cannot delete system administrator")
     }
 
-    users = loadUsers()
-    const initialLength = users.length
-    users = users.filter((u) => u.id !== userId)
-
-    if (users.length < initialLength) {
-      saveUsers(users)
-      return true
-    }
-    return false
-  },
-
-  // Update user password (admin only)
-  updateUserPassword: (userId: string, newPassword: string): boolean => {
-    users = loadUsers()
-    const user = users.find((u) => u.id === userId)
-    if (user) {
-      user.password = newPassword
-      saveUsers(users)
-
-      // Update current user session if it's the same user
-      const currentUser = authService.getCurrentUser()
-      if (currentUser && currentUser.id === userId) {
-        currentUser.password = newPassword
-        try {
-          localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(currentUser))
-        } catch (error) {
-          console.warn("Could not update current user session:", error)
-        }
+    for (const [username, userData] of this.users.entries()) {
+      if (userData.user.id === userId) {
+        this.users.delete(username)
+        this.saveUsers()
+        return
       }
-
-      return true
     }
-    return false
-  },
+    throw new Error("User not found")
+  }
 
-  // Update user role (admin only) - cannot change system admin role
-  updateUserRole: (userId: string, newRole: "admin" | "user"): boolean => {
-    // Prevent role change for system admin
-    if (userId === "1") {
-      return false
-    }
+  getAllUsers(): User[] {
+    // Filter out system admin from public user list
+    return Array.from(this.users.values())
+      .map((data) => data.user)
+      .filter((user) => user.id !== SYSTEM_ADMIN.id)
+  }
 
-    users = loadUsers()
-    const user = users.find((u) => u.id === userId)
-    if (user) {
-      user.role = newRole
-      saveUsers(users)
-
-      // Update current user session if it's the same user
-      const currentUser = authService.getCurrentUser()
-      if (currentUser && currentUser.id === userId) {
-        currentUser.role = newRole
-        try {
-          localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(currentUser))
-        } catch (error) {
-          console.warn("Could not update current user session:", error)
-        }
+  getUserById(userId: string): User | null {
+    for (const userData of this.users.values()) {
+      if (userData.user.id === userId) {
+        return userData.user
       }
-
-      return true
     }
-    return false
-  },
-
-  // Update username (admin only) - cannot change system admin username
-  updateUsername: (userId: string, newUsername: string): boolean => {
-    // Prevent username change for system admin
-    if (userId === "1") {
-      return false
-    }
-
-    users = loadUsers()
-    const user = users.find((u) => u.id === userId)
-    if (user) {
-      user.username = newUsername
-      saveUsers(users)
-
-      // Update current user session if it's the same user
-      const currentUser = authService.getCurrentUser()
-      if (currentUser && currentUser.id === userId) {
-        currentUser.username = newUsername
-        try {
-          localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(currentUser))
-        } catch (error) {
-          console.warn("Could not update current user session:", error)
-        }
-      }
-
-      return true
-    }
-    return false
-  },
+    return null
+  }
 }
 
-// Auto-save users periodically
-if (typeof window !== "undefined") {
-  setInterval(() => {
-    saveUsers(users)
-  }, 30000) // Save every 30 seconds
-}
+export const authService = new AuthService()

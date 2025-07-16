@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, LogIn } from "lucide-react"
+import { Shield, AlertCircle } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
 interface LoginFormProps {
@@ -47,29 +47,30 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <Shield className="mx-auto h-12 w-12 text-blue-600" />
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Gunworx Employee Portal</h2>
+          <p className="mt-2 text-sm text-gray-600">FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)</p>
+          <p className="mt-4 text-sm text-gray-500">Sign in to access the firearms tracking system</p>
+        </div>
+
         <Card>
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Shield className="h-12 w-12 text-blue-600" />
-            </div>
-            <CardTitle className="text-2xl">Gunworx Tracker</CardTitle>
-            <CardDescription>
-              FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)
-              <br />
-              Professional Firearms Management System
-            </CardDescription>
+          <CardHeader>
+            <CardTitle>Sign In</CardTitle>
+            <CardDescription>Enter your credentials to access the system</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
@@ -82,7 +83,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
@@ -96,32 +97,33 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Sign In
-                  </>
-                )}
+                {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
-
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-sm mb-2">Access Information</h4>
-              <p className="text-xs text-gray-600">
-                This system is for authorized personnel only. Contact your system administrator for access credentials.
-              </p>
-            </div>
-
-            <div className="mt-4 text-center">
-              <p className="text-xs text-gray-500">Secure firearms tracking and management system</p>
-            </div>
           </CardContent>
         </Card>
+
+        <div className="text-center">
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <h4 className="font-semibold text-blue-800 mb-2">System Access</h4>
+            <p className="text-sm text-blue-700">
+              Contact your system administrator for login credentials. All access is logged and monitored for security
+              purposes.
+            </p>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <div className="p-4 bg-orange-50 rounded-lg">
+            <h4 className="font-semibold text-orange-800 mb-2">Security Notice</h4>
+            <ul className="text-sm text-orange-700 space-y-1 text-left">
+              <li>• This system is for authorized personnel only</li>
+              <li>• All activities are logged and monitored</li>
+              <li>• Unauthorized access is prohibited</li>
+              <li>• Report any security concerns immediately</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   )
