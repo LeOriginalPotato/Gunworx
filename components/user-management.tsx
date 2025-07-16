@@ -39,6 +39,7 @@ import {
   Loader2,
   RefreshCw,
   Server,
+  Lock,
 } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
@@ -86,7 +87,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
         throw new Error("Authentication service not ready")
       }
 
-      // Get users from server
+      // Get users from server (now includes system admin)
       const allUsers = await authService.getAllUsers()
       setUsers(allUsers)
       setLastSyncTime(new Date())
@@ -269,7 +270,15 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     setNewUser({ ...newUser, password })
   }
 
-  const getRoleBadge = (role: User["role"]) => {
+  const getRoleBadge = (role: User["role"], isSystemAdmin = false) => {
+    if (isSystemAdmin) {
+      return (
+        <Badge className="bg-purple-100 text-purple-800">
+          <Lock className="w-3 h-3 mr-1" />
+          System Admin
+        </Badge>
+      )
+    }
     return role === "admin" ? (
       <Badge className="bg-red-100 text-red-800">
         <Shield className="w-3 h-3 mr-1" />
@@ -287,6 +296,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     total: users.length,
     admins: users.filter((u) => u.role === "admin").length,
     users: users.filter((u) => u.role === "user").length,
+    systemAdmins: users.filter((u) => authService.isSystemAdmin(u.id)).length,
   }
 
   return (
@@ -313,7 +323,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       </Card>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -330,8 +340,22 @@ export function UserManagement({ currentUser }: UserManagementProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm font-medium text-gray-600">System Admins</p>
+                <p className="text-2xl font-bold text-purple-600">{isLoadingUsers ? "..." : stats.systemAdmins}</p>
+                <p className="text-xs text-gray-500">Protected accounts</p>
+              </div>
+              <Lock className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm font-medium text-gray-600">Administrators</p>
-                <p className="text-2xl font-bold text-red-600">{isLoadingUsers ? "..." : stats.admins}</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {isLoadingUsers ? "..." : stats.admins - stats.systemAdmins}
+                </p>
                 <p className="text-xs text-gray-500">Admin privileges</p>
               </div>
               <Shield className="h-8 w-8 text-red-600" />
@@ -499,30 +523,47 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.username}</TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-1">
-                          <Button variant="outline" size="sm" onClick={() => handleEditUser(user)} disabled={isLoading}>
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="text-red-600 hover:text-red-700"
-                            disabled={isLoading}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {users.map((user) => {
+                    const isSystemAdmin = authService.isSystemAdmin(user.id)
+                    return (
+                      <TableRow key={user.id} className={isSystemAdmin ? "bg-purple-50" : ""}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {user.username}
+                            {isSystemAdmin && <Lock className="w-3 h-3 text-purple-600" />}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getRoleBadge(user.role, isSystemAdmin)}</TableCell>
+                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                              disabled={isLoading || isSystemAdmin}
+                              title={isSystemAdmin ? "System administrator cannot be modified" : "Edit user"}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-red-600 hover:text-red-700"
+                              disabled={isLoading || isSystemAdmin}
+                              title={isSystemAdmin ? "System administrator cannot be deleted" : "Delete user"}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
               <div className="mt-4 p-3 bg-green-50 rounded-lg">
@@ -530,6 +571,10 @@ export function UserManagement({ currentUser }: UserManagementProps) {
                   <strong>Global Server Storage:</strong> All users shown here are stored on the server and
                   automatically synchronized across all devices and locations. Changes made anywhere will be reflected
                   everywhere immediately.
+                </p>
+                <p className="text-sm text-purple-700 mt-2">
+                  <strong>System Administrator Protection:</strong> System administrators (marked with{" "}
+                  <Lock className="w-3 h-3 inline" />) cannot be modified or deleted to ensure system security.
                 </p>
               </div>
             </div>

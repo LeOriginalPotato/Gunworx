@@ -9,7 +9,7 @@ export interface User {
 const API_BASE_URL = typeof window !== "undefined" ? window.location.origin : ""
 const CURRENT_USER_KEY = "gunworx_current_user"
 
-// Default system admin (hidden from UI)
+// Default system admin (now visible in UI but protected)
 const SYSTEM_ADMIN: User = {
   id: "system_admin",
   username: "Jean-Mari",
@@ -19,6 +19,19 @@ const SYSTEM_ADMIN: User = {
 
 // Default password for system admin
 const SYSTEM_ADMIN_PASSWORD = "Password123"
+
+// Previously created user by the user
+const INITIAL_USERS = [
+  {
+    user: {
+      id: "user_jp_admin_001",
+      username: "JP",
+      role: "admin" as const,
+      createdAt: "2024-01-15T10:30:00.000Z",
+    },
+    password: "xNgU7ADa",
+  },
+]
 
 class AuthService {
   private users: Map<string, { user: User; password: string }> = new Map()
@@ -36,21 +49,49 @@ class AuthService {
 
     try {
       await this.loadUsersFromServer()
+
       // Always ensure system admin exists
       this.users.set(SYSTEM_ADMIN.username, {
         user: SYSTEM_ADMIN,
         password: SYSTEM_ADMIN_PASSWORD,
       })
+
+      // Add initial users if they don't exist
+      await this.addInitialUsers()
+
       this.initialized = true
     } catch (error) {
       console.error("Failed to initialize auth service:", error)
-      // Initialize with just system admin if loading fails
+      // Initialize with system admin and initial users if loading fails
       this.users.clear()
       this.users.set(SYSTEM_ADMIN.username, {
         user: SYSTEM_ADMIN,
         password: SYSTEM_ADMIN_PASSWORD,
       })
+
+      // Add initial users
+      INITIAL_USERS.forEach((userData) => {
+        this.users.set(userData.user.username, userData)
+      })
+
       this.initialized = true
+    }
+  }
+
+  private async addInitialUsers() {
+    let needsSync = false
+
+    // Add initial users if they don't already exist
+    INITIAL_USERS.forEach((userData) => {
+      if (!this.users.has(userData.user.username)) {
+        this.users.set(userData.user.username, userData)
+        needsSync = true
+      }
+    })
+
+    // Save to server if we added any new users
+    if (needsSync) {
+      await this.saveUsersToServer()
     }
   }
 
@@ -224,6 +265,11 @@ class AuthService {
       await this.initialize()
     }
 
+    // Prevent modification of system admin
+    if (userId === SYSTEM_ADMIN.id) {
+      throw new Error("Cannot modify system administrator")
+    }
+
     for (const [username, userData] of this.users.entries()) {
       if (userData.user.id === userId) {
         const updatedUser = { ...userData.user, ...updates }
@@ -246,6 +292,11 @@ class AuthService {
   async updatePassword(userId: string, newPassword: string): Promise<void> {
     if (!this.initialized && typeof window !== "undefined") {
       await this.initialize()
+    }
+
+    // Prevent modification of system admin password
+    if (userId === SYSTEM_ADMIN.id) {
+      throw new Error("Cannot modify system administrator password")
     }
 
     for (const [username, userData] of this.users.entries()) {
@@ -291,11 +342,15 @@ class AuthService {
         password: SYSTEM_ADMIN_PASSWORD,
       })
 
-      // Return ALL users including those created by admin, but filter out system admin
+      // Return ALL users including system admin
       return Array.from(this.users.values())
         .map((data) => data.user)
-        .filter((user) => user.id !== SYSTEM_ADMIN.id)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .sort((a, b) => {
+          // Sort system admin first, then by creation date
+          if (a.id === SYSTEM_ADMIN.id) return -1
+          if (b.id === SYSTEM_ADMIN.id) return 1
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        })
     } catch (error) {
       console.error("Error getting all users:", error)
       return []
@@ -315,6 +370,11 @@ class AuthService {
     return null
   }
 
+  // Method to check if user is system admin
+  isSystemAdmin(userId: string): boolean {
+    return userId === SYSTEM_ADMIN.id
+  }
+
   // Method to check if service is ready
   isReady(): boolean {
     return this.initialized
@@ -325,7 +385,7 @@ class AuthService {
     if (!this.initialized && typeof window !== "undefined") {
       await this.initialize()
     }
-    return this.users.size - 1 // Subtract 1 for system admin
+    return this.users.size
   }
 
   // Method to force refresh users from server
