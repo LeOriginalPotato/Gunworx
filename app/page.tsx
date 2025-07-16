@@ -1674,83 +1674,181 @@ export default function GunworxTracker() {
                   </div>
                 </div>
 
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Stock No</TableHead>
-                        <TableHead>Make/Type</TableHead>
-                        <TableHead>Serial No</TableHead>
-                        <TableHead>Owner</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredFirearms.slice(0, 100).map((firearm) => (
-                        <TableRow key={firearm.id}>
-                          <TableCell className="font-medium">
-                            {firearm.stockNo}
-                            {firearm.originalStockNo && (
-                              <div className="text-xs text-gray-500">({firearm.originalStockNo})</div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{firearm.make}</div>
-                              <div className="text-sm text-gray-500">
-                                {firearm.type} • {firearm.caliber}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">{firearm.serialNo}</TableCell>
-                          <TableCell>
-                            {firearm.fullName || firearm.surname ? (
-                              <div>
-                                <div className="font-medium">
-                                  {firearm.fullName} {firearm.surname}
-                                </div>
-                                <div className="text-sm text-gray-500">{firearm.registrationId}</div>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(firearm.status)}</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-1">
-                              <Button variant="outline" size="sm" onClick={() => handleEditFirearm(firearm)}>
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteFirearm(firearm.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openSignaturePad(firearm.id, "collection")}
-                              >
-                                <PenTool className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                {/* Side-by-side layout for Active and Collected Firearms */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Active Firearms Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <Package className="w-5 h-5 text-green-600" />
+                        Active Firearms ({filteredFirearms.filter((f) => f.status !== "collected").length})
+                      </h3>
+                    </div>
 
-                {filteredFirearms.length > 100 && (
-                  <div className="mt-4 text-center text-sm text-gray-500">
-                    Showing first 100 of {filteredFirearms.length.toLocaleString()} results. Use search to narrow down
-                    results.
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Stock No</TableHead>
+                            <TableHead>Make/Type</TableHead>
+                            <TableHead>Serial No</TableHead>
+                            <TableHead>Owner</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredFirearms
+                            .filter((firearm) => firearm.status !== "collected")
+                            .slice(0, 50)
+                            .map((firearm) => (
+                              <TableRow key={firearm.id}>
+                                <TableCell className="font-medium">
+                                  {firearm.stockNo}
+                                  {firearm.originalStockNo && (
+                                    <div className="text-xs text-gray-500">({firearm.originalStockNo})</div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{firearm.make}</div>
+                                    <div className="text-sm text-gray-500">
+                                      {firearm.type} • {firearm.caliber}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-mono text-sm">{firearm.serialNo}</TableCell>
+                                <TableCell>
+                                  {firearm.fullName || firearm.surname ? (
+                                    <div>
+                                      <div className="font-medium">
+                                        {firearm.fullName} {firearm.surname}
+                                      </div>
+                                      <div className="text-sm text-gray-500">{firearm.registrationId}</div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>{getStatusBadge(firearm.status)}</TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-1">
+                                    <Button variant="outline" size="sm" onClick={() => handleEditFirearm(firearm)}>
+                                      <Edit className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteFirearm(firearm.id)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => openSignaturePad(firearm.id, "collection")}
+                                    >
+                                      <PenTool className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {filteredFirearms.filter((f) => f.status !== "collected").length > 50 && (
+                      <div className="text-center text-sm text-gray-500">
+                        Showing first 50 of{" "}
+                        {filteredFirearms.filter((f) => f.status !== "collected").length.toLocaleString()} active
+                        firearms. Use search to narrow down results.
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {/* Collected Firearms Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-blue-600" />
+                        Collected Firearms ({filteredFirearms.filter((f) => f.status === "collected").length})
+                      </h3>
+                    </div>
+
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Original Stock</TableHead>
+                            <TableHead>Make/Type</TableHead>
+                            <TableHead>Date Delivered</TableHead>
+                            <TableHead>Delivered To</TableHead>
+                            <TableHead>Remarks</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredFirearms
+                            .filter((firearm) => firearm.status === "collected")
+                            .slice(0, 50)
+                            .map((firearm) => (
+                              <TableRow key={firearm.id} className="bg-blue-50">
+                                <TableCell className="font-medium">
+                                  {firearm.originalStockNo || firearm.stockNo}
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{firearm.make || "N/A"}</div>
+                                    <div className="text-sm text-gray-500">
+                                      {firearm.type || "N/A"} • {firearm.caliber || "N/A"}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{firearm.dateDelivered || "N/A"}</TableCell>
+                                <TableCell>{firearm.deliveredTo || "N/A"}</TableCell>
+                                <TableCell className="max-w-xs">
+                                  <div className="truncate" title={firearm.remarks}>
+                                    {firearm.remarks || "N/A"}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-1">
+                                    <Button variant="outline" size="sm" onClick={() => handleEditFirearm(firearm)}>
+                                      <Edit className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteFirearm(firearm.id)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                    {firearm.collectionSignature && (
+                                      <div className="flex items-center text-xs text-green-600 ml-2">
+                                        <PenTool className="w-3 h-3 mr-1" />
+                                        Signed
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {filteredFirearms.filter((f) => f.status === "collected").length > 50 && (
+                      <div className="text-center text-sm text-gray-500">
+                        Showing first 50 of{" "}
+                        {filteredFirearms.filter((f) => f.status === "collected").length.toLocaleString()} collected
+                        firearms. Use search to narrow down results.
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

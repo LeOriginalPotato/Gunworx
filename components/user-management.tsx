@@ -27,7 +27,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, Edit, Trash2, Shield, UserIcon, Eye, EyeOff } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Plus, Edit, Trash2, Shield, UserIcon, Eye, EyeOff, Users, Lock, UserCheck } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
 interface UserManagementProps {
@@ -36,6 +37,7 @@ interface UserManagementProps {
 
 export function UserManagement({ currentUser }: UserManagementProps) {
   const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -54,19 +56,75 @@ export function UserManagement({ currentUser }: UserManagementProps) {
   // Load users on component mount
   useEffect(() => {
     loadUsers()
+
+    // Auto-refresh every 30 seconds to sync with server
+    const interval = setInterval(loadUsers, 30000)
+    return () => clearInterval(interval)
   }, [])
 
-  const loadUsers = () => {
-    const allUsers = authService.getUsers()
-    setUsers(allUsers)
+  const loadUsers = async () => {
+    try {
+      setIsLoading(true)
+      console.log("Loading users...")
+
+      const userList = await authService.getUsers()
+      console.log("Raw user list:", userList)
+
+      // Ensure we have valid user objects
+      const validUsers = userList.filter((user): user is User => {
+        return (
+          user &&
+          typeof user === "object" &&
+          typeof user.id === "string" &&
+          typeof user.username === "string" &&
+          typeof user.password === "string" &&
+          typeof user.role === "string" &&
+          typeof user.createdAt === "string"
+        )
+      })
+
+      console.log("Valid users:", validUsers)
+
+      // Sort users: system admin first, then by role, then by username
+      const sortedUsers = validUsers.sort((a, b) => {
+        // System admin first
+        if (a.isSystemAdmin && !b.isSystemAdmin) return -1
+        if (b.isSystemAdmin && !a.isSystemAdmin) return 1
+
+        // Then by role (admin before user)
+        if (a.role === "admin" && b.role === "user") return -1
+        if (a.role === "user" && b.role === "admin") return 1
+
+        // Finally by username
+        return (a.username || "").localeCompare(b.username || "")
+      })
+
+      console.log("Sorted users:", sortedUsers)
+      setUsers(sortedUsers)
+    } catch (err) {
+      console.error("Failed to load users:", err)
+      setError("Failed to load users")
+      setUsers([])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleAddUser = () => {
+  const generatePassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    let password = ""
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return password
+  }
+
+  const handleAddUser = async () => {
     setError("")
     setSuccess("")
 
-    if (!newUser.username || !newUser.password) {
-      setError("Username and password are required")
+    if (!newUser.username) {
+      setError("Username is required")
       return
     }
 
@@ -75,22 +133,39 @@ export function UserManagement({ currentUser }: UserManagementProps) {
       return
     }
 
-    if (newUser.password.length < 6) {
+    const password = newUser.password || generatePassword()
+
+    if (password.length < 6) {
       setError("Password must be at least 6 characters long")
       return
     }
 
-    if (authService.userExists(newUser.username)) {
+    if (await authService.userExists(newUser.username)) {
       setError("Username already exists")
       return
     }
 
     try {
-      const createdUser = authService.createUser(newUser)
-      loadUsers()
+      const createdUser = await authService.createUser({
+        username: newUser.username,
+        password,
+        role: newUser.role,
+      })
+
+      await loadUsers()
       setNewUser({ username: "", password: "", role: "user" })
       setIsAddDialogOpen(false)
-      setSuccess(`User "${createdUser.username}" created successfully. Password: ${newUser.password}`)
+
+      alert(
+        `User created successfully!
+
+Username: ${createdUser.username}
+Password: ${password}
+
+Please provide these credentials to the user.`,
+      )
+
+      setSuccess(`User "${createdUser.username}" created successfully`)
     } catch (err) {
       setError("Failed to create user")
     }
@@ -98,7 +173,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
 
   const handleEditUser = (user: User) => {
     // Prevent editing the system admin user
-    if (user.username === "admin" && user.id === "1") {
+    if (user.isSystemAdmin) {
       setError("Cannot edit the system administrator account")
       return
     }
@@ -108,7 +183,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     setError("")
   }
 
-  const handleUpdateUser = () => {
+  const handleUpdateUser = async () => {
     if (!editingUser) return
 
     setError("")
@@ -129,19 +204,28 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     }
 
     // Check if username exists for other users
-    const existingUser = authService
-      .getUsers()
-      .find((u) => u.username === editingUser.username && u.id !== editingUser.id)
+    const existingUsers = await authService.getUsers()
+    const existingUser = existingUsers.find((u) => u.username === editingUser.username && u.id !== editingUser.id)
     if (existingUser) {
       setError("Username already exists")
       return
     }
 
     try {
-      authService.updateUser(editingUser)
-      loadUsers()
+      await authService.updateUser(editingUser)
+      await loadUsers()
       setIsEditDialogOpen(false)
       setEditingUser(null)
+
+      alert(
+        `User updated successfully!
+
+Username: ${editingUser.username}
+Password: ${editingUser.password}
+
+Please provide the updated credentials to the user.`,
+      )
+
       setSuccess(`User "${editingUser.username}" updated successfully`)
     } catch (err) {
       setError("Failed to update user")
@@ -152,7 +236,7 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     const user = users.find((u) => u.id === userId)
 
     // Prevent deleting the system admin user
-    if (user && user.username === "admin" && user.id === "1") {
+    if (user?.isSystemAdmin) {
       setError("Cannot delete the system administrator account")
       return
     }
@@ -168,13 +252,13 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     setError("")
   }
 
-  const confirmDeleteUser = () => {
+  const confirmDeleteUser = async () => {
     if (!deletingUserId) return
 
     try {
       const userToDelete = users.find((u) => u.id === deletingUserId)
-      authService.deleteUser(deletingUserId)
-      loadUsers()
+      await authService.deleteUser(deletingUserId)
+      await loadUsers()
       setIsDeleteDialogOpen(false)
       setDeletingUserId(null)
       setSuccess(`User "${userToDelete?.username}" deleted successfully`)
@@ -190,260 +274,363 @@ export function UserManagement({ currentUser }: UserManagementProps) {
     }))
   }
 
-  const getRoleBadge = (role: string) => {
-    return role === "admin" ? (
-      <Badge className="bg-red-100 text-red-800">
+  const getRoleBadge = (user: User) => {
+    if (user.isSystemAdmin) {
+      return (
+        <Badge className="bg-purple-100 text-purple-800">
+          <Lock className="w-3 h-3 mr-1" />
+          System Admin
+        </Badge>
+      )
+    }
+
+    return user.role === "admin" ? (
+      <Badge className="bg-orange-100 text-orange-800">
         <Shield className="w-3 h-3 mr-1" />
-        Admin
+        Administrator
       </Badge>
     ) : (
-      <Badge className="bg-blue-100 text-blue-800">
+      <Badge className="bg-green-100 text-green-800">
         <UserIcon className="w-3 h-3 mr-1" />
         User
       </Badge>
     )
   }
 
-  const isSystemAdmin = (user: User) => {
-    return user.username === "admin" && user.id === "1"
+  // Calculate statistics
+  const stats = {
+    total: users.length,
+    systemAdmins: users.filter((u) => u.isSystemAdmin).length,
+    admins: users.filter((u) => u.role === "admin" && !u.isSystemAdmin).length,
+    users: users.filter((u) => u.role === "user").length,
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <Users className="h-8 w-8 text-blue-600 mx-auto mb-2 animate-spin" />
+          <p className="text-gray-600">Loading users...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>Manage system users and their permissions</CardDescription>
-            </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                  <DialogDescription>Create a new user account for the system</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="new-username">Username *</Label>
-                    <Input
-                      id="new-username"
-                      value={newUser.username}
-                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                      placeholder="Enter username (min 3 characters)"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-password">Password *</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newUser.password}
-                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                      placeholder="Enter password (min 6 characters)"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-role">Role</Label>
-                    <Select
-                      value={newUser.role}
-                      onValueChange={(value: "admin" | "user") => setNewUser({ ...newUser, role: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-                  <div className="flex gap-2">
-                    <Button onClick={handleAddUser} className="flex-1">
-                      Create User
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                  </div>
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Users</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {success && (
-            <Alert className="mb-4 border-green-200 bg-green-50">
-              <AlertDescription className="text-green-800">{success}</AlertDescription>
-            </Alert>
-          )}
+                <Users className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">System Admins</p>
+                  <p className="text-2xl font-bold text-purple-600">{stats.systemAdmins}</p>
+                </div>
+                <Lock className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Administrators</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.admins}</p>
+                </div>
+                <UserCheck className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Regular Users</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.users}</p>
+                </div>
+                <UserIcon className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Password</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id} className={isSystemAdmin(user) ? "bg-yellow-50" : ""}>
-                    <TableCell className="font-medium">
-                      {user.username}
-                      {isSystemAdmin(user) && (
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          System Admin
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-sm">{showPasswords[user.id] ? user.password : "••••••••"}</span>
-                        <Button variant="ghost" size="sm" onClick={() => togglePasswordVisibility(user.id)}>
-                          {showPasswords[user.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditUser(user)}
-                          disabled={isSystemAdmin(user)}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-red-600 hover:text-red-700"
-                          disabled={isSystemAdmin(user) || user.id === currentUser.id}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-blue-900 mb-2">User Management Notes</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• System administrator account cannot be edited or deleted</li>
-              <li>• Users cannot delete their own accounts</li>
-              <li>• Passwords are stored locally and visible to administrators</li>
-              <li>• Provide credentials directly to users when creating accounts</li>
-              <li>• Admin users have full system access including user management</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Update user account information</DialogDescription>
-          </DialogHeader>
-          {editingUser && (
-            <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
               <div>
-                <Label htmlFor="edit-username">Username *</Label>
-                <Input
-                  id="edit-username"
-                  value={editingUser.username}
-                  onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
-                  placeholder="Enter username"
-                />
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>Manage system users and their permissions</CardDescription>
               </div>
-              <div>
-                <Label htmlFor="edit-password">Password *</Label>
-                <Input
-                  id="edit-password"
-                  type="password"
-                  value={editingUser.password}
-                  onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
-                  placeholder="Enter password"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-role">Role</Label>
-                <Select
-                  value={editingUser.role}
-                  onValueChange={(value: "admin" | "user") => setEditingUser({ ...editingUser, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              <div className="flex gap-2">
-                <Button onClick={handleUpdateUser} className="flex-1">
-                  Update User
-                </Button>
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New User</DialogTitle>
+                    <DialogDescription>Create a new user account for the system</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="new-username">Username *</Label>
+                      <Input
+                        id="new-username"
+                        value={newUser.username}
+                        onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                        placeholder="Enter username (min 3 characters)"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="new-password">Password (leave empty to auto-generate)</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                        placeholder="Enter password or leave empty"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="new-role">Role</Label>
+                      <Select
+                        value={newUser.role}
+                        onValueChange={(value: "admin" | "user") => setNewUser({ ...newUser, role: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="admin">Administrator</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                    <div className="flex gap-2">
+                      <Button onClick={handleAddUser} className="flex-1" disabled={!newUser.username}>
+                        Create User
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {success && (
+              <Alert className="mb-4 border-green-200 bg-green-50">
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
+              </Alert>
+            )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteUser}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+            {users.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No users found</p>
+                <p className="text-sm text-gray-400">Click "Add User" to create the first user</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Password</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Last Login</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id} className={user.isSystemAdmin ? "bg-purple-50" : ""}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {user.isSystemAdmin && <Lock className="w-4 h-4 text-purple-600" />}
+                            {user.username}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                              {showPasswords[user.id] ? user.password : "••••••••"}
+                            </code>
+                            <Button variant="ghost" size="sm" onClick={() => togglePasswordVisibility(user.id)}>
+                              {showPasswords[user.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getRoleBadge(user)}</TableCell>
+                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditUser(user)}
+                                  disabled={user.isSystemAdmin}
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {user.isSystemAdmin ? "Cannot edit system admin" : "Edit user"}
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  disabled={user.isSystemAdmin || user.id === currentUser.id}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {user.isSystemAdmin
+                                  ? "Cannot delete system admin"
+                                  : user.id === currentUser.id
+                                    ? "Cannot delete yourself"
+                                    : "Delete user"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-semibold text-blue-900 mb-2">User Management Notes</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• System administrator account cannot be edited or deleted</li>
+                <li>• Users cannot delete their own accounts</li>
+                <li>• Passwords are visible to administrators for credential sharing</li>
+                <li>• Provide credentials directly to users when creating accounts</li>
+                <li>• Admin users have full system access including user management</li>
+                <li>• Data syncs with server automatically every 30 seconds</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Edit User Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>Update user account information</DialogDescription>
+            </DialogHeader>
+            {editingUser && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-username">Username *</Label>
+                  <Input
+                    id="edit-username"
+                    value={editingUser.username}
+                    onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                    placeholder="Enter username"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-password">Password *</Label>
+                  <Input
+                    id="edit-password"
+                    type="password"
+                    value={editingUser.password}
+                    onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                    placeholder="Enter password"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-role">Role</Label>
+                  <Select
+                    value={editingUser.role}
+                    onValueChange={(value: "admin" | "user") => setEditingUser({ ...editingUser, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="admin">Administrator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                <div className="flex gap-2">
+                  <Button onClick={handleUpdateUser} className="flex-1">
+                    Update User
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the user account.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteUser}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
   )
 }
