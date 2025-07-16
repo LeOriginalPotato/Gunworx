@@ -8,6 +8,9 @@ export interface User {
   lastLogin?: string
 }
 
+// Returns true only in the browser
+const isBrowser = () => typeof window !== "undefined"
+
 class AuthService {
   private readonly STORAGE_KEY = "gunworx_current_user"
   private readonly USERS_KEY = "gunworx_users"
@@ -17,6 +20,7 @@ class AuthService {
   }
 
   private initializeDefaultUsers() {
+    if (!isBrowser()) return // <-- skip on the server
     const existingUsers = this.getUsers()
     if (existingUsers.length === 0) {
       const defaultUsers: User[] = [
@@ -30,11 +34,14 @@ class AuthService {
         },
       ]
 
-      localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultUsers))
+      if (isBrowser()) {
+        localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultUsers))
+      }
     }
   }
 
   private getUsers(): User[] {
+    if (!isBrowser()) return []
     try {
       const users = localStorage.getItem(this.USERS_KEY)
       return users ? JSON.parse(users) : []
@@ -44,6 +51,7 @@ class AuthService {
   }
 
   private saveUsers(users: User[]) {
+    if (!isBrowser()) return
     localStorage.setItem(this.USERS_KEY, JSON.stringify(users))
   }
 
@@ -59,7 +67,9 @@ class AuthService {
       this.saveUsers(updatedUsers)
 
       // Store current user
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user))
+      if (isBrowser()) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user))
+      }
       return user
     }
 
@@ -67,7 +77,9 @@ class AuthService {
   }
 
   logout() {
-    localStorage.removeItem(this.STORAGE_KEY)
+    if (isBrowser()) {
+      localStorage.removeItem(this.STORAGE_KEY)
+    }
   }
 
   getCurrentUser(): User | null {
