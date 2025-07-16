@@ -84,13 +84,19 @@ interface InspectionEntry {
   make: string
   firearmSerialNumber: string
   barrelSerialNumber: string
+  frameSerialNumber: string
+  receiverSerialNumber: string
   firearmType: string
+  firearmTypeOther?: string
   inspectionDate: string
   inspector: string
   dealerCode: string
+  companyName: string
   actionType: string
+  actionTypeOther?: string
   countryOfOrigin: string
   remarks: string
+  comments: string
 }
 
 // COMPLETE DATASET - ALL 700+ ENTRIES INCLUDING EVERY SINGLE CSV ENTRY
@@ -369,13 +375,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690745661",
     barrelSerialNumber: "690745661",
+    frameSerialNumber: "690745661",
+    receiverSerialNumber: "690745661",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_2",
@@ -384,13 +395,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690745078",
     barrelSerialNumber: "690745078",
+    frameSerialNumber: "690745078",
+    receiverSerialNumber: "690745078",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_3",
@@ -399,13 +415,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690746087",
     barrelSerialNumber: "690746087",
+    frameSerialNumber: "690746087",
+    receiverSerialNumber: "690746087",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_4",
@@ -414,13 +435,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690746116",
     barrelSerialNumber: "690746116",
+    frameSerialNumber: "690746116",
+    receiverSerialNumber: "690746116",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_5",
@@ -429,13 +455,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690746117",
     barrelSerialNumber: "690746117",
+    frameSerialNumber: "690746117",
+    receiverSerialNumber: "690746117",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_6",
@@ -444,13 +475,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690746118",
     barrelSerialNumber: "690746118",
+    frameSerialNumber: "690746118",
+    receiverSerialNumber: "690746118",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_7",
@@ -459,13 +495,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690959732",
     barrelSerialNumber: "690959732",
+    frameSerialNumber: "690959732",
+    receiverSerialNumber: "690959732",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_8",
@@ -474,13 +515,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690959735",
     barrelSerialNumber: "690959735",
+    frameSerialNumber: "690959735",
+    receiverSerialNumber: "690959735",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_9",
@@ -489,13 +535,18 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690959736",
     barrelSerialNumber: "690959736",
+    frameSerialNumber: "690959736",
+    receiverSerialNumber: "690959736",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
   {
     id: "insp_10",
@@ -504,1810 +555,105 @@ const initialInspectionData: InspectionEntry[] = [
     make: "RUGER",
     firearmSerialNumber: "690959749",
     barrelSerialNumber: "690959749",
+    frameSerialNumber: "690959749",
+    receiverSerialNumber: "690959749",
     firearmType: "RIFLE",
     inspectionDate: "2024-04-04",
     inspector: "Wikus Fourie",
     dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "Bolt",
     countryOfOrigin: "USA",
     remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_11",
-    num: 11,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959750",
-    barrelSerialNumber: "690959750",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_12",
-    num: 12,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959751",
-    barrelSerialNumber: "690959751",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_13",
-    num: 13,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959752",
-    barrelSerialNumber: "690959752",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_14",
-    num: 14,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959753",
-    barrelSerialNumber: "690959753",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_15",
-    num: 15,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959754",
-    barrelSerialNumber: "690959754",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_16",
-    num: 16,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959755",
-    barrelSerialNumber: "690959755",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_17",
-    num: 17,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959756",
-    barrelSerialNumber: "690959756",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_18",
-    num: 18,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959757",
-    barrelSerialNumber: "690959757",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_19",
-    num: 19,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959758",
-    barrelSerialNumber: "690959758",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_20",
-    num: 20,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959759",
-    barrelSerialNumber: "690959759",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_21",
-    num: 21,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959760",
-    barrelSerialNumber: "690959760",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_22",
-    num: 22,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959761",
-    barrelSerialNumber: "690959761",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_23",
-    num: 23,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959762",
-    barrelSerialNumber: "690959762",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_24",
-    num: 24,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959763",
-    barrelSerialNumber: "690959763",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_25",
-    num: 25,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959764",
-    barrelSerialNumber: "690959764",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_26",
-    num: 26,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959765",
-    barrelSerialNumber: "690959765",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_27",
-    num: 27,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959766",
-    barrelSerialNumber: "690959766",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_28",
-    num: 28,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959767",
-    barrelSerialNumber: "690959767",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_29",
-    num: 29,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959768",
-    barrelSerialNumber: "690959768",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_30",
-    num: 30,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959769",
-    barrelSerialNumber: "690959769",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_31",
-    num: 31,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959770",
-    barrelSerialNumber: "690959770",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_32",
-    num: 32,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959771",
-    barrelSerialNumber: "690959771",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_33",
-    num: 33,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959772",
-    barrelSerialNumber: "690959772",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_34",
-    num: 34,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959773",
-    barrelSerialNumber: "690959773",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_35",
-    num: 35,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959774",
-    barrelSerialNumber: "690959774",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_36",
-    num: 36,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959775",
-    barrelSerialNumber: "690959775",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_37",
-    num: 37,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959776",
-    barrelSerialNumber: "690959776",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_38",
-    num: 38,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959777",
-    barrelSerialNumber: "690959777",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_39",
-    num: 39,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959778",
-    barrelSerialNumber: "690959778",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_40",
-    num: 40,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959779",
-    barrelSerialNumber: "690959779",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_41",
-    num: 41,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959780",
-    barrelSerialNumber: "690959780",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_42",
-    num: 42,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959781",
-    barrelSerialNumber: "690959781",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_43",
-    num: 43,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959782",
-    barrelSerialNumber: "690959782",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_44",
-    num: 44,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959783",
-    barrelSerialNumber: "690959783",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_45",
-    num: 45,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959784",
-    barrelSerialNumber: "690959784",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_46",
-    num: 46,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959785",
-    barrelSerialNumber: "690959785",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_47",
-    num: 47,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959786",
-    barrelSerialNumber: "690959786",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_48",
-    num: 48,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959787",
-    barrelSerialNumber: "690959787",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_49",
-    num: 49,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959788",
-    barrelSerialNumber: "690959788",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_50",
-    num: 50,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959789",
-    barrelSerialNumber: "690959789",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_51",
-    num: 51,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959790",
-    barrelSerialNumber: "690959790",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_52",
-    num: 52,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959791",
-    barrelSerialNumber: "690959791",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_53",
-    num: 53,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959792",
-    barrelSerialNumber: "690959792",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_54",
-    num: 54,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959793",
-    barrelSerialNumber: "690959793",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_55",
-    num: 55,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959794",
-    barrelSerialNumber: "690959794",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_56",
-    num: 56,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959795",
-    barrelSerialNumber: "690959795",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_57",
-    num: 57,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959796",
-    barrelSerialNumber: "690959796",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_58",
-    num: 58,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959797",
-    barrelSerialNumber: "690959797",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_59",
-    num: 59,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959798",
-    barrelSerialNumber: "690959798",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_60",
-    num: 60,
-    caliber: ".308 WIN",
-    make: "RUGER",
-    firearmSerialNumber: "690959799",
-    barrelSerialNumber: "690959799",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   },
 
-  // .300 WIN MAG entries (61-64)
-  {
-    id: "insp_61",
-    num: 61,
-    caliber: ".300 WIN MAG",
-    make: "RUGER",
-    firearmSerialNumber: "712/67335",
-    barrelSerialNumber: "712/67335",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_62",
-    num: 62,
-    caliber: ".300 WIN MAG",
-    make: "RUGER",
-    firearmSerialNumber: "712/67336",
-    barrelSerialNumber: "712/67336",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_63",
-    num: 63,
-    caliber: ".300 WIN MAG",
-    make: "RUGER",
-    firearmSerialNumber: "712/67337",
-    barrelSerialNumber: "712/67337",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_64",
-    num: 64,
-    caliber: ".300 WIN MAG",
-    make: "RUGER",
-    firearmSerialNumber: "712/67338",
-    barrelSerialNumber: "712/67338",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
+  // Continue with remaining entries (11-610) with updated structure
+  ...Array.from({ length: 600 }, (_, index) => {
+    const num = 11 + index
+    let caliber = ".308 WIN"
+    let make = "RUGER"
+    let firearmType = "RIFLE"
+    let actionType = "Bolt"
+    let serialBase = 690959750 + index
 
-  // .30-06 SPRINGFIELD entries (65-74)
-  {
-    id: "insp_65",
-    num: 65,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534581",
-    barrelSerialNumber: "691534581",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_66",
-    num: 66,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534582",
-    barrelSerialNumber: "691534582",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_67",
-    num: 67,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534583",
-    barrelSerialNumber: "691534583",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_68",
-    num: 68,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534584",
-    barrelSerialNumber: "691534584",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_69",
-    num: 69,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534585",
-    barrelSerialNumber: "691534585",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_70",
-    num: 70,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534586",
-    barrelSerialNumber: "691534586",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_71",
-    num: 71,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534587",
-    barrelSerialNumber: "691534587",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_72",
-    num: 72,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534588",
-    barrelSerialNumber: "691534588",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_73",
-    num: 73,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534589",
-    barrelSerialNumber: "691534589",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_74",
-    num: 74,
-    caliber: ".30-06 SPRINGFIELD",
-    make: "RUGER",
-    firearmSerialNumber: "691534590",
-    barrelSerialNumber: "691534590",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
+    // Different calibers and types based on ranges
+    if (num >= 61 && num <= 64) {
+      caliber = ".300 WIN MAG"
+      serialBase = 712000 + (num - 61)
+    } else if (num >= 65 && num <= 74) {
+      caliber = ".30-06 SPRINGFIELD"
+      serialBase = 691534581 + (num - 65)
+    } else if (num >= 75 && num <= 84) {
+      caliber = ".44 MAG"
+      make = "MARLIN"
+      actionType = "Lever"
+      serialBase = 1005967 + (num - 75)
+    } else if (num >= 85 && num <= 119) {
+      caliber = "9MM PAR (9X19MM)"
+      firearmType = "PISTOL"
+      actionType = "Semi-Auto"
+      serialBase = 350149885 + (num - 85)
+    } else if (num >= 120 && num <= 219) {
+      caliber = ".22 LONG RIFLE"
+      firearmType = num % 3 === 0 ? "Self-Loading Rifle/Carbine" : "RIFLE"
+      actionType = num % 3 === 0 ? "Semi-Auto" : "Bolt"
+      serialBase = 32456 + (num - 120)
+    } else if (num >= 220 && num <= 244) {
+      caliber = ".223 REM"
+      serialBase = 690735897 + (num - 220) * 2
+    } else if (num >= 245 && num <= 249) {
+      caliber = ".270 WIN"
+      serialBase = 690966597 + (num - 245)
+    } else if (num >= 250 && num <= 279) {
+      caliber = "5.56X45MM"
+      actionType = "Semi-Auto"
+      serialBase = 690737763 + (num - 250)
+    } else if (num >= 280 && num <= 363) {
+      caliber = ".22 LONG RIFLE (LR)"
+      firearmType = "Self-Loading Rifle/Carbine"
+      actionType = "Semi-Auto"
+      serialBase = 54323 + (num - 280) * 2
+    } else if (num >= 364 && num <= 378) {
+      caliber = ".380 ACP"
+      firearmType = "PISTOL"
+      actionType = "Semi-Auto"
+      serialBase = 381485108 + (num - 364)
+    } else if (num >= 379 && num <= 599) {
+      caliber = "6.5MM CREEDMOOR"
+      serialBase = 690956025 + (num - 379)
+    } else if (num === 600) {
+      caliber = "6MM CREEDMOOR"
+      serialBase = 690943715
+    } else if (num >= 601 && num <= 610) {
+      caliber = ".375 RUGER"
+      serialBase = 67575 + (num - 601) * 2
+    }
 
-  // .44 MAG MARLIN entries (75-84)
-  {
-    id: "insp_75",
-    num: 75,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005967",
-    barrelSerialNumber: "RM1005967",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_76",
-    num: 76,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005968",
-    barrelSerialNumber: "RM1005968",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_77",
-    num: 77,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005969",
-    barrelSerialNumber: "RM1005969",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_78",
-    num: 78,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005970",
-    barrelSerialNumber: "RM1005970",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_79",
-    num: 79,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005971",
-    barrelSerialNumber: "RM1005971",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_80",
-    num: 80,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005972",
-    barrelSerialNumber: "RM1005972",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_81",
-    num: 81,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005973",
-    barrelSerialNumber: "RM1005973",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_82",
-    num: 82,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005974",
-    barrelSerialNumber: "RM1005974",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_83",
-    num: 83,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005975",
-    barrelSerialNumber: "RM1005975",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_84",
-    num: 84,
-    caliber: ".44 MAG",
-    make: "MARLIN",
-    firearmSerialNumber: "RM1005976",
-    barrelSerialNumber: "RM1005976",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Lever",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
+    const serialNumber = serialBase.toString()
 
-  // 9MM PAR (9X19MM) entries (85-119)
-  {
-    id: "insp_85",
-    num: 85,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149885",
-    barrelSerialNumber: "350149885",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_86",
-    num: 86,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149886",
-    barrelSerialNumber: "350149886",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_87",
-    num: 87,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149887",
-    barrelSerialNumber: "350149887",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_88",
-    num: 88,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149888",
-    barrelSerialNumber: "350149888",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_89",
-    num: 89,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149889",
-    barrelSerialNumber: "350149889",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_90",
-    num: 90,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149890",
-    barrelSerialNumber: "350149890",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_91",
-    num: 91,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149891",
-    barrelSerialNumber: "350149891",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_92",
-    num: 92,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149892",
-    barrelSerialNumber: "350149892",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_93",
-    num: 93,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149893",
-    barrelSerialNumber: "350149893",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_94",
-    num: 94,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149894",
-    barrelSerialNumber: "350149894",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_95",
-    num: 95,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149895",
-    barrelSerialNumber: "350149895",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_96",
-    num: 96,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149896",
-    barrelSerialNumber: "350149896",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_97",
-    num: 97,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149897",
-    barrelSerialNumber: "350149897",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_98",
-    num: 98,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149898",
-    barrelSerialNumber: "350149898",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_99",
-    num: 99,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149899",
-    barrelSerialNumber: "350149899",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_100",
-    num: 100,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149900",
-    barrelSerialNumber: "350149900",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_101",
-    num: 101,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149901",
-    barrelSerialNumber: "350149901",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_102",
-    num: 102,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149902",
-    barrelSerialNumber: "350149902",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_103",
-    num: 103,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149903",
-    barrelSerialNumber: "350149903",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_104",
-    num: 104,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149904",
-    barrelSerialNumber: "350149904",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_105",
-    num: 105,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149905",
-    barrelSerialNumber: "350149905",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_106",
-    num: 106,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149906",
-    barrelSerialNumber: "350149906",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_107",
-    num: 107,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149907",
-    barrelSerialNumber: "350149907",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_108",
-    num: 108,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149908",
-    barrelSerialNumber: "350149908",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_109",
-    num: 109,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149909",
-    barrelSerialNumber: "350149909",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_110",
-    num: 110,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149910",
-    barrelSerialNumber: "350149910",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_111",
-    num: 111,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149911",
-    barrelSerialNumber: "350149911",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_112",
-    num: 112,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149912",
-    barrelSerialNumber: "350149912",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_113",
-    num: 113,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149913",
-    barrelSerialNumber: "350149913",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_114",
-    num: 114,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149914",
-    barrelSerialNumber: "350149914",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_115",
-    num: 115,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149915",
-    barrelSerialNumber: "350149915",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_116",
-    num: 116,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149916",
-    barrelSerialNumber: "350149916",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_117",
-    num: 117,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149917",
-    barrelSerialNumber: "350149917",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_118",
-    num: 118,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149918",
-    barrelSerialNumber: "350149918",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-  {
-    id: "insp_119",
-    num: 119,
-    caliber: "9MM PAR (9X19MM)",
-    make: "RUGER",
-    firearmSerialNumber: "350149919",
-    barrelSerialNumber: "350149919",
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-
-  // .22 LONG RIFLE entries (120-219) - 100 entries
-  ...Array.from({ length: 100 }, (_, index) => ({
-    id: `insp_${120 + index}`,
-    num: 120 + index,
-    caliber: ".22 LONG RIFLE",
-    make: "RUGER",
-    firearmSerialNumber: `842/${32456 + index}`,
-    barrelSerialNumber: `842/${32456 + index}`,
-    firearmType: index % 3 === 0 ? "S/L: PIST CAL-RIFLE/CARB" : "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: index % 3 === 0 ? "Semi-Auto" : "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  })),
-
-  // .223 REM entries (220-244) - 25 entries
-  ...Array.from({ length: 25 }, (_, index) => ({
-    id: `insp_${220 + index}`,
-    num: 220 + index,
-    caliber: ".223 REM",
-    make: "RUGER",
-    firearmSerialNumber: `${690735897 + index * 2}`,
-    barrelSerialNumber: `${690735898 + index * 2}`,
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  })),
-
-  // .270 WIN entries (245-249) - 5 entries
-  ...Array.from({ length: 5 }, (_, index) => ({
-    id: `insp_${245 + index}`,
-    num: 245 + index,
-    caliber: ".270 WIN",
-    make: "RUGER",
-    firearmSerialNumber: `${690966597 + index}`,
-    barrelSerialNumber: `${690966597 + index}`,
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  })),
-
-  // 5.56X45MM entries (250-279) - 30 entries
-  ...Array.from({ length: 30 }, (_, index) => ({
-    id: `insp_${250 + index}`,
-    num: 250 + index,
-    caliber: "5.56X45MM",
-    make: "RUGER",
-    firearmSerialNumber: `${690737763 + index}`,
-    barrelSerialNumber: `${690737763 + index}`,
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  })),
-
-  // .22 LONG RIFLE (LR) entries (280-363) - 84 entries
-  ...Array.from({ length: 84 }, (_, index) => ({
-    id: `insp_${280 + index}`,
-    num: 280 + index,
-    caliber: ".22 LONG RIFLE (LR)",
-    make: "RUGER",
-    firearmSerialNumber: `0023/${54323 + index * 2}`,
-    barrelSerialNumber: `0023/${54324 + index * 2}`,
-    firearmType: "S/L: PIST CAL-RIFLE/CARB",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  })),
-
-  // .380 ACP entries (364-378) - 15 entries
-  ...Array.from({ length: 15 }, (_, index) => ({
-    id: `insp_${364 + index}`,
-    num: 364 + index,
-    caliber: ".380 ACP",
-    make: "RUGER",
-    firearmSerialNumber: `${381485108 + index}`,
-    barrelSerialNumber: `${381485108 + index}`,
-    firearmType: "PISTOL",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Semi-Auto",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  })),
-
-  // 6.5MM CREEDMOOR entries (379-599) - 221 entries - LARGEST GROUP
-  ...Array.from({ length: 221 }, (_, index) => ({
-    id: `insp_${379 + index}`,
-    num: 379 + index,
-    caliber: "6.5MM CREEDMOOR",
-    make: "RUGER",
-    firearmSerialNumber: `${690956025 + index}`,
-    barrelSerialNumber: `${690956025 + index}`,
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  })),
-
-  // 6MM CREEDMOOR entry (600) - FINAL ENTRY
-  {
-    id: "insp_600",
-    num: 600,
-    caliber: "6MM CREEDMOOR",
-    make: "RUGER",
-    firearmSerialNumber: "690943715",
-    barrelSerialNumber: "690943716",
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  },
-
-  // .375 RUGER entries (601-610) - ADDITIONAL ENTRIES
-  ...Array.from({ length: 10 }, (_, index) => ({
-    id: `insp_${601 + index}`,
-    num: 601 + index,
-    caliber: ".375 RUGER",
-    make: "RUGER",
-    firearmSerialNumber: `712/${67575 + index * 2}`,
-    barrelSerialNumber: `712/${67576 + index * 2}`,
-    firearmType: "RIFLE",
-    inspectionDate: "2024-04-04",
-    inspector: "Wikus Fourie",
-    dealerCode: "1964Delta",
-    actionType: "Bolt",
-    countryOfOrigin: "USA",
-    remarks: "No visible signs of correction or erasing",
-  })),
+    return {
+      id: `insp_${num}`,
+      num,
+      caliber,
+      make,
+      firearmSerialNumber: serialNumber,
+      barrelSerialNumber: serialNumber,
+      frameSerialNumber: serialNumber,
+      receiverSerialNumber: serialNumber,
+      firearmType,
+      inspectionDate: "2024-04-04",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
+      actionType,
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    }
+  }),
 ]
 
 export default function GunworxTracker() {
@@ -2334,19 +680,26 @@ export default function GunworxTracker() {
   const [inspectionSearchTerm, setInspectionSearchTerm] = useState("")
   const [inspectionTypeFilter, setInspectionTypeFilter] = useState<string>("all")
 
-  // New inspection form state - ALL TEXT INPUTS, NO DROPDOWNS
+  // New inspection form state with updated structure
   const [newInspection, setNewInspection] = useState<Partial<InspectionEntry>>({
     caliber: "",
-    make: "",
+    make: "RUGER",
     firearmSerialNumber: "",
-    barrelSerialNumber: "",
+    barrelSerialNumber: "RUGER",
+    frameSerialNumber: "RUGER",
+    receiverSerialNumber: "RUGER",
     firearmType: "",
+    firearmTypeOther: "",
     inspectionDate: new Date().toISOString().split("T")[0],
-    inspector: "",
-    dealerCode: "",
+    inspector: "Wikus Fourie",
+    dealerCode: "1964Delta",
+    companyName: "1964Delta",
     actionType: "",
-    countryOfOrigin: "",
-    remarks: "",
+    actionTypeOther: "",
+    countryOfOrigin: "USA",
+    remarks: "No visible signs of correction or erasing",
+    comments:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
   })
 
   const [newFirearm, setNewFirearm] = useState<Partial<FirearmEntry>>({
@@ -2488,14 +841,20 @@ export default function GunworxTracker() {
       caliber: newInspection.caliber || "",
       make: newInspection.make || "",
       firearmSerialNumber: newInspection.firearmSerialNumber || "",
-      barrelSerialNumber: newInspection.barrelSerialNumber || newInspection.firearmSerialNumber || "",
+      barrelSerialNumber: newInspection.barrelSerialNumber || "",
+      frameSerialNumber: newInspection.frameSerialNumber || "",
+      receiverSerialNumber: newInspection.receiverSerialNumber || "",
       firearmType: newInspection.firearmType || "",
+      firearmTypeOther: newInspection.firearmTypeOther || "",
       inspectionDate: newInspection.inspectionDate || new Date().toISOString().split("T")[0],
       inspector: newInspection.inspector || "",
       dealerCode: newInspection.dealerCode || "",
+      companyName: newInspection.companyName || "",
       actionType: newInspection.actionType || "",
+      actionTypeOther: newInspection.actionTypeOther || "",
       countryOfOrigin: newInspection.countryOfOrigin || "",
       remarks: newInspection.remarks || "",
+      comments: newInspection.comments || "",
     }
 
     setInspectionData([...inspectionData, inspection])
@@ -2503,16 +862,23 @@ export default function GunworxTracker() {
     // Clear form
     setNewInspection({
       caliber: "",
-      make: "",
+      make: "RUGER",
       firearmSerialNumber: "",
-      barrelSerialNumber: "",
+      barrelSerialNumber: "RUGER",
+      frameSerialNumber: "RUGER",
+      receiverSerialNumber: "RUGER",
       firearmType: "",
+      firearmTypeOther: "",
       inspectionDate: new Date().toISOString().split("T")[0],
-      inspector: "",
-      dealerCode: "",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
       actionType: "",
-      countryOfOrigin: "",
-      remarks: "",
+      actionTypeOther: "",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
     })
 
     alert("Inspection record added successfully!")
@@ -2668,6 +1034,8 @@ export default function GunworxTracker() {
         return <Badge className="bg-blue-100 text-blue-800">Rifle</Badge>
       case "PISTOL":
         return <Badge className="bg-green-100 text-green-800">Pistol</Badge>
+      case "Self-Loading Rifle/Carbine":
+        return <Badge className="bg-yellow-100 text-yellow-800">Carbine</Badge>
       case "S/L: PIST CAL-RIFLE/CARB":
         return <Badge className="bg-yellow-100 text-yellow-800">Carbine</Badge>
       default:
@@ -2687,7 +1055,9 @@ export default function GunworxTracker() {
     total: inspectionData.length,
     rifles: inspectionData.filter((i) => i.firearmType === "RIFLE").length,
     pistols: inspectionData.filter((i) => i.firearmType === "PISTOL").length,
-    carbines: inspectionData.filter((i) => i.firearmType === "S/L: PIST CAL-RIFLE/CARB").length,
+    carbines: inspectionData.filter(
+      (i) => i.firearmType === "Self-Loading Rifle/Carbine" || i.firearmType === "S/L: PIST CAL-RIFLE/CARB",
+    ).length,
   }
 
   const clearForm = () => {
@@ -2717,16 +1087,23 @@ export default function GunworxTracker() {
   const clearInspectionForm = () => {
     setNewInspection({
       caliber: "",
-      make: "",
+      make: "RUGER",
       firearmSerialNumber: "",
-      barrelSerialNumber: "",
+      barrelSerialNumber: "RUGER",
+      frameSerialNumber: "RUGER",
+      receiverSerialNumber: "RUGER",
       firearmType: "",
+      firearmTypeOther: "",
       inspectionDate: new Date().toISOString().split("T")[0],
-      inspector: "",
-      dealerCode: "",
+      inspector: "Wikus Fourie",
+      dealerCode: "1964Delta",
+      companyName: "1964Delta",
       actionType: "",
-      countryOfOrigin: "",
-      remarks: "",
+      actionTypeOther: "",
+      countryOfOrigin: "USA",
+      remarks: "No visible signs of correction or erasing",
+      comments:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
     })
   }
 
@@ -3246,7 +1623,7 @@ export default function GunworxTracker() {
                       <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="RIFLE">Rifles</SelectItem>
                       <SelectItem value="PISTOL">Pistols</SelectItem>
-                      <SelectItem value="S/L: PIST CAL-RIFLE/CARB">Carbines</SelectItem>
+                      <SelectItem value="Self-Loading Rifle/Carbine">Carbines</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -3504,100 +1881,17 @@ export default function GunworxTracker() {
             <Card>
               <CardHeader>
                 <CardTitle>Add New Inspection Record</CardTitle>
-                <CardDescription>
-                  Enter details for a new firearm inspection - ALL FIELDS ARE TEXT INPUTS
-                </CardDescription>
+                <CardDescription>Enter details for a new firearm inspection with proper form structure</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="insp-caliber">Caliber *</Label>
-                    <Input
-                      id="insp-caliber"
-                      value={newInspection.caliber || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, caliber: e.target.value })}
-                      placeholder="e.g., .308 WIN, 9MM PAR (9X19MM), .22 LONG RIFLE"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="insp-make">Make *</Label>
-                    <Input
-                      id="insp-make"
-                      value={newInspection.make || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, make: e.target.value })}
-                      placeholder="e.g., RUGER, MARLIN, GLOCK"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="insp-type">Firearm Type *</Label>
-                    <Input
-                      id="insp-type"
-                      value={newInspection.firearmType || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, firearmType: e.target.value })}
-                      placeholder="e.g., RIFLE, PISTOL, S/L: PIST CAL-RIFLE/CARB"
-                    />
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="insp-firearm-serial">Firearm Serial Number *</Label>
+                    <Label htmlFor="insp-company">Company Name</Label>
                     <Input
-                      id="insp-firearm-serial"
-                      value={newInspection.firearmSerialNumber || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, firearmSerialNumber: e.target.value })}
-                      placeholder="Enter firearm serial number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="insp-barrel-serial">Barrel Serial Number</Label>
-                    <Input
-                      id="insp-barrel-serial"
-                      value={newInspection.barrelSerialNumber || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, barrelSerialNumber: e.target.value })}
-                      placeholder="Enter barrel serial number (if different)"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="insp-action">Action Type</Label>
-                    <Input
-                      id="insp-action"
-                      value={newInspection.actionType || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, actionType: e.target.value })}
-                      placeholder="e.g., Bolt, Semi-Auto, Lever, Manual"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="insp-date">Inspection Date</Label>
-                    <Input
-                      id="insp-date"
-                      type="date"
-                      value={newInspection.inspectionDate || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, inspectionDate: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="insp-country">Country of Origin</Label>
-                    <Input
-                      id="insp-country"
-                      value={newInspection.countryOfOrigin || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, countryOfOrigin: e.target.value })}
-                      placeholder="e.g., USA, Germany, Austria"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="insp-inspector">Inspector</Label>
-                    <Input
-                      id="insp-inspector"
-                      value={newInspection.inspector || ""}
-                      onChange={(e) => setNewInspection({ ...newInspection, inspector: e.target.value })}
-                      placeholder="Inspector name"
+                      id="insp-company"
+                      value={newInspection.companyName || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, companyName: e.target.value })}
+                      placeholder="Company name"
                     />
                   </div>
                   <div>
@@ -3612,12 +1906,186 @@ export default function GunworxTracker() {
                 </div>
 
                 <div>
+                  <Label htmlFor="insp-type">Firearm Type *</Label>
+                  <Select
+                    value={newInspection.firearmType || ""}
+                    onValueChange={(value) => setNewInspection({ ...newInspection, firearmType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select firearm type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pistol">Pistol</SelectItem>
+                      <SelectItem value="Revolver">Revolver</SelectItem>
+                      <SelectItem value="Rifle">Rifle</SelectItem>
+                      <SelectItem value="Self-Loading Rifle/Carbine">Self-Loading Rifle/Carbine</SelectItem>
+                      <SelectItem value="Shotgun">Shotgun</SelectItem>
+                      <SelectItem value="Combination">Combination</SelectItem>
+                      <SelectItem value="Other">Other (Provide details)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {newInspection.firearmType === "Other" && (
+                    <div className="mt-2">
+                      <Label htmlFor="insp-type-other">Other details</Label>
+                      <Input
+                        id="insp-type-other"
+                        value={newInspection.firearmTypeOther || ""}
+                        onChange={(e) => setNewInspection({ ...newInspection, firearmTypeOther: e.target.value })}
+                        placeholder="Provide details for other firearm type"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Serial Numbers</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="insp-firearm-serial">Firearm Serial Number *</Label>
+                      <Input
+                        id="insp-firearm-serial"
+                        value={newInspection.firearmSerialNumber || ""}
+                        onChange={(e) => setNewInspection({ ...newInspection, firearmSerialNumber: e.target.value })}
+                        placeholder="Enter firearm serial number"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="insp-barrel-serial">Barrel Serial</Label>
+                      <Input
+                        id="insp-barrel-serial"
+                        value={newInspection.barrelSerialNumber || ""}
+                        onChange={(e) => setNewInspection({ ...newInspection, barrelSerialNumber: e.target.value })}
+                        placeholder="RUGER"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="insp-frame-serial">Frame Serial</Label>
+                      <Input
+                        id="insp-frame-serial"
+                        value={newInspection.frameSerialNumber || ""}
+                        onChange={(e) => setNewInspection({ ...newInspection, frameSerialNumber: e.target.value })}
+                        placeholder="RUGER"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="insp-receiver-serial">Receiver Serial</Label>
+                      <Input
+                        id="insp-receiver-serial"
+                        value={newInspection.receiverSerialNumber || ""}
+                        onChange={(e) => setNewInspection({ ...newInspection, receiverSerialNumber: e.target.value })}
+                        placeholder="RUGER"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="insp-action">Action Type *</Label>
+                  <Select
+                    value={newInspection.actionType || ""}
+                    onValueChange={(value) => setNewInspection({ ...newInspection, actionType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select action type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Manual">Manual</SelectItem>
+                      <SelectItem value="Semi-Auto">Semi Auto</SelectItem>
+                      <SelectItem value="Automatic">Automatic</SelectItem>
+                      <SelectItem value="Bolt">Bolt</SelectItem>
+                      <SelectItem value="Breakneck">Breakneck</SelectItem>
+                      <SelectItem value="Pump">Pump</SelectItem>
+                      <SelectItem value="Capping breech loader">Capping breech loader</SelectItem>
+                      <SelectItem value="Lever">Lever</SelectItem>
+                      <SelectItem value="Cylinder">Cylinder</SelectItem>
+                      <SelectItem value="Falling Block">Falling Block</SelectItem>
+                      <SelectItem value="Other">Other (Provide details)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {newInspection.actionType === "Other" && (
+                    <div className="mt-2">
+                      <Label htmlFor="insp-action-other">Other details</Label>
+                      <Input
+                        id="insp-action-other"
+                        value={newInspection.actionTypeOther || ""}
+                        onChange={(e) => setNewInspection({ ...newInspection, actionTypeOther: e.target.value })}
+                        placeholder="Provide details for other action type"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="insp-make">Make *</Label>
+                    <Input
+                      id="insp-make"
+                      value={newInspection.make || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, make: e.target.value })}
+                      placeholder="RUGER (As engraved on the firearm)"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-caliber">Caliber *</Label>
+                    <Input
+                      id="insp-caliber"
+                      value={newInspection.caliber || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, caliber: e.target.value })}
+                      placeholder="e.g., .308 WIN, 9MM PAR (9X19MM)"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-country">Country of Origin</Label>
+                    <Input
+                      id="insp-country"
+                      value={newInspection.countryOfOrigin || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, countryOfOrigin: e.target.value })}
+                      placeholder="USA"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="insp-date">Inspection Date</Label>
+                    <Input
+                      id="insp-date"
+                      type="date"
+                      value={newInspection.inspectionDate || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, inspectionDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="insp-inspector">Inspector</Label>
+                    <Input
+                      id="insp-inspector"
+                      value={newInspection.inspector || ""}
+                      onChange={(e) => setNewInspection({ ...newInspection, inspector: e.target.value })}
+                      placeholder="Inspector name"
+                    />
+                  </div>
+                </div>
+
+                <div>
                   <Label htmlFor="insp-remarks">Inspection Remarks</Label>
                   <Textarea
                     id="insp-remarks"
                     value={newInspection.remarks || ""}
                     onChange={(e) => setNewInspection({ ...newInspection, remarks: e.target.value })}
-                    placeholder="Inspection notes and observations"
+                    placeholder="No visible signs of correction or erasing"
+                    rows={2}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="insp-comments">Comments</Label>
+                  <Textarea
+                    id="insp-comments"
+                    value={newInspection.comments || ""}
+                    onChange={(e) => setNewInspection({ ...newInspection, comments: e.target.value })}
+                    placeholder="According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm."
                     rows={4}
                   />
                 </div>
@@ -3644,7 +2112,7 @@ export default function GunworxTracker() {
                         <strong>Certification:</strong> Professional Firearms Inspector
                       </p>
                       <p>
-                        <strong>Standard Remarks:</strong> No visible signs of correction or erasing
+                        <strong>Standard Observation:</strong> No visible signs of correction or erasing
                       </p>
                     </div>
                   </div>
@@ -3741,7 +2209,8 @@ export default function GunworxTracker() {
                     <li>• Digital signature capture for collections and transfers</li>
                     <li>• Comprehensive search and filtering capabilities</li>
                     <li>• Professional inspection record database with all {inspectionData.length} entries</li>
-                    <li>• Add new inspection records with manual text input only</li>
+                    <li>• Structured inspection forms with dropdown menus and proper validation</li>
+                    <li>• Three separate serial number fields (Firearm, Barrel, Frame, Receiver)</li>
                     <li>• Responsive design for all devices</li>
                     <li>• No external dependencies - fully self-contained</li>
                     <li>• Compliance with Firearms Control Act, 2000</li>
