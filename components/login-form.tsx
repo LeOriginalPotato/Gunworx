@@ -3,12 +3,11 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, AlertCircle } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Shield, Eye, EyeOff } from "lucide-react"
 import { authService, type User } from "@/lib/auth"
 
 interface LoginFormProps {
@@ -18,6 +17,7 @@ interface LoginFormProps {
 export function LoginForm({ onLogin }: LoginFormProps) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -26,14 +26,8 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setError("")
     setIsLoading(true)
 
-    if (!username.trim() || !password.trim()) {
-      setError("Please enter both username and password")
-      setIsLoading(false)
-      return
-    }
-
     try {
-      const user = authService.login(username.trim(), password)
+      const user = authService.login(username, password)
       if (user) {
         onLogin(user)
       } else {
@@ -53,7 +47,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <Shield className="mx-auto h-12 w-12 text-blue-600" />
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Gunworx Employee Portal</h2>
           <p className="mt-2 text-sm text-gray-600">FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)</p>
-          <p className="mt-4 text-sm text-gray-500">Sign in to access the firearms tracking system</p>
+          <p className="mt-4 text-sm text-gray-500">Sign in to access the firearms management system</p>
         </div>
 
         <Card>
@@ -63,13 +57,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
               <div>
                 <Label htmlFor="username">Username</Label>
                 <Input
@@ -78,23 +65,43 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
+                  required
                   disabled={isLoading}
-                  autoComplete="username"
                 />
               </div>
 
               <div>
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  disabled={isLoading}
-                  autoComplete="current-password"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    required
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
               </div>
+
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">{error}</div>
+              )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing in..." : "Sign In"}
@@ -104,25 +111,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         </Card>
 
         <div className="text-center">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-blue-800 mb-2">System Access</h4>
-            <p className="text-sm text-blue-700">
-              Contact your system administrator for login credentials. All access is logged and monitored for security
-              purposes.
-            </p>
-          </div>
-        </div>
-
-        <div className="text-center">
-          <div className="p-4 bg-orange-50 rounded-lg">
-            <h4 className="font-semibold text-orange-800 mb-2">Security Notice</h4>
-            <ul className="text-sm text-orange-700 space-y-1 text-left">
-              <li>• This system is for authorized personnel only</li>
-              <li>• All activities are logged and monitored</li>
-              <li>• Unauthorized access is prohibited</li>
-              <li>• Report any security concerns immediately</li>
-            </ul>
-          </div>
+          <p className="text-xs text-gray-500">Authorized personnel only. All access is logged and monitored.</p>
         </div>
       </div>
     </div>

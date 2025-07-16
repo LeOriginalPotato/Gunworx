@@ -1,175 +1,143 @@
 export interface User {
   id: string
   username: string
-  role: "admin" | "user"
+  role: "admin" | "employee"
+  fullName: string
+  email: string
   createdAt: string
   lastLogin?: string
 }
 
-const STORAGE_KEY = "gunworx_users"
-const CURRENT_USER_KEY = "gunworx_current_user"
-
-// Default system admin (hidden from UI)
-const SYSTEM_ADMIN: User = {
-  id: "system_admin",
-  username: "Jean-Mari",
-  role: "admin",
-  createdAt: new Date().toISOString(),
-}
-
-// Default password for system admin
-const SYSTEM_ADMIN_PASSWORD = "Password123"
-
 class AuthService {
-  private users: Map<string, { user: User; password: string }> = new Map()
+  private readonly STORAGE_KEY = "gunworx_current_user"
+  private readonly USERS_KEY = "gunworx_users"
 
   constructor() {
-    this.loadUsers()
-    // Always ensure system admin exists
-    this.users.set(SYSTEM_ADMIN.username, {
-      user: SYSTEM_ADMIN,
-      password: SYSTEM_ADMIN_PASSWORD,
-    })
+    this.initializeDefaultUsers()
   }
 
-  private loadUsers() {
-    if (typeof window === "undefined") return
+  private initializeDefaultUsers() {
+    const existingUsers = this.getUsers()
+    if (existingUsers.length === 0) {
+      const defaultUsers: User[] = [
+        {
+          id: "admin-1",
+          username: "jean-mari",
+          role: "admin",
+          fullName: "Jean-Mari",
+          email: "admin@gunworx.com",
+          createdAt: new Date().toISOString(),
+        },
+      ]
 
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const userData = JSON.parse(saved)
-        Object.entries(userData).forEach(([username, data]: [string, any]) => {
-          this.users.set(username, data)
-        })
-      }
-    } catch (error) {
-      console.warn("Failed to load users from localStorage:", error)
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultUsers))
     }
   }
 
-  private saveUsers() {
-    if (typeof window === "undefined") return
-
+  private getUsers(): User[] {
     try {
-      const userData: Record<string, { user: User; password: string }> = {}
-      this.users.forEach((data, username) => {
-        userData[username] = data
-      })
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(userData))
-    } catch (error) {
-      console.warn("Failed to save users to localStorage:", error)
+      const users = localStorage.getItem(this.USERS_KEY)
+      return users ? JSON.parse(users) : []
+    } catch {
+      return []
     }
+  }
+
+  private saveUsers(users: User[]) {
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(users))
   }
 
   login(username: string, password: string): User | null {
-    const userData = this.users.get(username)
-    if (userData && userData.password === password) {
-      const user = {
-        ...userData.user,
-        lastLogin: new Date().toISOString(),
-      }
-      this.users.set(username, { ...userData, user })
-      this.saveUsers()
-      this.setCurrentUser(user)
+    const users = this.getUsers()
+
+    // Simple authentication - in production, this would be properly hashed
+    const user = users.find((u) => u.username === username)
+
+    if (user) {
+      // Update last login
+      const updatedUsers = users.map((u) => (u.id === user.id ? { ...u, lastLogin: new Date().toISOString() } : u))
+      this.saveUsers(updatedUsers)
+
+      // Store current user
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user))
       return user
     }
+
     return null
   }
 
   logout() {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(CURRENT_USER_KEY)
-    }
+    localStorage.removeItem(this.STORAGE_KEY)
   }
 
   getCurrentUser(): User | null {
-    if (typeof window === "undefined") return null
-
     try {
-      const saved = localStorage.getItem(CURRENT_USER_KEY)
-      return saved ? JSON.parse(saved) : null
+      const user = localStorage.getItem(this.STORAGE_KEY)
+      return user ? JSON.parse(user) : null
     } catch {
       return null
     }
   }
 
-  setCurrentUser(user: User) {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user))
-    }
-  }
+  createUser(userData: Omit<User, "id" | "createdAt">): User {
+    const users = this.getUsers()
 
-  createUser(username: string, password: string, role: "admin" | "user" = "user"): User {
-    if (this.users.has(username)) {
+    // Check if username already exists
+    if (users.some((u) => u.username === userData.username)) {
       throw new Error("Username already exists")
     }
 
-    const user: User = {
-      id: `user_${Date.now()}`,
-      username,
-      role,
+    const newUser: User = {
+      ...userData,
+      id: `user-${Date.now()}`,
       createdAt: new Date().toISOString(),
     }
 
-    this.users.set(username, { user, password })
-    this.saveUsers()
-    return user
+    users.push(newUser)
+    this.saveUsers(users)
+
+    return newUser
   }
 
   updateUser(userId: string, updates: Partial<User>): User {
-    for (const [username, userData] of this.users.entries()) {
-      if (userData.user.id === userId) {
-        const updatedUser = { ...userData.user, ...updates }
-        this.users.set(username, { ...userData, user: updatedUser })
-        this.saveUsers()
-        return updatedUser
+    const users = this.getUsers()
+    const userIndex = users.findIndex((u) => u.id === userId)
+
+    if (userIndex === -1) {
+      throw new Error("User not found")
+    }
+
+    // Check if username is being changed and if it already exists
+    if (updates.username && updates.username !== users[userIndex].username) {
+      if (users.some((u) => u.username === updates.username && u.id !== userId)) {
+        throw new Error("Username already exists")
       }
     }
-    throw new Error("User not found")
+
+    users[userIndex] = { ...users[userIndex], ...updates }
+    this.saveUsers(users)
+
+    return users[userIndex]
   }
 
-  updatePassword(userId: string, newPassword: string): void {
-    for (const [username, userData] of this.users.entries()) {
-      if (userData.user.id === userId) {
-        this.users.set(username, { ...userData, password: newPassword })
-        this.saveUsers()
-        return
-      }
-    }
-    throw new Error("User not found")
-  }
+  deleteUser(userId: string): boolean {
+    const users = this.getUsers()
+    const filteredUsers = users.filter((u) => u.id !== userId)
 
-  deleteUser(userId: string): void {
-    // Prevent deletion of system admin
-    if (userId === SYSTEM_ADMIN.id) {
-      throw new Error("Cannot delete system administrator")
+    if (filteredUsers.length === users.length) {
+      return false // User not found
     }
 
-    for (const [username, userData] of this.users.entries()) {
-      if (userData.user.id === userId) {
-        this.users.delete(username)
-        this.saveUsers()
-        return
-      }
-    }
-    throw new Error("User not found")
+    this.saveUsers(filteredUsers)
+    return true
   }
 
   getAllUsers(): User[] {
-    // Filter out system admin from public user list
-    return Array.from(this.users.values())
-      .map((data) => data.user)
-      .filter((user) => user.id !== SYSTEM_ADMIN.id)
+    return this.getUsers().filter((u) => u.username !== "jean-mari") // Hide default admin
   }
 
-  getUserById(userId: string): User | null {
-    for (const userData of this.users.values()) {
-      if (userData.user.id === userId) {
-        return userData.user
-      }
-    }
-    return null
+  isAdmin(user: User | null): boolean {
+    return user?.role === "admin"
   }
 }
 
