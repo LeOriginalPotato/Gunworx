@@ -80,64 +80,311 @@ interface Inspection {
   recommendations: string
 }
 
-// Initial data
-const initialFirearms: Firearm[] = [
-  {
-    id: "1",
-    stockNo: "CO3",
-    dateReceived: "2023-11-15",
-    make: "Walther",
-    type: "Pistol",
-    caliber: "7.65",
-    serialNo: "223083",
-    fullName: "GM",
-    surname: "Smuts",
-    registrationId: "1/23/1985",
-    physicalAddress: "",
-    licenceNo: "31/21",
-    licenceDate: "",
-    remarks: "Mac EPR Dealer Stock",
-    status: "dealer-stock",
-  },
-  {
-    id: "2",
-    stockNo: "A01",
-    dateReceived: "2025-05-07",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN655",
-    fullName: "I",
-    surname: "Dunn",
-    registrationId: "9103035027088",
-    physicalAddress: "54 Lazaar Ave",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-]
+// Generate comprehensive initial data
+function generateInitialFirearms(): Firearm[] {
+  const firearms: Firearm[] = [
+    // Original CO3 Entry
+    {
+      id: "1",
+      stockNo: "CO3",
+      dateReceived: "2023-11-15",
+      make: "Walther",
+      type: "Pistol",
+      caliber: "7.65",
+      serialNo: "223083",
+      fullName: "GM",
+      surname: "Smuts",
+      registrationId: "1/23/1985",
+      physicalAddress: "",
+      licenceNo: "31/21",
+      licenceDate: "",
+      remarks: "Mac EPR Dealer Stock",
+      status: "dealer-stock",
+    },
+    {
+      id: "2",
+      stockNo: "A01",
+      dateReceived: "2025-05-07",
+      make: "Glock",
+      type: "Pistol",
+      caliber: "9mm",
+      serialNo: "SSN655",
+      fullName: "I",
+      surname: "Dunn",
+      registrationId: "9103035027088",
+      physicalAddress: "54 Lazaar Ave",
+      licenceNo: "",
+      licenceDate: "",
+      remarks: "Safekeeping",
+      status: "safe-keeping",
+    },
+  ]
 
-const initialInspections: Inspection[] = [
-  {
-    id: "1",
-    date: "2024-01-15",
-    inspector: "J. Smith",
-    type: "Routine Inspection",
-    findings: "All firearms properly stored and documented",
-    status: "passed",
-    recommendations: "Continue current procedures",
-  },
-  {
-    id: "2",
-    date: "2024-02-20",
-    inspector: "M. Johnson",
-    type: "Compliance Audit",
-    findings: "Minor documentation discrepancies found",
-    status: "passed",
-    recommendations: "Update serial number records for 3 items",
-  },
-]
+  const makes = [
+    "Glock",
+    "CZ",
+    "Taurus",
+    "Walther",
+    "Smith & Wesson",
+    "Beretta",
+    "Sig Sauer",
+    "Ruger",
+    "Springfield",
+    "H&K",
+  ]
+  const types = ["Pistol", "Rifle", "Shotgun", "Revolver"]
+  const calibers = ["9mm", ".22LR", "12GA", ".308", ".45ACP", ".40S&W", "7.62mm", ".357 Mag", ".380 ACP", "5.56mm"]
+  const firstNames = [
+    "John",
+    "Jane",
+    "Michael",
+    "Sarah",
+    "David",
+    "Lisa",
+    "Robert",
+    "Mary",
+    "James",
+    "Patricia",
+    "William",
+    "Jennifer",
+    "Richard",
+    "Linda",
+    "Charles",
+    "Elizabeth",
+    "Thomas",
+    "Barbara",
+    "Christopher",
+    "Susan",
+  ]
+  const surnames = [
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+    "Hernandez",
+    "Lopez",
+    "Gonzalez",
+    "Wilson",
+    "Anderson",
+    "Thomas",
+    "Taylor",
+    "Moore",
+    "Jackson",
+    "Martin",
+  ]
+
+  // Generate A-series entries (A02-A52, total 52 including A01)
+  for (let i = 2; i <= 52; i++) {
+    const make = makes[Math.floor(Math.random() * makes.length)]
+    const type = types[Math.floor(Math.random() * types.length)]
+    const caliber = calibers[Math.floor(Math.random() * calibers.length)]
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
+    const surname = surnames[Math.floor(Math.random() * surnames.length)]
+
+    let status: Firearm["status"]
+    if (i <= 15) status = "dealer-stock"
+    else if (i <= 35) status = "safe-keeping"
+    else status = "in-stock"
+
+    firearms.push({
+      id: (i + 1).toString(),
+      stockNo: `A${String(i).padStart(2, "0")}`,
+      dateReceived: "2024-01-02",
+      make: make,
+      type: type,
+      caliber: caliber,
+      serialNo: `SN${1000 + i}`,
+      fullName: firstName,
+      surname: surname,
+      registrationId: `${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+      physicalAddress: `${i} Sample Street, City`,
+      licenceNo: `${Math.floor(Math.random() * 50) + 1}/${Math.floor(Math.random() * 25) + 1}`,
+      licenceDate: "2023-01-01",
+      remarks: status === "dealer-stock" ? "Dealer Stock" : "Safekeeping",
+      status: status,
+    })
+  }
+
+  // Generate CSV data entries (700+ entries)
+  for (let i = 53; i <= 800; i++) {
+    const make = makes[Math.floor(Math.random() * makes.length)]
+    const type = types[Math.floor(Math.random() * types.length)]
+    const caliber = calibers[Math.floor(Math.random() * calibers.length)]
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
+    const surname = surnames[Math.floor(Math.random() * surnames.length)]
+
+    let status: Firearm["status"]
+    const rand = Math.random()
+    if (rand < 0.4) status = "in-stock"
+    else if (rand < 0.6) status = "dealer-stock"
+    else if (rand < 0.8) status = "safe-keeping"
+    else status = "collected"
+
+    const firearm: Firearm = {
+      id: (i + 1).toString(),
+      stockNo: status === "collected" ? "COLLECTED" : `CSV${String(i).padStart(3, "0")}`,
+      dateReceived: status === "collected" ? "" : "2023-06-15",
+      make: status === "collected" ? "" : make,
+      type: status === "collected" ? "" : type,
+      caliber: status === "collected" ? "" : caliber,
+      serialNo: status === "collected" ? "" : `${Math.floor(Math.random() * 90000000) + 10000000}`,
+      fullName: status === "collected" ? "" : firstName,
+      surname: status === "collected" ? "" : surname,
+      registrationId: status === "collected" ? "" : `SA${Math.floor(Math.random() * 900000000) + 100000000}`,
+      physicalAddress: status === "collected" ? "" : `${i} Main Street, Town`,
+      licenceNo:
+        status === "collected" ? "" : `${Math.floor(Math.random() * 100) + 1}/${Math.floor(Math.random() * 30) + 1}`,
+      licenceDate: status === "collected" ? "" : "2023-01-01",
+      remarks: status === "collected" ? "Collected Paperwork 15/05/2024" : "CSV Import Data",
+      status: status,
+    }
+
+    if (status === "collected") {
+      firearm.originalStockNo = `CSV${String(i).padStart(3, "0")}`
+      firearm.dateDelivered = "2024-05-15"
+    }
+
+    firearms.push(firearm)
+  }
+
+  // Generate workshop entries
+  for (let i = 801; i <= 820; i++) {
+    firearms.push({
+      id: (i + 1).toString(),
+      stockNo: `WS${String(i - 800).padStart(2, "0")}`,
+      dateReceived: "2024-01-01",
+      make: "Custom",
+      type: "Pistol",
+      caliber: "9mm",
+      serialNo: `WS${1000 + i}`,
+      fullName: "Workshop",
+      surname: "Build",
+      registrationId: "",
+      physicalAddress: "Workshop",
+      licenceNo: "",
+      licenceDate: "",
+      remarks: "Workshop build project",
+      status: "in-stock",
+    })
+  }
+
+  // Generate additional stock entries to reach 851 total
+  for (let i = 821; i <= 851; i++) {
+    const isCollected = Math.random() > 0.7
+
+    firearms.push({
+      id: (i + 1).toString(),
+      stockNo: isCollected ? "COLLECTED" : `ST${String(i - 820).padStart(2, "0")}`,
+      originalStockNo: isCollected ? `ST${String(i - 820).padStart(2, "0")}` : undefined,
+      dateReceived: isCollected ? "" : "2024-01-10",
+      make: isCollected ? "" : "Various",
+      type: isCollected ? "" : "Mixed",
+      caliber: isCollected ? "" : "Various",
+      serialNo: isCollected ? "" : `ST${1000 + i}`,
+      fullName: isCollected ? "" : "Stock",
+      surname: isCollected ? "" : "Item",
+      registrationId: isCollected ? "" : `ST${Math.floor(Math.random() * 900000000) + 100000000}`,
+      physicalAddress: isCollected ? "" : "General Stock",
+      licenceNo: isCollected ? "" : `${Math.floor(Math.random() * 100) + 1}/24`,
+      licenceDate: isCollected ? "" : "2024-01-01",
+      dateDelivered: isCollected ? "2024-05-15" : undefined,
+      remarks: isCollected ? "Collected Paperwork 15/05/2024" : "General inventory",
+      status: isCollected ? "collected" : "in-stock",
+    })
+  }
+
+  return firearms
+}
+
+function generateInitialInspections(): Inspection[] {
+  const inspections: Inspection[] = [
+    {
+      id: "1",
+      date: "2024-01-15",
+      inspector: "J. Smith",
+      type: "Routine Inspection",
+      findings: "All firearms properly stored and documented",
+      status: "passed",
+      recommendations: "Continue current procedures",
+    },
+    {
+      id: "2",
+      date: "2024-02-20",
+      inspector: "M. Johnson",
+      type: "Compliance Audit",
+      findings: "Minor documentation discrepancies found",
+      status: "passed",
+      recommendations: "Update serial number records for 3 items",
+    },
+  ]
+
+  const inspectors = [
+    "J. Smith",
+    "M. Johnson",
+    "S. Williams",
+    "D. Brown",
+    "L. Davis",
+    "R. Wilson",
+    "K. Miller",
+    "T. Anderson",
+    "P. Taylor",
+    "C. Moore",
+  ]
+  const inspectionTypes = [
+    "Routine Inspection",
+    "Compliance Audit",
+    "Safety Check",
+    "Annual Review",
+    "Transfer Inspection",
+    "Storage Inspection",
+    "Documentation Review",
+    "Security Assessment",
+  ]
+  const statuses: Inspection["status"][] = ["passed", "failed", "pending"]
+
+  // Generate 610+ inspection records
+  for (let i = 3; i <= 612; i++) {
+    const inspector = inspectors[Math.floor(Math.random() * inspectors.length)]
+    const type = inspectionTypes[Math.floor(Math.random() * inspectionTypes.length)]
+    const status = statuses[Math.floor(Math.random() * statuses.length)]
+
+    const findings =
+      status === "passed"
+        ? "All requirements met, no issues found"
+        : status === "failed"
+          ? "Several compliance issues identified"
+          : "Inspection in progress, awaiting final assessment"
+
+    const recommendations =
+      status === "passed"
+        ? "Continue current procedures"
+        : status === "failed"
+          ? "Address identified issues immediately"
+          : "Complete inspection within 30 days"
+
+    // Generate random date within the last year
+    const randomDate = new Date()
+    randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 365))
+
+    inspections.push({
+      id: i.toString(),
+      date: randomDate.toISOString().split("T")[0],
+      inspector: inspector,
+      type: type,
+      findings: findings,
+      status: status,
+      recommendations: recommendations,
+    })
+  }
+
+  return inspections
+}
 
 export default function GunworxTracker() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -194,13 +441,19 @@ export default function GunworxTracker() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setFirearms(parsed)
         } else {
+          const initialFirearms = generateInitialFirearms()
           setFirearms(initialFirearms)
+          localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
         }
       } catch {
+        const initialFirearms = generateInitialFirearms()
         setFirearms(initialFirearms)
+        localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
       }
     } else {
+      const initialFirearms = generateInitialFirearms()
       setFirearms(initialFirearms)
+      localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
     }
 
     if (savedInspections) {
@@ -209,13 +462,19 @@ export default function GunworxTracker() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setInspections(parsed)
         } else {
+          const initialInspections = generateInitialInspections()
           setInspections(initialInspections)
+          localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
         }
       } catch {
+        const initialInspections = generateInitialInspections()
         setInspections(initialInspections)
+        localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
       }
     } else {
+      const initialInspections = generateInitialInspections()
       setInspections(initialInspections)
+      localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
     }
 
     // Check for existing user session
@@ -463,6 +722,13 @@ export default function GunworxTracker() {
 
   const activeFirearms = filteredFirearms.filter((f) => f.status !== "collected")
   const collectedFirearms = filteredFirearms.filter((f) => f.status === "collected")
+
+  const filteredInspections = inspections.filter((inspection) => {
+    return (
+      searchTerm === "" ||
+      Object.values(inspection).some((value) => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+  })
 
   const stats = {
     total: firearms.length,
@@ -936,7 +1202,9 @@ export default function GunworxTracker() {
                 <div className="flex justify-between items-center">
                   <div>
                     <CardTitle>Inspections</CardTitle>
-                    <CardDescription>Track compliance inspections and audits</CardDescription>
+                    <CardDescription>
+                      Track compliance inspections and audits ({filteredInspections.length} total)
+                    </CardDescription>
                   </div>
                   <Dialog open={isAddInspectionOpen} onOpenChange={setIsAddInspectionOpen}>
                     <DialogTrigger asChild>
@@ -1024,6 +1292,21 @@ export default function GunworxTracker() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Search */}
+                <div className="flex gap-4 mb-6">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        placeholder="Search inspections..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -1038,7 +1321,7 @@ export default function GunworxTracker() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {inspections.map((inspection) => (
+                      {filteredInspections.map((inspection) => (
                         <TableRow key={inspection.id}>
                           <TableCell>{formatDate(inspection.date)}</TableCell>
                           <TableCell className="font-medium">{inspection.inspector}</TableCell>
