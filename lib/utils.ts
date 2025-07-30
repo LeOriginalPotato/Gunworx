@@ -5,81 +5,65 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Utility functions for the firearms tracker
 export function formatDate(dateString: string): string {
-  if (!dateString) return "Not specified"
+  if (!dateString) return ""
 
   try {
     const date = new Date(dateString)
-    return date.toLocaleDateString("en-ZA", {
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
+      month: "short",
+      day: "numeric",
     })
   } catch {
     return dateString
   }
 }
 
-export function formatStatus(status: string): string {
-  const statusMap: Record<string, string> = {
-    "in-stock": "In Stock",
-    "dealer-stock": "Dealer Stock",
-    "safe-keeping": "Safe Keeping",
-    collected: "Collected",
-  }
-  return statusMap[status] || status
-}
-
 export function generateId(): string {
-  return Date.now().toString() + Math.random().toString(36).substr(2, 9)
+  return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-export function validateRequired(value: string, fieldName: string): string | null {
-  if (!value || value.trim() === "") {
-    return `${fieldName} is required`
+export function exportToCSV(data: any[], filename: string): void {
+  if (!data || data.length === 0) {
+    alert("No data to export")
+    return
   }
-  return null
-}
 
-export function sanitizeInput(input: string): string {
-  return input.trim().replace(/[<>]/g, "")
-}
+  // Get all unique keys from the data
+  const keys = Array.from(new Set(data.flatMap((item) => Object.keys(item))))
 
-export function exportToCSV(data: any[], filename = "export.csv"): void {
-  if (!data.length) return
+  // Create CSV header
+  const csvHeader = keys.join(",")
 
-  const headers = Object.keys(data[0])
-  const csvContent = [
-    headers.join(","),
-    ...data.map((row) =>
-      headers
-        .map((header) => {
-          const value = row[header] || ""
-          // Escape quotes and wrap in quotes if contains comma
-          return typeof value === "string" && (value.includes(",") || value.includes('"'))
-            ? `"${value.replace(/"/g, '""')}"`
-            : value
-        })
-        .join(","),
-    ),
-  ].join("\n")
+  // Create CSV rows
+  const csvRows = data.map((item) =>
+    keys
+      .map((key) => {
+        const value = item[key]
+        // Handle values that might contain commas or quotes
+        if (typeof value === "string" && (value.includes(",") || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`
+        }
+        return value || ""
+      })
+      .join(","),
+  )
 
+  // Combine header and rows
+  const csvContent = [csvHeader, ...csvRows].join("\n")
+
+  // Create and download the file
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
   const link = document.createElement("a")
-  const url = URL.createObjectURL(blob)
-  link.setAttribute("href", url)
-  link.setAttribute("download", filename)
-  link.style.visibility = "hidden"
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
 
-export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => func(...args), wait)
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", filename)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 }

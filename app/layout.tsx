@@ -6,7 +6,7 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Gunworx Firearms Tracker",
+  title: "Gunworx Management Portal",
   description: "Professional firearms management system compliant with Firearms Control Act, 2000",
     generator: 'v0.dev'
 }
