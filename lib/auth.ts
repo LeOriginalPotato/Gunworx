@@ -20,9 +20,10 @@ class AuthService {
     },
     {
       id: "2",
-      username: "JP",
+      username: "Jean",
       password: "admin123",
       role: "admin",
+      isSystemAdmin: true,
       createdAt: "2024-01-01T00:00:00Z",
     },
     {
@@ -44,6 +45,14 @@ class AuthService {
       username: "Wikus",
       password: "Wikus@888",
       role: "admin",
+      createdAt: "2024-01-01T00:00:00Z",
+    },
+    {
+      id: "6",
+      username: "Jean",
+      password: "xNgU7ADa",
+      role: "admin",
+      isSystemAdmin: true,
       createdAt: "2024-01-01T00:00:00Z",
     },
   ]
@@ -174,6 +183,66 @@ class AuthService {
     this.users[userIndex].password = newPassword
     this.saveUsers()
     return true
+  }
+
+  // Method used by user management component
+  async getUsers(): Promise<User[]> {
+    // Return users with actual passwords for admin management
+    return Promise.resolve([...this.users])
+  }
+
+  // Method used by user management component
+  async userExists(username: string): Promise<boolean> {
+    return Promise.resolve(this.users.some((u) => u.username === username))
+  }
+
+  // Method used by user management component - updated signature
+  async createUser(userData: Omit<User, "id" | "createdAt">): Promise<User> {
+    const newUser: User = {
+      ...userData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+    }
+    this.users.push(newUser)
+    this.saveUsers()
+    return Promise.resolve(newUser)
+  }
+
+  // Method used by user management component - updated signature
+  async updateUser(updatedUser: User): Promise<User> {
+    const userIndex = this.users.findIndex((u) => u.id === updatedUser.id)
+    if (userIndex === -1) {
+      throw new Error("User not found")
+    }
+
+    this.users[userIndex] = { ...updatedUser }
+    this.saveUsers()
+
+    // Update current user if it's the same user
+    if (this.currentUser && this.currentUser.id === updatedUser.id) {
+      this.currentUser = { ...updatedUser }
+      this.saveCurrentUser()
+    }
+
+    return Promise.resolve(this.users[userIndex])
+  }
+
+  // Method used by user management component - updated signature
+  async deleteUser(userId: string): Promise<void> {
+    // Prevent deletion of system admin
+    const user = this.users.find((u) => u.id === userId)
+    if (user?.isSystemAdmin) {
+      throw new Error("Cannot delete system administrator")
+    }
+
+    const initialLength = this.users.length
+    this.users = this.users.filter((u) => u.id !== userId)
+
+    if (this.users.length < initialLength) {
+      this.saveUsers()
+      return Promise.resolve()
+    }
+    throw new Error("User not found")
   }
 }
 

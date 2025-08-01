@@ -12,9 +12,10 @@ const users = [
   },
   {
     id: "2",
-    username: "JP",
-    password: "admin123",
+    username: "Jean",
+    password: "xNgU7ADa",
     role: "admin",
+    isSystemAdmin: true,
     createdAt: "2024-01-01T00:00:00Z",
   },
   {
@@ -36,6 +37,14 @@ const users = [
     username: "Wikus",
     password: "Wikus@888",
     role: "admin",
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "6",
+    username: "Jean",
+    password: "xNgU7ADa",
+    role: "admin",
+    isSystemAdmin: true,
     createdAt: "2024-01-01T00:00:00Z",
   },
 ]
