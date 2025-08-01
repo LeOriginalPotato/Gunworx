@@ -21,49 +21,49 @@ export function formatDate(dateString: string): string {
 }
 
 export function generateId(): string {
-  return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  return Date.now().toString() + Math.random().toString(36).substr(2, 9)
 }
 
-export function exportToCSV(data: any[], filename: string): void {
+export function exportToCSV(data: any[], filename = "export.csv"): void {
+  if (typeof window === "undefined") return // Don't run on server
+
   if (!data || data.length === 0) {
-    alert("No data to export")
+    console.warn("No data to export")
     return
   }
 
   // Get all unique keys from the data
-  const keys = Array.from(new Set(data.flatMap((item) => Object.keys(item))))
+  const headers = Array.from(new Set(data.flatMap((item) => Object.keys(item))))
 
-  // Create CSV header
-  const csvHeader = keys.join(",")
-
-  // Create CSV rows
-  const csvRows = data.map((item) =>
-    keys
-      .map((key) => {
-        const value = item[key]
-        // Handle values that might contain commas or quotes
-        if (typeof value === "string" && (value.includes(",") || value.includes('"'))) {
-          return `"${value.replace(/"/g, '""')}"`
-        }
-        return value || ""
-      })
-      .join(","),
-  )
-
-  // Combine header and rows
-  const csvContent = [csvHeader, ...csvRows].join("\n")
+  // Create CSV content
+  const csvContent = [
+    headers.join(","),
+    ...data.map((item) =>
+      headers
+        .map((header) => {
+          const value = item[header] || ""
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          if (typeof value === "string" && (value.includes(",") || value.includes('"') || value.includes("\n"))) {
+            return `"${value.replace(/"/g, '""')}"`
+          }
+          return value
+        })
+        .join(","),
+    ),
+  ].join("\n")
 
   // Create and download the file
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
   const link = document.createElement("a")
+  const url = URL.createObjectURL(blob)
 
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", filename)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+  link.setAttribute("href", url)
+  link.setAttribute("download", filename)
+  link.style.visibility = "hidden"
+
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+  URL.revokeObjectURL(url)
 }

@@ -362,6 +362,7 @@ export default function GunworxTracker() {
   const [deleteFirearmId, setDeleteFirearmId] = useState<string | null>(null)
   const [deleteInspectionId, setDeleteInspectionId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("inventory")
+  const [isClient, setIsClient] = useState(false)
 
   const [newFirearm, setNewFirearm] = useState<Partial<Firearm>>({
     stockNo: "",
@@ -392,8 +393,15 @@ export default function GunworxTracker() {
   // Check if current user is admin or system admin
   const isAdmin = currentUser?.role === "admin" || currentUser?.isSystemAdmin === true
 
+  // Initialize client-side flag
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   // Initialize data
   useEffect(() => {
+    if (!isClient) return
+
     const savedFirearms = localStorage.getItem("gunworx_firearms")
     const savedInspections = localStorage.getItem("gunworx_inspections")
 
@@ -444,20 +452,20 @@ export default function GunworxTracker() {
     if (user) {
       setCurrentUser(user)
     }
-  }, [])
+  }, [isClient])
 
   // Save data to localStorage
   useEffect(() => {
-    if (firearms.length > 0) {
+    if (isClient && firearms.length > 0) {
       localStorage.setItem("gunworx_firearms", JSON.stringify(firearms))
     }
-  }, [firearms])
+  }, [firearms, isClient])
 
   useEffect(() => {
-    if (inspections.length > 0) {
+    if (isClient && inspections.length > 0) {
       localStorage.setItem("gunworx_inspections", JSON.stringify(inspections))
     }
-  }, [inspections])
+  }, [inspections, isClient])
 
   const handleLogin = (user: User) => {
     setCurrentUser(user)
@@ -703,6 +711,21 @@ export default function GunworxTracker() {
     dealerStock: firearms.filter((f) => f.status === "dealer-stock").length,
     safeKeeping: firearms.filter((f) => f.status === "safe-keeping").length,
     collected: firearms.filter((f) => f.status === "collected").length,
+  }
+
+  // Show loading state until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Gunworx Management Portal</h1>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!currentUser) {

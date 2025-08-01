@@ -49,8 +49,17 @@ class AuthService {
   ]
 
   private currentUser: User | null = null
+  private isClient = typeof window !== "undefined"
 
   constructor() {
+    if (this.isClient) {
+      this.initializeFromStorage()
+    }
+  }
+
+  private initializeFromStorage() {
+    if (!this.isClient) return
+
     // Load users from localStorage if available
     const savedUsers = localStorage.getItem("gunworx_users")
     if (savedUsers) {
@@ -73,10 +82,13 @@ class AuthService {
   }
 
   private saveUsers() {
+    if (!this.isClient) return
     localStorage.setItem("gunworx_users", JSON.stringify(this.users))
   }
 
   private saveCurrentUser() {
+    if (!this.isClient) return
+
     if (this.currentUser) {
       localStorage.setItem("gunworx_current_user", JSON.stringify(this.currentUser))
     } else {
