@@ -5,7 +5,7 @@ const users = [
   {
     id: "1",
     username: "Jean-Mari",
-    password: "admin123",
+    password: "Foktogbokka",
     role: "admin",
     isSystemAdmin: true,
     createdAt: "2024-01-01T00:00:00Z",
