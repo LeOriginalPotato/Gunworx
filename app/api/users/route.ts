@@ -13,7 +13,7 @@ const users = [
   {
     id: "2",
     username: "Jean",
-    password: "xNgU7ADa",
+    password: "admin123",
     role: "admin",
     isSystemAdmin: true,
     createdAt: "2024-01-01T00:00:00Z",
