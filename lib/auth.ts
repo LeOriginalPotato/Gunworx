@@ -56,11 +56,25 @@ class AuthService {
           createdAt: "2024-01-15T10:30:00.000Z",
         },
         {
-          id: "1",
-          username: "admin",
-          password: "admin123",
+          id: "user_eben_001",
+          username: "Eben",
+          password: "UY9FBe8abajU",
+          role: "user",
+          createdAt: "2024-01-20T08:00:00.000Z",
+        },
+        {
+          id: "user_francois_001",
+          username: "Francois",
+          password: "MnWbCkE4AcFP",
+          role: "user",
+          createdAt: "2024-01-20T08:15:00.000Z",
+        },
+        {
+          id: "user_wikus_001",
+          username: "Wikus",
+          password: "Wikus@888",
           role: "admin",
-          createdAt: new Date().toISOString(),
+          createdAt: "2024-01-20T08:30:00.000Z",
         },
       ]
       localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultUsers))
