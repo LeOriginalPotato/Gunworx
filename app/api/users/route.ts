@@ -1,58 +1,50 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-interface User {
-  id: string
-  username: string
-  password: string
-  role: "admin" | "user"
-  createdAt: string
-  lastLogin?: string
-  isSystemAdmin?: boolean
-}
-
-// Server-side user storage with all previously created users
-let serverUsers: User[] = [
+// Mock user data - in a real app, this would be in a database
+const users = [
   {
-    id: "system_admin_001",
+    id: "1",
     username: "Jean-Mari",
-    password: "Password123",
+    password: "admin123",
     role: "admin",
-    createdAt: "2024-01-01T00:00:00.000Z",
     isSystemAdmin: true,
+    createdAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: "user_jp_admin_001",
+    id: "2",
     username: "JP",
-    password: "xNgU7ADa",
+    password: "admin123",
     role: "admin",
-    createdAt: "2024-01-15T10:30:00.000Z",
+    createdAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: "user_eben_001",
+    id: "3",
     username: "Eben",
     password: "UY9FBe8abajU",
     role: "user",
-    createdAt: "2024-01-20T08:00:00.000Z",
+    createdAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: "user_francois_001",
+    id: "4",
     username: "Francois",
     password: "MnWbCkE4AcFP",
     role: "user",
-    createdAt: "2024-01-20T08:15:00.000Z",
+    createdAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: "user_wikus_001",
+    id: "5",
     username: "Wikus",
     password: "Wikus@888",
     role: "admin",
-    createdAt: "2024-01-20T08:30:00.000Z",
+    createdAt: "2024-01-01T00:00:00Z",
   },
 ]
 
 export async function GET() {
   try {
-    return NextResponse.json(serverUsers)
+    // Return users without passwords for security
+    const safeUsers = users.map(({ password, ...user }) => user)
+    return NextResponse.json(safeUsers)
   } catch (error) {
     console.error("Error fetching users:", error)
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
@@ -62,61 +54,38 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, user, users } = body
+    const { action, user } = body
 
     switch (action) {
       case "create":
-        if (!user) {
-          return NextResponse.json({ error: "User data required" }, { status: 400 })
-        }
-
-        // Check if username already exists
-        if (serverUsers.find((u) => u.username === user.username)) {
-          return NextResponse.json({ error: "Username already exists" }, { status: 409 })
-        }
-
-        serverUsers.push(user)
-        return NextResponse.json(user)
+        users.push(user)
+        return NextResponse.json({ success: true, user: { ...user, password: "***" } })
 
       case "update":
-        if (!user || !user.id) {
-          return NextResponse.json({ error: "User ID required" }, { status: 400 })
+        const updateIndex = users.findIndex((u) => u.id === user.id)
+        if (updateIndex !== -1) {
+          users[updateIndex] = { ...users[updateIndex], ...user }
+          return NextResponse.json({ success: true, user: { ...users[updateIndex], password: "***" } })
         }
-
-        const userIndex = serverUsers.findIndex((u) => u.id === user.id)
-        if (userIndex === -1) {
-          return NextResponse.json({ error: "User not found" }, { status: 404 })
-        }
-
-        serverUsers[userIndex] = { ...serverUsers[userIndex], ...user }
-        return NextResponse.json(serverUsers[userIndex])
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
 
       case "delete":
-        if (!user || !user.id) {
-          return NextResponse.json({ error: "User ID required" }, { status: 400 })
+        const deleteIndex = users.findIndex((u) => u.id === user.id)
+        if (deleteIndex !== -1) {
+          // Prevent deletion of system admin
+          if (users[deleteIndex].isSystemAdmin) {
+            return NextResponse.json({ error: "Cannot delete system admin" }, { status: 403 })
+          }
+          users.splice(deleteIndex, 1)
+          return NextResponse.json({ success: true })
         }
-
-        const userToDelete = serverUsers.find((u) => u.id === user.id)
-        if (!userToDelete) {
-          return NextResponse.json({ error: "User not found" }, { status: 404 })
-        }
-
-        serverUsers = serverUsers.filter((u) => u.id !== user.id)
-        return NextResponse.json({ success: true })
-
-      case "sync":
-        if (!users || !Array.isArray(users)) {
-          return NextResponse.json({ error: "Users array required" }, { status: 400 })
-        }
-
-        serverUsers = users
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
 
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 })
     }
   } catch (error) {
     console.error("Error processing user request:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 })
   }
 }
