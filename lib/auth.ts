@@ -3,246 +3,216 @@ export interface User {
   username: string
   password: string
   role: "admin" | "user"
-  isSystemAdmin?: boolean
   createdAt: string
   lastLogin?: string
+  isSystemAdmin?: boolean
 }
 
 class AuthService {
-  private users: User[] = [
-    {
-      id: "1",
-      username: "Jean-Mari",
-      password: "Foktogbokka",
-      role: "admin",
-      isSystemAdmin: true,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "2",
-      username: "Jean",
-      password: "admin123",
-      role: "admin",
-      isSystemAdmin: true,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "3",
-      username: "Eben",
-      password: "UY9FBe8abajU",
-      role: "user",
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "4",
-      username: "Francois",
-      password: "MnWbCkE4AcFP",
-      role: "user",
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "5",
-      username: "Wikus",
-      password: "Wikus@888",
-      role: "admin",
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "6",
-      username: "Jean",
-      password: "xNgU7ADa",
-      role: "admin",
-      isSystemAdmin: true,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-  ]
-
-  private currentUser: User | null = null
-  private isClient = typeof window !== "undefined"
+  private readonly STORAGE_KEY = "gunworx_current_user"
+  private readonly USERS_KEY = "gunworx_users"
+  private readonly API_ENDPOINT = "/api/users"
 
   constructor() {
-    if (this.isClient) {
-      this.initializeFromStorage()
+    if (typeof window !== "undefined") {
+      this.initializeUsers()
     }
   }
 
-  private initializeFromStorage() {
-    if (!this.isClient) return
+  private async initializeUsers() {
+    if (typeof window === "undefined") return
 
-    // Load users from localStorage if available
-    const savedUsers = localStorage.getItem("gunworx_users")
-    if (savedUsers) {
-      try {
-        this.users = JSON.parse(savedUsers)
-      } catch (error) {
-        console.error("Failed to load users from localStorage:", error)
+    try {
+      // First try to get users from server
+      const response = await fetch(this.API_ENDPOINT)
+      if (response.ok) {
+        const serverUsers = await response.json()
+        if (Array.isArray(serverUsers) && serverUsers.length > 0) {
+          localStorage.setItem(this.USERS_KEY, JSON.stringify(serverUsers))
+          return
+        }
       }
+    } catch (error) {
+      console.warn("Failed to fetch users from server, using localStorage fallback:", error)
     }
 
-    // Check for existing session
-    const savedUser = localStorage.getItem("gunworx_current_user")
-    if (savedUser) {
-      try {
-        this.currentUser = JSON.parse(savedUser)
-      } catch (error) {
-        console.error("Failed to load current user from localStorage:", error)
-      }
+    // Fallback to localStorage or create default users
+    const existingUsers = localStorage.getItem(this.USERS_KEY)
+    if (!existingUsers) {
+      const defaultUsers: User[] = [
+        {
+          id: "system_admin_001",
+          username: "Jean-Mari",
+          password: "Password123",
+          role: "admin",
+          createdAt: "2024-01-01T00:00:00.000Z",
+          isSystemAdmin: true,
+        },
+        {
+          id: "user_jp_admin_001",
+          username: "JP",
+          password: "xNgU7ADa",
+          role: "admin",
+          createdAt: "2024-01-15T10:30:00.000Z",
+        },
+        {
+          id: "1",
+          username: "admin",
+          password: "admin123",
+          role: "admin",
+          createdAt: new Date().toISOString(),
+        },
+      ]
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultUsers))
     }
   }
 
-  private saveUsers() {
-    if (!this.isClient) return
-    localStorage.setItem("gunworx_users", JSON.stringify(this.users))
-  }
+  async login(username: string, password: string): Promise<User | null> {
+    if (typeof window === "undefined") return null
 
-  private saveCurrentUser() {
-    if (!this.isClient) return
+    const users = await this.getUsers()
+    const user = users.find((u) => u.username === username && u.password === password)
 
-    if (this.currentUser) {
-      localStorage.setItem("gunworx_current_user", JSON.stringify(this.currentUser))
-    } else {
-      localStorage.removeItem("gunworx_current_user")
-    }
-  }
-
-  login(username: string, password: string): User | null {
-    const user = this.users.find((u) => u.username === username && u.password === password)
     if (user) {
-      this.currentUser = { ...user, lastLogin: new Date().toISOString() }
-      this.saveCurrentUser()
-      // Update user's last login in the users array
-      const userIndex = this.users.findIndex((u) => u.id === user.id)
-      if (userIndex !== -1) {
-        this.users[userIndex].lastLogin = this.currentUser.lastLogin
-        this.saveUsers()
-      }
-      return this.currentUser
+      const updatedUser = { ...user, lastLogin: new Date().toISOString() }
+      await this.updateUser(updatedUser)
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedUser))
+      return updatedUser
     }
+
     return null
   }
 
-  logout() {
-    this.currentUser = null
-    this.saveCurrentUser()
+  logout(): void {
+    if (typeof window === "undefined") return
+    localStorage.removeItem(this.STORAGE_KEY)
   }
 
   getCurrentUser(): User | null {
-    return this.currentUser
+    if (typeof window === "undefined") return null
+
+    const userStr = localStorage.getItem(this.STORAGE_KEY)
+    return userStr ? JSON.parse(userStr) : null
   }
 
-  getAllUsers(): User[] {
-    return this.users.map((user) => ({ ...user, password: "***" })) // Don't expose passwords
-  }
-
-  createUser(userData: Omit<User, "id" | "createdAt">): User {
-    const newUser: User = {
-      ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    }
-    this.users.push(newUser)
-    this.saveUsers()
-    return { ...newUser, password: "***" }
-  }
-
-  updateUser(userId: string, updates: Partial<Omit<User, "id" | "createdAt">>): User | null {
-    const userIndex = this.users.findIndex((u) => u.id === userId)
-    if (userIndex === -1) return null
-
-    this.users[userIndex] = { ...this.users[userIndex], ...updates }
-    this.saveUsers()
-
-    // Update current user if it's the same user
-    if (this.currentUser && this.currentUser.id === userId) {
-      this.currentUser = { ...this.currentUser, ...updates }
-      this.saveCurrentUser()
-    }
-
-    return { ...this.users[userIndex], password: "***" }
-  }
-
-  deleteUser(userId: string): boolean {
-    // Prevent deletion of system admin
-    const user = this.users.find((u) => u.id === userId)
-    if (user?.isSystemAdmin) return false
-
-    const initialLength = this.users.length
-    this.users = this.users.filter((u) => u.id !== userId)
-
-    if (this.users.length < initialLength) {
-      this.saveUsers()
-      return true
-    }
-    return false
-  }
-
-  changePassword(userId: string, newPassword: string): boolean {
-    const userIndex = this.users.findIndex((u) => u.id === userId)
-    if (userIndex === -1) return false
-
-    this.users[userIndex].password = newPassword
-    this.saveUsers()
-    return true
-  }
-
-  // Method used by user management component
   async getUsers(): Promise<User[]> {
-    // Return users with actual passwords for admin management
-    return Promise.resolve([...this.users])
+    if (typeof window === "undefined") return []
+
+    try {
+      // Try to get fresh data from server first
+      const response = await fetch(this.API_ENDPOINT)
+      if (response.ok) {
+        const serverUsers = await response.json()
+        if (Array.isArray(serverUsers) && serverUsers.length > 0) {
+          // Update localStorage with server data
+          localStorage.setItem(this.USERS_KEY, JSON.stringify(serverUsers))
+          return serverUsers
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to fetch users from server:", error)
+    }
+
+    // Fallback to localStorage
+    try {
+      const usersStr = localStorage.getItem(this.USERS_KEY)
+      if (!usersStr) {
+        await this.initializeUsers()
+        const newUsersStr = localStorage.getItem(this.USERS_KEY)
+        return newUsersStr ? JSON.parse(newUsersStr) : []
+      }
+      return JSON.parse(usersStr)
+    } catch (error) {
+      console.error("Error parsing users from localStorage:", error)
+      await this.initializeUsers()
+      const usersStr = localStorage.getItem(this.USERS_KEY)
+      return usersStr ? JSON.parse(usersStr) : []
+    }
   }
 
-  // Method used by user management component
-  async userExists(username: string): Promise<boolean> {
-    return Promise.resolve(this.users.some((u) => u.username === username))
-  }
-
-  // Method used by user management component - updated signature
   async createUser(userData: Omit<User, "id" | "createdAt">): Promise<User> {
+    if (typeof window === "undefined") throw new Error("Cannot create user on server side")
+
+    const users = await this.getUsers()
     const newUser: User = {
       ...userData,
-      id: Date.now().toString(),
+      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString(),
     }
-    this.users.push(newUser)
-    this.saveUsers()
-    return Promise.resolve(newUser)
-  }
 
-  // Method used by user management component - updated signature
-  async updateUser(updatedUser: User): Promise<User> {
-    const userIndex = this.users.findIndex((u) => u.id === updatedUser.id)
-    if (userIndex === -1) {
-      throw new Error("User not found")
+    const updatedUsers = [...users, newUser]
+
+    // Save to server
+    try {
+      await fetch(this.API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", user: newUser }),
+      })
+    } catch (error) {
+      console.warn("Failed to save user to server:", error)
     }
 
-    this.users[userIndex] = { ...updatedUser }
-    this.saveUsers()
-
-    // Update current user if it's the same user
-    if (this.currentUser && this.currentUser.id === updatedUser.id) {
-      this.currentUser = { ...updatedUser }
-      this.saveCurrentUser()
-    }
-
-    return Promise.resolve(this.users[userIndex])
+    // Always save to localStorage as backup
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(updatedUsers))
+    return newUser
   }
 
-  // Method used by user management component - updated signature
+  async updateUser(userData: User): Promise<void> {
+    if (typeof window === "undefined") return
+
+    const users = await this.getUsers()
+    const index = users.findIndex((u) => u.id === userData.id)
+
+    if (index !== -1) {
+      users[index] = userData
+
+      // Save to server
+      try {
+        await fetch(this.API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "update", user: userData }),
+        })
+      } catch (error) {
+        console.warn("Failed to update user on server:", error)
+      }
+
+      // Always save to localStorage as backup
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(users))
+    }
+  }
+
   async deleteUser(userId: string): Promise<void> {
-    // Prevent deletion of system admin
-    const user = this.users.find((u) => u.id === userId)
-    if (user?.isSystemAdmin) {
-      throw new Error("Cannot delete system administrator")
+    if (typeof window === "undefined") return
+
+    const users = await this.getUsers()
+    const userToDelete = users.find((u) => u.id === userId)
+
+    if (!userToDelete) return
+
+    const filteredUsers = users.filter((u) => u.id !== userId)
+
+    // Delete from server
+    try {
+      await fetch(this.API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", user: { id: userId } }),
+      })
+    } catch (error) {
+      console.warn("Failed to delete user from server:", error)
     }
 
-    const initialLength = this.users.length
-    this.users = this.users.filter((u) => u.id !== userId)
+    // Always save to localStorage as backup
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(filteredUsers))
+  }
 
-    if (this.users.length < initialLength) {
-      this.saveUsers()
-      return Promise.resolve()
-    }
-    throw new Error("User not found")
+  async userExists(username: string): Promise<boolean> {
+    if (typeof window === "undefined") return false
+
+    const users = await this.getUsers()
+    return users.some((u) => u.username === username)
   }
 }
 
