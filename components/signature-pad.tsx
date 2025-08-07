@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { RotateCcw } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 
 interface SignaturePadProps {
   onSignatureChange: (signature: string) => void
@@ -14,7 +14,7 @@ interface SignaturePadProps {
 export function SignaturePad({ onSignatureChange, width = 400, height = 200 }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
-  const [hasSignature, setHasSignature] = useState(false)
+  const [isEmpty, setIsEmpty] = useState(true)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -23,17 +23,13 @@ export function SignaturePad({ onSignatureChange, width = 400, height = 200 }: S
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Set canvas size
-    canvas.width = width
-    canvas.height = height
-
-    // Set drawing styles
+    // Set up canvas
     ctx.strokeStyle = '#000000'
     ctx.lineWidth = 2
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
-    // Fill with white background
+    // Clear canvas
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, width, height)
   }, [width, height])
@@ -69,7 +65,7 @@ export function SignaturePad({ onSignatureChange, width = 400, height = 200 }: S
 
     ctx.lineTo(x, y)
     ctx.stroke()
-    setHasSignature(true)
+    setIsEmpty(false)
   }
 
   const stopDrawing = () => {
@@ -80,7 +76,7 @@ export function SignaturePad({ onSignatureChange, width = 400, height = 200 }: S
     const canvas = canvasRef.current
     if (!canvas) return
 
-    // Convert canvas to data URL and notify parent
+    // Convert canvas to data URL and call callback
     const dataURL = canvas.toDataURL('image/png')
     onSignatureChange(dataURL)
   }
@@ -92,11 +88,9 @@ export function SignaturePad({ onSignatureChange, width = 400, height = 200 }: S
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Clear canvas and fill with white background
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, width, height)
-    
-    setHasSignature(false)
+    setIsEmpty(true)
     onSignatureChange('')
   }
 
@@ -136,7 +130,7 @@ export function SignaturePad({ onSignatureChange, width = 400, height = 200 }: S
 
     ctx.lineTo(x, y)
     ctx.stroke()
-    setHasSignature(true)
+    setIsEmpty(false)
   }
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -148,14 +142,25 @@ export function SignaturePad({ onSignatureChange, width = 400, height = 200 }: S
     <Card>
       <CardContent className="p-4">
         <div className="space-y-4">
-          <div className="text-sm text-gray-600">
-            Please sign in the box below using your mouse or touch screen:
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-medium">Digital Signature</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearSignature}
+              disabled={isEmpty}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
           </div>
           
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 bg-gray-50">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-2">
             <canvas
               ref={canvasRef}
-              className="border border-gray-300 rounded cursor-crosshair bg-white"
+              width={width}
+              height={height}
+              className="border border-gray-200 rounded cursor-crosshair touch-none"
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}
@@ -163,26 +168,12 @@ export function SignaturePad({ onSignatureChange, width = 400, height = 200 }: S
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              style={{ touchAction: 'none' }}
             />
           </div>
-
-          <div className="flex justify-between items-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearSignature}
-              disabled={!hasSignature}
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Clear
-            </Button>
-            
-            <div className="text-xs text-gray-500">
-              {hasSignature ? 'Signature captured' : 'No signature'}
-            </div>
-          </div>
+          
+          <p className="text-xs text-gray-500 text-center">
+            Sign above using your mouse or touch screen
+          </p>
         </div>
       </CardContent>
     </Card>

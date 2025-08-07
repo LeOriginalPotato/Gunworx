@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { authService, User } from '@/lib/auth'
-import { Plus, Edit, Trash2, Users, UserCheck, UserX } from 'lucide-react'
+import { Plus, Edit, Trash2, Users, UserCheck, UserX, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export function UserManagement() {
@@ -20,6 +20,8 @@ export function UserManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({})
+  const [editPassword, setEditPassword] = useState('')
   const { toast } = useToast()
 
   const [newUser, setNewUser] = useState({
@@ -82,10 +84,15 @@ export function UserManagement() {
     if (!selectedUser) return
 
     try {
-      await authService.updateUser(selectedUser.id, selectedUser)
+      const updateData = editPassword 
+        ? { ...selectedUser, password: editPassword }
+        : selectedUser
+      
+      await authService.updateUser(selectedUser.id, updateData)
       await loadUsers()
       setIsEditDialogOpen(false)
       setSelectedUser(null)
+      setEditPassword('')
       toast({
         title: "User Updated",
         description: "User details have been successfully updated."
@@ -114,6 +121,17 @@ export function UserManagement() {
         variant: "destructive"
       })
     }
+  }
+
+  const togglePasswordVisibility = (userId: string) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }))
+  }
+
+  const getUserPassword = (username: string) => {
+    return authService.getPassword(username)
   }
 
   const getRoleBadge = (role: string) => {
@@ -181,29 +199,12 @@ export function UserManagement() {
                   onChange={(e) => setNewUser({...newUser, password: e.target.value})}
                 />
               </div>
-              <div>
+              <div className="col-span-2">
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
                   id="firstName"
                   value={newUser.firstName}
                   onChange={(e) => setNewUser({...newUser, firstName: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={newUser.lastName}
-                  onChange={(e) => setNewUser({...newUser, lastName: e.target.value})}
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                 />
               </div>
               <div>
@@ -245,7 +246,7 @@ export function UserManagement() {
               <TableRow>
                 <TableHead>Username</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>Password</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Login</TableHead>
@@ -256,8 +257,28 @@ export function UserManagement() {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.username}</TableCell>
-                  <TableCell>{user.firstName} {user.lastName}</TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.firstName}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-sm">
+                        {showPasswords[user.id] 
+                          ? getUserPassword(user.username) 
+                          : '••••••••'
+                        }
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => togglePasswordVisibility(user.id)}
+                      >
+                        {showPasswords[user.id] ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
                   <TableCell>{getStatusBadge(user.isActive)}</TableCell>
                   <TableCell>
@@ -270,6 +291,7 @@ export function UserManagement() {
                         size="sm"
                         onClick={() => {
                           setSelectedUser(user)
+                          setEditPassword('')
                           setIsEditDialogOpen(true)
                         }}
                       >
@@ -325,28 +347,21 @@ export function UserManagement() {
                 />
               </div>
               <div>
+                <Label htmlFor="editPassword">New Password (leave blank to keep current)</Label>
+                <Input
+                  id="editPassword"
+                  type="password"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="Enter new password..."
+                />
+              </div>
+              <div>
                 <Label htmlFor="editFirstName">First Name</Label>
                 <Input
                   id="editFirstName"
                   value={selectedUser.firstName}
                   onChange={(e) => setSelectedUser({...selectedUser, firstName: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="editLastName">Last Name</Label>
-                <Input
-                  id="editLastName"
-                  value={selectedUser.lastName}
-                  onChange={(e) => setSelectedUser({...selectedUser, lastName: e.target.value})}
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="editEmail">Email</Label>
-                <Input
-                  id="editEmail"
-                  type="email"
-                  value={selectedUser.email}
-                  onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
                 />
               </div>
               <div>

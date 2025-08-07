@@ -6,8 +6,8 @@ const users = [
     id: '1',
     username: 'Jean-Mari',
     firstName: 'Jean-Mari',
-    lastName: 'Administrator',
-    email: 'jean-mari@gunworx.com',
+    lastName: '',
+    email: '',
     role: 'admin',
     department: 'Management',
     position: 'System Administrator',
@@ -18,13 +18,49 @@ const users = [
     id: '2',
     username: 'Jean',
     firstName: 'Jean',
-    lastName: 'Admin',
-    email: 'jean@gunworx.com',
+    lastName: '',
+    email: '',
     role: 'admin',
     department: 'Operations',
     position: 'Operations Manager',
     hireDate: '2021-03-15',
     isSystemAdmin: true
+  },
+  {
+    id: '3',
+    username: 'Wikus',
+    firstName: 'Wikus',
+    lastName: '',
+    email: '',
+    role: 'admin',
+    department: 'Sales',
+    position: 'Sales Manager',
+    hireDate: '2022-06-10',
+    isSystemAdmin: true
+  },
+  {
+    id: '4',
+    username: 'Eben',
+    firstName: 'Eben',
+    lastName: '',
+    email: '',
+    role: 'user',
+    department: 'Workshop',
+    position: 'Gunsmith',
+    hireDate: '2022-08-22',
+    isSystemAdmin: false
+  },
+  {
+    id: '5',
+    username: 'Francois',
+    firstName: 'Francois',
+    lastName: '',
+    email: '',
+    role: 'user',
+    department: 'Inventory',
+    position: 'Inventory Clerk',
+    hireDate: '2023-01-18',
+    isSystemAdmin: false
   }
 ]
 
@@ -37,7 +73,7 @@ export async function POST(request: NextRequest) {
     const userData = await request.json()
     
     // Validate required fields
-    if (!userData.username || !userData.firstName || !userData.lastName) {
+    if (!userData.username || !userData.firstName) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }

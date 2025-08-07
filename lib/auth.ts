@@ -16,27 +16,60 @@ class AuthService {
       id: '1',
       username: 'Jean-Mari',
       firstName: 'Jean-Mari',
-      lastName: 'Admin',
-      email: 'jean-mari@gunworx.com',
+      lastName: '',
+      email: '',
       role: 'admin',
       isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
+      createdAt: '2020-01-01T00:00:00Z'
     },
     {
       id: '2',
       username: 'Jean',
       firstName: 'Jean',
-      lastName: 'Admin',
-      email: 'jean@gunworx.com',
+      lastName: '',
+      email: '',
       role: 'admin',
       isActive: true,
-      createdAt: '2024-01-01T00:00:00Z'
+      createdAt: '2021-03-15T00:00:00Z'
+    },
+    {
+      id: '3',
+      username: 'Wikus',
+      firstName: 'Wikus',
+      lastName: '',
+      email: '',
+      role: 'admin',
+      isActive: true,
+      createdAt: '2022-06-10T00:00:00Z'
+    },
+    {
+      id: '4',
+      username: 'Eben',
+      firstName: 'Eben',
+      lastName: '',
+      email: '',
+      role: 'user',
+      isActive: true,
+      createdAt: '2022-08-22T00:00:00Z'
+    },
+    {
+      id: '5',
+      username: 'Francois',
+      firstName: 'Francois',
+      lastName: '',
+      email: '',
+      role: 'user',
+      isActive: true,
+      createdAt: '2023-01-18T00:00:00Z'
     }
   ]
 
   private passwords: Record<string, string> = {
     'Jean-Mari': 'Foktogbokka',
-    'Jean': 'xNgU7ADa'
+    'Jean': 'xNgU7ADa',
+    'Wikus': 'Wikus@888',
+    'Eben': 'UY9FBe8abajU',
+    'Francois': 'MnWbCkE4AcFP'
   }
 
   async login(username: string, password: string): Promise<User> {
@@ -114,6 +147,10 @@ class AuthService {
     const username = this.users[userIndex].username
     this.users.splice(userIndex, 1)
     delete this.passwords[username]
+  }
+
+  getPassword(username: string): string {
+    return this.passwords[username] || 'Not found'
   }
 }
 

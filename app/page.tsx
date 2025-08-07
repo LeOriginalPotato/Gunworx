@@ -1885,6 +1885,9 @@ export default function GunworxTracker() {
   const [signature, setSignature] = useState<string>('')
   const { toast } = useToast()
 
+  const [isEditInspectionDialogOpen, setIsEditInspectionDialogOpen] = useState(false)
+  const [selectedInspectionForEdit, setSelectedInspectionForEdit] = useState<Inspection | null>(null)
+
   const [newFirearm, setNewFirearm] = useState<Omit<Firearm, 'id'>>({
     stockNo: '',
     dateReceived: '',
@@ -2077,6 +2080,28 @@ export default function GunworxTracker() {
     })
   }
 
+  const handleEditInspection = () => {
+    if (selectedInspectionForEdit) {
+      setInspections(inspections.map(i => 
+        i.id === selectedInspectionForEdit.id ? selectedInspectionForEdit : i
+      ))
+      setIsEditInspectionDialogOpen(false)
+      setSelectedInspectionForEdit(null)
+      toast({
+        title: "Inspection Updated",
+        description: "Inspection record has been successfully updated.",
+      })
+    }
+  }
+
+  const handleDeleteInspection = (id: string) => {
+    setInspections(inspections.filter(i => i.id !== id))
+    toast({
+      title: "Inspection Deleted",
+      description: "Inspection record has been successfully removed.",
+    })
+  }
+
   const exportData = () => {
     const data = {
       firearms,
@@ -2139,7 +2164,7 @@ export default function GunworxTracker() {
               </div>
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600">
-                  Welcome, {currentUser.firstName} {currentUser.lastName}
+                  Welcome, {currentUser.firstName}
                 </span>
                 <Button variant="outline" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
@@ -2174,7 +2199,7 @@ export default function GunworxTracker() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Welcome, {currentUser.firstName} {currentUser.lastName}
+                Welcome, {currentUser.firstName}
               </span>
               {currentUser.role === 'admin' && (
                 <Button
@@ -2712,16 +2737,53 @@ export default function GunworxTracker() {
                         <TableCell>{inspection.type}</TableCell>
                         <TableCell>{getInspectionStatusBadge(inspection.status)}</TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedInspection(inspection)
-                              // You could open a view dialog here
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedInspection(inspection)
+                                // You could open a view dialog here
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {currentUser?.role === 'admin' && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedInspectionForEdit(inspection)
+                                    setIsEditInspectionDialogOpen(true)
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the inspection record.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteInspection(inspection.id)}>
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -2729,6 +2791,82 @@ export default function GunworxTracker() {
                 </Table>
               </CardContent>
             </Card>
+
+            {/* Edit Inspection Dialog */}
+            <Dialog open={isEditInspectionDialogOpen} onOpenChange={setIsEditInspectionDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Inspection</DialogTitle>
+                  <DialogDescription>
+                    Update the inspection record details.
+                  </DialogDescription>
+                </DialogHeader>
+                {selectedInspectionForEdit && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="editInspectionDate">Date</Label>
+                      <Input
+                        id="editInspectionDate"
+                        type="date"
+                        value={selectedInspectionForEdit.date}
+                        onChange={(e) => setSelectedInspectionForEdit({...selectedInspectionForEdit, date: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="editInspector">Inspector</Label>
+                      <Input
+                        id="editInspector"
+                        value={selectedInspectionForEdit.inspector}
+                        onChange={(e) => setSelectedInspectionForEdit({...selectedInspectionForEdit, inspector: e.target.value})}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="editInspectionType">Type</Label>
+                      <Input
+                        id="editInspectionType"
+                        value={selectedInspectionForEdit.type}
+                        onChange={(e) => setSelectedInspectionForEdit({...selectedInspectionForEdit, type: e.target.value})}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="editFindings">Findings</Label>
+                      <Textarea
+                        id="editFindings"
+                        value={selectedInspectionForEdit.findings}
+                        onChange={(e) => setSelectedInspectionForEdit({...selectedInspectionForEdit, findings: e.target.value})}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="editRecommendations">Recommendations</Label>
+                      <Textarea
+                        id="editRecommendations"
+                        value={selectedInspectionForEdit.recommendations}
+                        onChange={(e) => setSelectedInspectionForEdit({...selectedInspectionForEdit, recommendations: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="editInspectionStatus">Status</Label>
+                      <Select value={selectedInspectionForEdit.status} onValueChange={(value: Inspection['status']) => setSelectedInspectionForEdit({...selectedInspectionForEdit, status: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="passed">Passed</SelectItem>
+                          <SelectItem value="failed">Failed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsEditInspectionDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleEditInspection}>Save Changes</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-6">
