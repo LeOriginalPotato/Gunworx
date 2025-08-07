@@ -1,77 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authService } from '@/lib/auth'
+
+// Mock user data
+const users = [
+  {
+    id: '1',
+    username: 'Jean-Mari',
+    firstName: 'Jean-Mari',
+    lastName: 'Administrator',
+    email: 'jean-mari@gunworx.com',
+    role: 'admin',
+    department: 'Management',
+    position: 'System Administrator',
+    hireDate: '2020-01-01',
+    isSystemAdmin: true
+  },
+  {
+    id: '2',
+    username: 'Jean',
+    firstName: 'Jean',
+    lastName: 'Admin',
+    email: 'jean@gunworx.com',
+    role: 'admin',
+    department: 'Operations',
+    position: 'Operations Manager',
+    hireDate: '2021-03-15',
+    isSystemAdmin: true
+  }
+]
 
 export async function GET() {
-  try {
-    const users = authService.getAllUsers()
-    return NextResponse.json({ users })
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    )
-  }
+  return NextResponse.json(users)
 }
 
 export async function POST(request: NextRequest) {
   try {
     const userData = await request.json()
-    const result = await authService.createUser(userData)
     
-    if (result.success) {
-      return NextResponse.json({ user: result.user })
-    } else {
+    // Validate required fields
+    if (!userData.username || !userData.firstName || !userData.lastName) {
       return NextResponse.json(
-        { error: result.error },
+        { error: 'Missing required fields' },
         { status: 400 }
       )
     }
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    )
-  }
-}
 
-export async function PUT(request: NextRequest) {
-  try {
-    const { userId, ...updateData } = await request.json()
-    const result = await authService.updateUser(userId, updateData)
-    
-    if (result.success) {
-      return NextResponse.json({ user: result.user })
-    } else {
+    // Check if username already exists
+    if (users.some(u => u.username === userData.username)) {
       return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
+        { error: 'Username already exists' },
+        { status: 409 }
       )
     }
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    )
-  }
-}
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const { userId } = await request.json()
-    const result = await authService.deleteUser(userId)
-    
-    if (result.success) {
-      return NextResponse.json({ success: true })
-    } else {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      )
+    const newUser = {
+      id: Date.now().toString(),
+      ...userData,
+      isSystemAdmin: false
     }
+
+    users.push(newUser)
+
+    return NextResponse.json(newUser, { status: 201 })
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to delete user' },
-      { status: 500 }
+      { error: 'Invalid request data' },
+      { status: 400 }
     )
   }
 }

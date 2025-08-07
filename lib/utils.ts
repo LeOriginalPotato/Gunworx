@@ -5,14 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(date: string | Date): string {
-  if (!date) return ""
-  
-  const dateObj = typeof date === "string" ? new Date(date) : date
-  
-  if (isNaN(dateObj.getTime())) return ""
-  
-  return dateObj.toLocaleDateString("en-US", {
+export function formatDate(dateString: string): string {
+  if (!dateString) return ""
+  const date = new Date(dateString)
+  return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -43,46 +39,34 @@ export function formatCurrency(amount: number, currency = "USD"): string {
 }
 
 export function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+  return Math.random().toString(36).substr(2, 9)
 }
 
 export function exportToCSV(data: any[], filename: string): void {
-  if (!data || data.length === 0) {
-    alert("No data to export")
-    return
-  }
+  if (!data.length) return
 
-  // Get headers from the first object
   const headers = Object.keys(data[0])
-  
-  // Create CSV content
   const csvContent = [
-    headers.join(","), // Header row
+    headers.join(","),
     ...data.map(row => 
       headers.map(header => {
         const value = row[header]
-        // Escape commas and quotes in values
-        if (typeof value === "string" && (value.includes(",") || value.includes('"'))) {
-          return `"${value.replace(/"/g, '""')}"`
-        }
-        return value || ""
+        return typeof value === "string" && value.includes(",") 
+          ? `"${value}"` 
+          : value
       }).join(",")
     )
   ].join("\n")
 
-  // Create and download file
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
   const link = document.createElement("a")
-  
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", filename)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+  const url = URL.createObjectURL(blob)
+  link.setAttribute("href", url)
+  link.setAttribute("download", filename)
+  link.style.visibility = "hidden"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 export function debounce<T extends (...args: any[]) => any>(

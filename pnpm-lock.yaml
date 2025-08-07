@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@hookform/resolvers':
-        specifier: ^3.3.2
-        version: 3.3.2(react-hook-form@7.62.0(react@18.0.0))
       '@radix-ui/react-accordion':
         specifier: latest
         version: 1.2.11(@types/react-dom@18.0.0)(@types/react@18.0.0)(react-dom@18.0.0(react@18.0.0))(react@18.0.0)
@@ -137,9 +134,6 @@ importers:
       recharts:
         specifier: latest
         version: 3.1.2(@types/react@18.0.0)(react-dom@18.0.0(react@18.0.0))(react-is@18.3.1)(react@18.0.0)(redux@5.0.1)
-      signature_pad:
-        specifier: ^4.1.1
-        version: 4.1.1
       sonner:
         specifier: latest
         version: 2.0.7(react-dom@18.0.0(react@18.0.0))(react@18.0.0)
@@ -152,9 +146,6 @@ importers:
       vaul:
         specifier: latest
         version: 1.1.2(@types/react-dom@18.0.0)(@types/react@18.0.0)(react-dom@18.0.0(react@18.0.0))(react@18.0.0)
-      zod:
-        specifier: ^3.22.4
-        version: 3.22.4
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -169,7 +160,7 @@ importers:
         specifier: ^10.4.16
         version: 10.4.20(postcss@8.5.0)
       eslint:
-        specifier: ^8.56.0
+        specifier: ^8.54.0
         version: 8.56.0
       eslint-config-next:
         specifier: 14.0.4
@@ -178,7 +169,7 @@ importers:
         specifier: ^8.5
         version: 8.5.0
       tailwindcss:
-        specifier: ^3.3.6
+        specifier: ^3.3.5
         version: 3.4.17
       typescript:
         specifier: ^5
@@ -238,11 +229,6 @@ packages:
 
   '@floating-ui/utils@0.2.9':
     resolution: {integrity: sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==}
-
-  '@hookform/resolvers@3.3.2':
-    resolution: {integrity: sha512-Tw+GGPnBp+5DOsSg4ek3LCPgkBOuOgS5DsDV7qsWNH9LZc433kgsWICjlsh2J9p04H2K66hsXPPb9qn9ILdUtA==}
-    peerDependencies:
-      react-hook-form: ^7.0.0
 
   '@humanwhocodes/config-array@0.11.14':
     resolution: {integrity: sha512-3T8LkOmg45BV5FICb15QQMsyUSWrQ8AygVfC7ZG32zOalnqrilm018ZVCw0eapXux8FtA33q8PSRSstjee3jSg==}
@@ -2555,9 +2541,6 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
-  signature_pad@4.1.1:
-    resolution: {integrity: sha512-xLOCnmjgYGpW3z3BPlS+Vv6DTNlP6Wx2y6OQJaRX6d1EPvG4SKRdtvFBa5QqfFoUZtBuSZs9vDwBE5kqcuo3Hg==}
-
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
@@ -2835,9 +2818,6 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zod@3.22.4:
-    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
@@ -2901,10 +2881,6 @@ snapshots:
       react-dom: 18.0.0(react@18.0.0)
 
   '@floating-ui/utils@0.2.9': {}
-
-  '@hookform/resolvers@3.3.2(react-hook-form@7.62.0(react@18.0.0))':
-    dependencies:
-      react-hook-form: 7.62.0(react@18.0.0)
 
   '@humanwhocodes/config-array@0.11.14':
     dependencies:
@@ -5409,8 +5385,6 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  signature_pad@4.1.1: {}
-
   slash@3.0.0: {}
 
   sonner@2.0.7(react-dom@18.0.0(react@18.0.0))(react@18.0.0):
@@ -5788,5 +5762,3 @@ snapshots:
   yaml@2.8.0: {}
 
   yocto-queue@0.1.0: {}
-
-  zod@3.22.4: {}

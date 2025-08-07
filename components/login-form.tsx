@@ -1,106 +1,92 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, Eye, EyeOff } from 'lucide-react'
-import { authService, type User } from "@/lib/auth"
+import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Label } from '@/components/ui/label'
+import { authService, User } from '@/lib/auth'
+import { Lock, UserIcon } from 'lucide-react'
 
 interface LoginFormProps {
   onLogin: (user: User) => void
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
     setIsLoading(true)
+    setError('')
 
     try {
-      const user = authService.login(username, password)
-      if (user) {
-        onLogin(user)
-      } else {
-        setError("Invalid username or password")
-      }
+      const user = await authService.login(username, password)
+      onLogin(user)
     } catch (err) {
-      setError("Login failed. Please try again.")
+      setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-xl">GW</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gunworx Management Portal</h1>
-          <p className="text-gray-600">Firearms Control Act Compliance System</p>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            Gunworx Employee Portal
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Sign in to access the firearms tracking system
+          </p>
         </div>
 
-        <Card className="shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle>Sign In</CardTitle>
             <CardDescription>
-              Enter your credentials to access the management portal
+              Enter your credentials to access the system
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
-                  required
-                  disabled={isLoading}
-                />
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter your username"
+                    required
+                  />
+                </div>
               </div>
-              
-              <div className="space-y-2">
+
+              <div>
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     id="password"
-                    type={showPassword ? "text" : "password"}
+                    type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
                     placeholder="Enter your password"
                     required
-                    disabled={isLoading}
-                    className="pr-10"
                   />
-                  <button
-                    type="button"
-                    onClick={togglePasswordVisibility}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </button>
                 </div>
               </div>
 
@@ -110,22 +96,24 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 </Alert>
               )}
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
 
-            
+            <div className="mt-6 text-center">
+              <div className="text-sm text-gray-600">
+                <p className="font-medium">Demo Credentials:</p>
+                <p>Username: Jean-Mari | Password: Foktogbokka</p>
+                <p>Username: Jean | Password: xNgU7ADa</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
-
-        <div className="text-center mt-6 text-sm text-gray-500">
-          <p>© 2024 Gunworx Management Portal. All rights reserved.</p>
-        </div>
       </div>
     </div>
   )
