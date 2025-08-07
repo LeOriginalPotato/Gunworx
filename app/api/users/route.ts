@@ -1,150 +1,100 @@
-import { NextRequest, NextResponse } from 'next/server'
-
-// This is a placeholder API route for user management
-// In a real application, this would connect to a database
+import { NextRequest, NextResponse } from 'next/server';
+import { authService } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    // In a real app, fetch users from database
-    const users = [
-      {
-        id: "1",
-        username: "Jean-Mari",
-        role: "admin",
-        isSystemAdmin: true,
-        createdAt: "2024-01-01T00:00:00Z",
-        lastLogin: "2024-01-15T10:30:00Z"
-      },
-      {
-        id: "2",
-        username: "Jean",
-        role: "admin",
-        isSystemAdmin: true,
-        createdAt: "2024-01-01T00:00:00Z",
-        lastLogin: "2024-01-14T15:45:00Z"
-      },
-      {
-        id: "3",
-        username: "Eben",
-        role: "user",
-        isSystemAdmin: false,
-        createdAt: "2024-01-01T00:00:00Z",
-        lastLogin: "2024-01-13T09:20:00Z"
-      },
-      {
-        id: "4",
-        username: "Francois",
-        role: "user",
-        isSystemAdmin: false,
-        createdAt: "2024-01-01T00:00:00Z",
-        lastLogin: "2024-01-12T14:10:00Z"
-      },
-      {
-        id: "5",
-        username: "Wikus",
-        role: "admin",
-        isSystemAdmin: false,
-        createdAt: "2024-01-01T00:00:00Z",
-        lastLogin: "2024-01-11T11:55:00Z"
-      }
-    ]
+    const sessionId = request.cookies.get('sessionId')?.value;
+    
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    return NextResponse.json({ users })
+    const currentUser = await authService.validateSession(sessionId);
+    if (!currentUser || currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const users = await authService.getAllUsers();
+    return NextResponse.json(users);
   } catch (error) {
-    console.error('Error fetching users:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    )
+    console.error('Error fetching users:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { username, password, role, isSystemAdmin } = body
-
-    // Validate required fields
-    if (!username || !password || !role) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
+    const sessionId = request.cookies.get('sessionId')?.value;
+    
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // In a real app, save to database
-    const newUser = {
-      id: Date.now().toString(),
-      username,
-      role,
-      isSystemAdmin: isSystemAdmin || false,
-      createdAt: new Date().toISOString(),
-      lastLogin: null
+    const currentUser = await authService.validateSession(sessionId);
+    if (!currentUser || currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    return NextResponse.json({ user: newUser }, { status: 201 })
+    const userData = await request.json();
+    const newUser = await authService.createUser(userData);
+    
+    return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
-    console.error('Error creating user:', error)
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    )
+    console.error('Error creating user:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { id, username, password, role, isSystemAdmin } = body
-
-    // Validate required fields
-    if (!id || !username || !role) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
+    const sessionId = request.cookies.get('sessionId')?.value;
+    
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // In a real app, update in database
-    const updatedUser = {
-      id,
-      username,
-      role,
-      isSystemAdmin: isSystemAdmin || false,
-      updatedAt: new Date().toISOString()
+    const currentUser = await authService.validateSession(sessionId);
+    if (!currentUser || currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    return NextResponse.json({ user: updatedUser })
+    const { id, ...updates } = await request.json();
+    const updatedUser = await authService.updateUser(id, updates);
+    
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json(updatedUser);
   } catch (error) {
-    console.error('Error updating user:', error)
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    )
+    console.error('Error updating user:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      )
+    const sessionId = request.cookies.get('sessionId')?.value;
+    
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // In a real app, delete from database
-    // Check if user is system admin before deletion
+    const currentUser = await authService.validateSession(sessionId);
+    if (!currentUser || currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { id } = await request.json();
+    const deleted = await authService.deleteUser(id);
     
-    return NextResponse.json({ success: true })
+    if (!deleted) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting user:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete user' },
-      { status: 500 }
-    )
+    console.error('Error deleting user:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

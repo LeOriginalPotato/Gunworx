@@ -1,202 +1,112 @@
 export interface User {
-  id: string
-  username: string
-  password: string
-  role: "admin" | "user"
-  isSystemAdmin?: boolean
-  createdAt: string
-  lastLogin?: string
+  id: string;
+  username: string;
+  email: string;
+  role: 'admin' | 'employee';
+  firstName: string;
+  lastName: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-class AuthService {
+export class AuthService {
   private users: User[] = [
     {
-      id: "1",
-      username: "Jean-Mari",
-      password: "Foktogbokka",
-      role: "admin",
-      isSystemAdmin: true,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "2",
-      username: "Jean",
-      password: "xNgU7ADa",
-      role: "admin",
-      isSystemAdmin: true,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "3",
-      username: "Eben",
-      password: "UY9FBe8abajU",
-      role: "user",
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "4",
-      username: "Francois",
-      password: "MnWbCkE4AcFP",
-      role: "user",
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "5",
-      username: "Wikus",
-      password: "Wikus@888",
-      role: "admin",
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-  ]
-
-  private currentUser: User | null = null
-  private isClient = typeof window !== "undefined"
-
-  constructor() {
-    if (this.isClient) {
-      this.initializeFromStorage()
+      id: '1',
+      username: 'admin',
+      email: 'admin@gunworx.com',
+      role: 'admin',
+      firstName: 'Admin',
+      lastName: 'User',
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
-  }
+  ];
 
-  private initializeFromStorage() {
-    if (!this.isClient) return
+  private sessions: Map<string, { userId: string; expiresAt: Date }> = new Map();
 
-    // Load users from localStorage if available
-    const savedUsers = localStorage.getItem("gunworx_users")
-    if (savedUsers) {
-      try {
-        this.users = JSON.parse(savedUsers)
-      } catch (error) {
-        console.error("Failed to load users from localStorage:", error)
-      }
-    } else {
-      // Save initial users to localStorage
-      this.saveUsers()
-    }
-
-    // Check for existing session
-    const savedUser = localStorage.getItem("gunworx_current_user")
-    if (savedUser) {
-      try {
-        this.currentUser = JSON.parse(savedUser)
-      } catch (error) {
-        console.error("Failed to load current user from localStorage:", error)
+  async login(username: string, password: string): Promise<{ success: boolean; user?: User; sessionId?: string; error?: string }> {
+    // Simple authentication - in production, use proper password hashing
+    if (username === 'admin' && password === 'admin123') {
+      const user = this.users.find(u => u.username === username);
+      if (user) {
+        const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        
+        this.sessions.set(sessionId, { userId: user.id, expiresAt });
+        
+        return { success: true, user, sessionId };
       }
     }
+    
+    return { success: false, error: 'Invalid credentials' };
   }
 
-  private saveUsers() {
-    if (!this.isClient) return
-    localStorage.setItem("gunworx_users", JSON.stringify(this.users))
+  async logout(sessionId: string): Promise<void> {
+    this.sessions.delete(sessionId);
   }
 
-  private saveCurrentUser() {
-    if (!this.isClient) return
-
-    if (this.currentUser) {
-      localStorage.setItem("gunworx_current_user", JSON.stringify(this.currentUser))
-    } else {
-      localStorage.removeItem("gunworx_current_user")
-    }
-  }
-
-  login(username: string, password: string): User | null {
-    const user = this.users.find((u) => u.username === username && u.password === password)
-    if (user) {
-      this.currentUser = { ...user, lastLogin: new Date().toISOString() }
-      this.saveCurrentUser()
-      // Update user's last login in the users array
-      const userIndex = this.users.findIndex((u) => u.id === user.id)
-      if (userIndex !== -1) {
-        this.users[userIndex].lastLogin = this.currentUser.lastLogin
-        this.saveUsers()
+  async validateSession(sessionId: string): Promise<User | null> {
+    const session = this.sessions.get(sessionId);
+    if (!session || session.expiresAt < new Date()) {
+      if (session) {
+        this.sessions.delete(sessionId);
       }
-      return this.currentUser
+      return null;
     }
-    return null
+
+    const user = this.users.find(u => u.id === session.userId);
+    return user || null;
   }
 
-  logout() {
-    this.currentUser = null
-    this.saveCurrentUser()
-  }
-
-  getCurrentUser(): User | null {
-    return this.currentUser
-  }
-
-  getAllUsers(): User[] {
-    return this.users.map((user) => ({ ...user, password: "***" })) // Don't expose passwords
-  }
-
-  changePassword(userId: string, newPassword: string): boolean {
-    const userIndex = this.users.findIndex((u) => u.id === userId)
-    if (userIndex === -1) return false
-
-    this.users[userIndex].password = newPassword
-    this.saveUsers()
-    return true
-  }
-
-  // Method used by user management component
-  async getUsers(): Promise<User[]> {
-    // Return users with actual passwords for admin management
-    return Promise.resolve([...this.users])
-  }
-
-  // Method used by user management component
-  async userExists(username: string): Promise<boolean> {
-    return Promise.resolve(this.users.some((u) => u.username === username))
-  }
-
-  // Method used by user management component
-  async createUser(userData: Omit<User, "id" | "createdAt">): Promise<User> {
+  async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
     const newUser: User = {
       ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    }
-    this.users.push(newUser)
-    this.saveUsers()
-    return Promise.resolve(newUser)
+      id: Math.random().toString(36).substring(2, 15),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.users.push(newUser);
+    return newUser;
   }
 
-  // Method used by user management component
-  async updateUser(updatedUser: User): Promise<User> {
-    const userIndex = this.users.findIndex((u) => u.id === updatedUser.id)
-    if (userIndex === -1) {
-      throw new Error("User not found")
-    }
+  async updateUser(id: string, updates: Partial<Omit<User, 'id' | 'createdAt'>>): Promise<User | null> {
+    const userIndex = this.users.findIndex(u => u.id === id);
+    if (userIndex === -1) return null;
 
-    this.users[userIndex] = { ...updatedUser }
-    this.saveUsers()
+    this.users[userIndex] = {
+      ...this.users[userIndex],
+      ...updates,
+      updatedAt: new Date()
+    };
 
-    // Update current user if it's the same user
-    if (this.currentUser && this.currentUser.id === updatedUser.id) {
-      this.currentUser = { ...updatedUser }
-      this.saveCurrentUser()
-    }
-
-    return Promise.resolve(this.users[userIndex])
+    return this.users[userIndex];
   }
 
-  // Method used by user management component
-  async deleteUser(userId: string): Promise<void> {
-    // Prevent deletion of system administrator
-    const user = this.users.find((u) => u.id === userId)
-    if (user?.isSystemAdmin) {
-      throw new Error("Cannot delete system administrator")
-    }
+  async deleteUser(id: string): Promise<boolean> {
+    const userIndex = this.users.findIndex(u => u.id === id);
+    if (userIndex === -1) return false;
 
-    const initialLength = this.users.length
-    this.users = this.users.filter((u) => u.id !== userId)
+    this.users.splice(userIndex, 1);
+    return true;
+  }
 
-    if (this.users.length < initialLength) {
-      this.saveUsers()
-      return Promise.resolve()
-    }
-    throw new Error("User not found")
+  async getAllUsers(): Promise<User[]> {
+    return [...this.users];
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    return this.users.find(u => u.id === id) || null;
+  }
+
+  async updatePassword(userId: string, newPassword: string): Promise<boolean> {
+    // In a real application, you would hash the password and store it
+    // For this demo, we'll just return true if the user exists
+    const user = this.users.find(u => u.id === userId);
+    return !!user;
   }
 }
 
-export const authService = new AuthService()
+// Singleton instance
+export const authService = new AuthService();
