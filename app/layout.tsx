@@ -1,15 +1,14 @@
-import type { Metadata } from "next"
+import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import "./globals.css"
+import './globals.css'
+import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from '@/components/ui/toaster'
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Gunworx Management Portal",
-  description: "Professional firearms management system compliant with Firearms Control Act, 2000",
-  keywords: ["firearms", "management", "compliance", "tracking", "inventory"],
-  authors: [{ name: "Gunworx" }],
-  viewport: "width=device-width, initial-scale=1",
+  title: 'Gunworx Employee Portal',
+  description: 'Employee management and tracking system for Gunworx',
     generator: 'v0.dev'
 }
 
@@ -20,13 +19,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </head>
-      <body className={inter.className} suppressHydrationWarning>
-        {children}
+      <body className={inter.className}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   )
