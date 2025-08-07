@@ -69,6 +69,9 @@ class AuthService {
       } catch (error) {
         console.error("Failed to load users from localStorage:", error)
       }
+    } else {
+      // Save initial users to localStorage
+      this.saveUsers()
     }
 
     // Check for existing session
@@ -126,48 +129,6 @@ class AuthService {
     return this.users.map((user) => ({ ...user, password: "***" })) // Don't expose passwords
   }
 
-  createUser(userData: Omit<User, "id" | "createdAt">): User {
-    const newUser: User = {
-      ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    }
-    this.users.push(newUser)
-    this.saveUsers()
-    return { ...newUser, password: "***" }
-  }
-
-  updateUser(userId: string, updates: Partial<Omit<User, "id" | "createdAt">>): User | null {
-    const userIndex = this.users.findIndex((u) => u.id === userId)
-    if (userIndex === -1) return null
-
-    this.users[userIndex] = { ...this.users[userIndex], ...updates }
-    this.saveUsers()
-
-    // Update current user if it's the same user
-    if (this.currentUser && this.currentUser.id === userId) {
-      this.currentUser = { ...this.currentUser, ...updates }
-      this.saveCurrentUser()
-    }
-
-    return { ...this.users[userIndex], password: "***" }
-  }
-
-  deleteUser(userId: string): boolean {
-    // Prevent deletion of system admin
-    const user = this.users.find((u) => u.id === userId)
-    if (user?.isSystemAdmin) return false
-
-    const initialLength = this.users.length
-    this.users = this.users.filter((u) => u.id !== userId)
-
-    if (this.users.length < initialLength) {
-      this.saveUsers()
-      return true
-    }
-    return false
-  }
-
   changePassword(userId: string, newPassword: string): boolean {
     const userIndex = this.users.findIndex((u) => u.id === userId)
     if (userIndex === -1) return false
@@ -188,7 +149,7 @@ class AuthService {
     return Promise.resolve(this.users.some((u) => u.username === username))
   }
 
-  // Method used by user management component - updated signature
+  // Method used by user management component
   async createUser(userData: Omit<User, "id" | "createdAt">): Promise<User> {
     const newUser: User = {
       ...userData,
@@ -200,7 +161,7 @@ class AuthService {
     return Promise.resolve(newUser)
   }
 
-  // Method used by user management component - updated signature
+  // Method used by user management component
   async updateUser(updatedUser: User): Promise<User> {
     const userIndex = this.users.findIndex((u) => u.id === updatedUser.id)
     if (userIndex === -1) {
@@ -219,7 +180,7 @@ class AuthService {
     return Promise.resolve(this.users[userIndex])
   }
 
-  // Method used by user management component - updated signature
+  // Method used by user management component
   async deleteUser(userId: string): Promise<void> {
     // Prevent deletion of system administrator
     const user = this.users.find((u) => u.id === userId)
