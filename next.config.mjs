@@ -10,6 +10,7 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
     unoptimized: true,
+    domains: ['localhost'],
   },
 
   // Security headers
@@ -51,6 +52,7 @@ const nextConfig = {
   // Experimental features
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    appDir: true,
   },
 
   // ESLint and TypeScript configurations
