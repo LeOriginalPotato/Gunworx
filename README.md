@@ -1,30 +1,42 @@
-# Gunworx employee portal
+# Gunworx Management Portal
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A professional firearms management system compliant with the Firearms Control Act, 2000.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/jean-maris-projects/v0-gunworx-employee-portal)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/wbzQhTRlB4R)
+## Features
 
-## Overview
+- Comprehensive firearms inventory management
+- Inspection tracking and compliance monitoring
+- User management with role-based access control
+- Digital signature capture for firearm collection
+- Export functionality for reports
+- Responsive design for desktop and mobile
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Getting Started
+
+First, run the development server:
+
+\`\`\`bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+\`\`\`
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Default Users
+
+- **Jean-Mari**: Foktogbokka (System Admin)
+- **Jean**: xNgU7ADa (System Admin)
+- **Eben**: UY9FBe8abajU (User)
+- **Francois**: MnWbCkE4AcFP (User)
+- **Wikus**: Wikus@888 (Admin)
 
 ## Deployment
 
-Your project is live at:
+This application is configured for deployment on Vercel with standalone output.
 
-**[https://vercel.com/jean-maris-projects/v0-gunworx-employee-portal](https://vercel.com/jean-maris-projects/v0-gunworx-employee-portal)**
+## License
 
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.dev/chat/projects/wbzQhTRlB4R](https://v0.dev/chat/projects/wbzQhTRlB4R)**
-
-## How It Works
-
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+Proprietary - All rights reserved
