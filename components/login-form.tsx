@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, LogIn } from "lucide-react"
+import { Eye, EyeOff, Shield } from 'lucide-react'
 import { authService, type User } from "@/lib/auth"
 
 interface LoginFormProps {
@@ -49,20 +48,31 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="space-y-4 text-center">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <LogIn className="w-6 h-6 text-white" />
+            <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Shield className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-center">Gunworx Tracker</CardTitle>
-          <CardDescription className="text-center">Enter your credentials to access the system</CardDescription>
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-bold text-gray-900">Gunworx Employee Portal</CardTitle>
+            <CardDescription className="text-sm text-gray-600 font-medium">
+              FIREARMS CONTROL ACT, 2000 (Act No. 60 of 2000)
+            </CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-semibold text-gray-900">Sign In</h2>
+            <p className="text-sm text-gray-600">Enter your credentials to access the system</p>
+          </div>
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username" className="text-sm font-medium text-gray-700">
+                Username
+              </Label>
               <Input
                 id="username"
                 type="text"
@@ -71,10 +81,14 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 placeholder="Enter your username"
                 disabled={isLoading}
                 autoComplete="username"
+                className="h-11"
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                Password
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -84,12 +98,13 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   placeholder="Enter your password"
                   disabled={isLoading}
                   autoComplete="current-password"
+                  className="h-11 pr-10"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  className="absolute right-0 top-0 h-11 px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
@@ -101,15 +116,28 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 </Button>
               </div>
             </div>
+
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
+
+            <Button 
+              type="submit" 
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium" 
+              disabled={isLoading}
+            >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
+
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">System Access</h3>
+            <p className="text-xs text-blue-700 leading-relaxed">
+              Contact your administrator if you need access credentials or have forgotten your login information.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

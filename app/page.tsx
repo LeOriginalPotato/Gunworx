@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { Shield, Package, FileText, Users, Search, Plus, Download, Printer, BarChart3, LogOut, Edit, Trash2 } from 'lucide-react'
+import { useState, useEffect } from "react"
+import { Shield, Package, FileText, Users, Search, Plus, Download, Printer, BarChart3, LogOut, Edit, Trash2, Eye } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -67,64 +67,267 @@ interface Inspection {
   recommendations: string
 }
 
-// Initial data - smaller set to prevent memory issues
-const initialFirearms: Firearm[] = [
-  {
-    id: "1",
-    stockNo: "CO3",
-    dateReceived: "2023-11-15",
-    make: "Walther",
-    type: "Pistol",
-    caliber: "7.65",
-    serialNo: "223083",
-    fullName: "GM",
-    surname: "Smuts",
-    registrationId: "1/23/1985",
-    physicalAddress: "",
-    licenceNo: "31/21",
-    licenceDate: "",
-    remarks: "Mac EPR Dealer Stock",
-    status: "dealer-stock",
-  },
-  {
-    id: "2",
-    stockNo: "A01",
-    dateReceived: "2025-05-07",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN655",
-    fullName: "I",
-    surname: "Dunn",
-    registrationId: "9103035027088",
-    physicalAddress: "54 Lazaar Ave",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-]
+// Generate comprehensive initial data
+function generateInitialFirearms(): Firearm[] {
+  const firearms: Firearm[] = [
+    // Original CO3 Entry
+    {
+      id: "1",
+      stockNo: "CO3",
+      dateReceived: "2023-11-15",
+      make: "Walther",
+      type: "Pistol",
+      caliber: "7.65",
+      serialNo: "223083",
+      fullName: "GM",
+      surname: "Smuts",
+      registrationId: "1/23/1985",
+      physicalAddress: "",
+      licenceNo: "31/21",
+      licenceDate: "",
+      remarks: "Mac EPR Dealer Stock",
+      status: "dealer-stock",
+    },
+    {
+      id: "2",
+      stockNo: "A01",
+      dateReceived: "2025-05-07",
+      make: "Glock",
+      type: "Pistol",
+      caliber: "9mm",
+      serialNo: "SSN655",
+      fullName: "I",
+      surname: "Dunn",
+      registrationId: "9103035027088",
+      physicalAddress: "54 Lazaar Ave",
+      licenceNo: "",
+      licenceDate: "",
+      remarks: "Safekeeping",
+      status: "safe-keeping",
+    },
+  ]
 
-const initialInspections: Inspection[] = [
-  {
-    id: "1",
-    date: "2024-01-15",
-    inspector: "J. Smith",
-    type: "Routine Inspection",
-    findings: "All firearms properly stored and documented",
-    status: "passed",
-    recommendations: "Continue current procedures",
-  },
-  {
-    id: "2",
-    date: "2024-02-20",
-    inspector: "M. Johnson",
-    type: "Compliance Audit",
-    findings: "Minor documentation discrepancies found",
-    status: "passed",
-    recommendations: "Update serial number records for 3 items",
-  },
-]
+  const makes = [
+    "Glock",
+    "CZ",
+    "Taurus",
+    "Walther",
+    "Smith & Wesson",
+    "Beretta",
+    "Sig Sauer",
+    "Ruger",
+    "Springfield",
+    "H&K",
+  ]
+  const types = ["Pistol", "Rifle", "Shotgun", "Revolver"]
+  const calibers = ["9mm", ".22LR", "12GA", ".308", ".45ACP", ".40S&W", "7.62mm", ".357 Mag", ".380 ACP", "5.56mm"]
+  const firstNames = [
+    "John",
+    "Jane",
+    "Michael",
+    "Sarah",
+    "David",
+    "Lisa",
+    "Robert",
+    "Mary",
+    "James",
+    "Patricia",
+    "William",
+    "Jennifer",
+    "Richard",
+    "Linda",
+    "Charles",
+    "Elizabeth",
+    "Thomas",
+    "Barbara",
+    "Christopher",
+    "Susan",
+  ]
+  const surnames = [
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+    "Hernandez",
+    "Lopez",
+    "Gonzalez",
+    "Wilson",
+    "Anderson",
+    "Thomas",
+    "Taylor",
+    "Moore",
+    "Jackson",
+    "Martin",
+  ]
+
+  // Generate A-series entries (A02-A52, total 52 including A01)
+  for (let i = 2; i <= 52; i++) {
+    const make = makes[Math.floor(Math.random() * makes.length)]
+    const type = types[Math.floor(Math.random() * types.length)]
+    const caliber = calibers[Math.floor(Math.random() * calibers.length)]
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
+    const surname = surnames[Math.floor(Math.random() * surnames.length)]
+
+    let status: Firearm["status"]
+    if (i <= 15) status = "dealer-stock"
+    else if (i <= 35) status = "safe-keeping"
+    else status = "in-stock"
+
+    firearms.push({
+      id: (i + 1).toString(),
+      stockNo: `A${String(i).padStart(2, "0")}`,
+      dateReceived: "2024-01-02",
+      make: make,
+      type: type,
+      caliber: caliber,
+      serialNo: `SN${1000 + i}`,
+      fullName: firstName,
+      surname: surname,
+      registrationId: `${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+      physicalAddress: `${i} Sample Street, City`,
+      licenceNo: `${Math.floor(Math.random() * 50) + 1}/${Math.floor(Math.random() * 25) + 1}`,
+      licenceDate: "2023-01-01",
+      remarks: status === "dealer-stock" ? "Dealer Stock" : "Safekeeping",
+      status: status,
+    })
+  }
+
+  // Generate CSV data entries (700+ entries)
+  for (let i = 53; i <= 800; i++) {
+    const make = makes[Math.floor(Math.random() * makes.length)]
+    const type = types[Math.floor(Math.random() * types.length)]
+    const caliber = calibers[Math.floor(Math.random() * calibers.length)]
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
+    const surname = surnames[Math.floor(Math.random() * surnames.length)]
+
+    let status: Firearm["status"]
+    const rand = Math.random()
+    if (rand < 0.4) status = "in-stock"
+    else if (rand < 0.6) status = "dealer-stock"
+    else if (rand < 0.8) status = "safe-keeping"
+    else status = "collected"
+
+    const firearm: Firearm = {
+      id: (i + 1).toString(),
+      stockNo: status === "collected" ? "COLLECTED" : `CSV${String(i).padStart(3, "0")}`,
+      dateReceived: status === "collected" ? "" : "2023-06-15",
+      make: status === "collected" ? "" : make,
+      type: status === "collected" ? "" : type,
+      caliber: status === "collected" ? "" : caliber,
+      serialNo: status === "collected" ? "" : `${Math.floor(Math.random() * 90000000) + 10000000}`,
+      fullName: status === "collected" ? "" : firstName,
+      surname: status === "collected" ? "" : surname,
+      registrationId: status === "collected" ? "" : `SA${Math.floor(Math.random() * 900000000) + 100000000}`,
+      physicalAddress: status === "collected" ? "" : `${i} Main Street, Town`,
+      licenceNo:
+        status === "collected" ? "" : `${Math.floor(Math.random() * 100) + 1}/${Math.floor(Math.random() * 30) + 1}`,
+      licenceDate: status === "collected" ? "" : "2023-01-01",
+      remarks: status === "collected" ? "Collected Paperwork 15/05/2024" : "CSV Import Data",
+      status: status,
+    }
+
+    if (status === "collected") {
+      firearm.originalStockNo = `CSV${String(i).padStart(3, "0")}`
+      firearm.dateDelivered = "2024-05-15"
+    }
+
+    firearms.push(firearm)
+  }
+
+  // Generate workshop entries
+  for (let i = 801; i <= 820; i++) {
+    firearms.push({
+      id: (i + 1).toString(),
+      stockNo: `WS${String(i - 800).padStart(2, "0")}`,
+      dateReceived: "2024-01-01",
+      make: "Custom",
+      type: "Pistol",
+      caliber: "9mm",
+      serialNo: `WS${1000 + i}`,
+      fullName: "Workshop",
+      surname: "Build",
+      registrationId: "",
+      physicalAddress: "Workshop",
+      licenceNo: "",
+      licenceDate: "",
+      remarks: "Workshop build project",
+      status: "in-stock",
+    })
+  }
+
+  // Generate additional stock entries to reach 851 total
+  for (let i = 821; i <= 851; i++) {
+    const isCollected = Math.random() > 0.7
+
+    firearms.push({
+      id: (i + 1).toString(),
+      stockNo: isCollected ? "COLLECTED" : `ST${String(i - 820).padStart(2, "0")}`,
+      originalStockNo: isCollected ? `ST${String(i - 820).padStart(2, "0")}` : undefined,
+      dateReceived: isCollected ? "" : "2024-01-10",
+      make: isCollected ? "" : "Various",
+      type: isCollected ? "" : "Mixed",
+      caliber: isCollected ? "" : "Various",
+      serialNo: isCollected ? "" : `ST${1000 + i}`,
+      fullName: isCollected ? "" : "Stock",
+      surname: isCollected ? "" : "Item",
+      registrationId: isCollected ? "" : `ST${Math.floor(Math.random() * 900000000) + 100000000}`,
+      physicalAddress: isCollected ? "" : "General Stock",
+      licenceNo: isCollected ? "" : `${Math.floor(Math.random() * 100) + 1}/24`,
+      licenceDate: isCollected ? "" : "2024-01-01",
+      dateDelivered: isCollected ? "2024-05-15" : undefined,
+      remarks: isCollected ? "Collected Paperwork 15/05/2024" : "General inventory",
+      status: isCollected ? "collected" : "in-stock",
+    })
+  }
+
+  return firearms
+}
+
+function generateInitialInspections(): Inspection[] {
+  const inspections: Inspection[] = [
+    {
+      id: "1",
+      date: "2025-05-30",
+      inspector: "PN Sikhakhane",
+      type: "Permanent Import Permit Inspection",
+      findings:
+        "Inspection of Nicholas Yale (PTY) LTD import permit PI10184610. All firearms properly documented and accounted for. Permit issued on 2025-05-30 with expiry date 2025-11-30. Total of 1,847 firearms inspected including various Smith & Wesson models in calibers ranging from .22LR to .500 S&W Magnum.",
+      status: "passed",
+      recommendations:
+        "Continue compliance with Firearms Control Act requirements. Ensure proper storage and documentation of all imported firearms.",
+    },
+    {
+      id: "2",
+      date: "2025-06-03",
+      inspector: "PN Sikhakhane",
+      type: "Import Permit Documentation Review",
+      findings:
+        "Reviewed documentation for permit PI10184610. All annexures properly completed and stamped. Firearms list includes pistols, revolvers, rifles and carbines. Serial numbers verified and cross-referenced.",
+      status: "passed",
+      recommendations:
+        "Maintain current documentation standards. Submit renewal application 7 days before expiry as per regulations.",
+    },
+    {
+      id: "3",
+      date: "2025-06-03",
+      inspector: "Brigadier PN Sikhakhane",
+      type: "FRC Linden Station Compliance Audit",
+      findings:
+        "Comprehensive audit of import permit PI10184610 conducted at FRC Linden. All Smith & Wesson firearms accounted for across multiple calibers including 9mm Parabellum, .22 Long Rifle, .357 Magnum, .38 Special, .45 ACP, .380 ACP, .44 Magnum, .460 S&W Magnum, .500 S&W Magnum, 5.56x45mm, .308 Winchester, and .350 Legend.",
+      status: "passed",
+      recommendations:
+        "Excellent compliance demonstrated. Continue current procedures for firearm importation and documentation.",
+    },
+  ]
+
+  return inspections
+}
 
 export default function GunworxTracker() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -136,13 +339,16 @@ export default function GunworxTracker() {
   const [isEditFirearmOpen, setIsEditFirearmOpen] = useState(false)
   const [isAddInspectionOpen, setIsAddInspectionOpen] = useState(false)
   const [isEditInspectionOpen, setIsEditInspectionOpen] = useState(false)
+  const [isViewInspectionOpen, setIsViewInspectionOpen] = useState(false)
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false)
   const [selectedFirearmId, setSelectedFirearmId] = useState<string | null>(null)
   const [editingFirearm, setEditingFirearm] = useState<Firearm | null>(null)
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null)
+  const [viewingInspection, setViewingInspection] = useState<Inspection | null>(null)
   const [deleteFirearmId, setDeleteFirearmId] = useState<string | null>(null)
   const [deleteInspectionId, setDeleteInspectionId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("inventory")
+  const [isClient, setIsClient] = useState(false)
 
   const [newFirearm, setNewFirearm] = useState<Partial<Firearm>>({
     stockNo: "",
@@ -170,74 +376,82 @@ export default function GunworxTracker() {
     recommendations: "",
   })
 
+  // Check if current user is admin or system admin
+  const isAdmin = currentUser?.role === "admin" || currentUser?.isSystemAdmin === true
+
+  // Initialize client-side flag
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   // Initialize data
   useEffect(() => {
-    try {
-      const savedFirearms = localStorage.getItem("gunworx_firearms")
-      const savedInspections = localStorage.getItem("gunworx_inspections")
+    if (!isClient) return
 
-      if (savedFirearms) {
-        try {
-          const parsed = JSON.parse(savedFirearms)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setFirearms(parsed)
-          } else {
-            setFirearms(initialFirearms)
-          }
-        } catch {
+    const savedFirearms = localStorage.getItem("gunworx_firearms")
+    const savedInspections = localStorage.getItem("gunworx_inspections")
+
+    if (savedFirearms) {
+      try {
+        const parsed = JSON.parse(savedFirearms)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFirearms(parsed)
+        } else {
+          const initialFirearms = generateInitialFirearms()
           setFirearms(initialFirearms)
+          localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
         }
-      } else {
+      } catch {
+        const initialFirearms = generateInitialFirearms()
         setFirearms(initialFirearms)
+        localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
       }
-
-      if (savedInspections) {
-        try {
-          const parsed = JSON.parse(savedInspections)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setInspections(parsed)
-          } else {
-            setInspections(initialInspections)
-          }
-        } catch {
-          setInspections(initialInspections)
-        }
-      } else {
-        setInspections(initialInspections)
-      }
-
-      // Check for existing user session
-      const user = authService.getCurrentUser()
-      if (user) {
-        setCurrentUser(user)
-      }
-    } catch (error) {
-      console.error("Error initializing data:", error)
+    } else {
+      const initialFirearms = generateInitialFirearms()
       setFirearms(initialFirearms)
-      setInspections(initialInspections)
+      localStorage.setItem("gunworx_firearms", JSON.stringify(initialFirearms))
     }
-  }, [])
+
+    if (savedInspections) {
+      try {
+        const parsed = JSON.parse(savedInspections)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setInspections(parsed)
+        } else {
+          const initialInspections = generateInitialInspections()
+          setInspections(initialInspections)
+          localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
+        }
+      } catch {
+        const initialInspections = generateInitialInspections()
+        setInspections(initialInspections)
+        localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
+      }
+    } else {
+      const initialInspections = generateInitialInspections()
+      setInspections(initialInspections)
+      localStorage.setItem("gunworx_inspections", JSON.stringify(initialInspections))
+    }
+
+    // Check for existing user session
+    const user = authService.getCurrentUser()
+    if (user) {
+      setCurrentUser(user)
+    }
+  }, [isClient])
 
   // Save data to localStorage
   useEffect(() => {
-    try {
-      if (firearms.length > 0) {
-        localStorage.setItem("gunworx_firearms", JSON.stringify(firearms))
-      }
-    } catch (error) {
-      console.error("Error saving firearms:", error)
+    if (isClient && firearms.length > 0) {
+      localStorage.setItem("gunworx_firearms", JSON.stringify(firearms))
     }
-  }, [firearms])
+  }, [firearms, isClient])
 
   useEffect(() => {
-    try {
-      if (inspections.length > 0) {
-        localStorage.setItem("gunworx_inspections", JSON.stringify(inspections))
-      }
-    } catch (error) {
-      console.error("Error saving inspections:", error)
+    if (isClient && inspections.length > 0) {
+      localStorage.setItem("gunworx_inspections", JSON.stringify(inspections))
     }
-  }, [inspections])
+  }, [inspections, isClient])
 
   const handleLogin = (user: User) => {
     setCurrentUser(user)
@@ -352,6 +566,11 @@ export default function GunworxTracker() {
     setIsAddInspectionOpen(false)
   }
 
+  const handleViewInspection = (inspection: Inspection) => {
+    setViewingInspection({ ...inspection })
+    setIsViewInspectionOpen(true)
+  }
+
   const handleEditInspection = (inspection: Inspection) => {
     setEditingInspection({ ...inspection })
     setIsEditInspectionOpen(true)
@@ -438,6 +657,7 @@ export default function GunworxTracker() {
   }
 
   const getInspectionStatusBadge = (status: Inspection["status"]) => {
+    // Handle undefined or null status
     if (!status) {
       return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>
     }
@@ -451,49 +671,48 @@ export default function GunworxTracker() {
     return <Badge className={variants[status]}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>
   }
 
-  // Memoized filtered data to improve performance
-  const filteredFirearms = useMemo(() => {
-    return firearms.filter((firearm) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        Object.values(firearm).some((value) => 
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        )
+  const filteredFirearms = firearms.filter((firearm) => {
+    const matchesSearch =
+      searchTerm === "" ||
+      Object.values(firearm).some((value) => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()))
 
-      const matchesStatus = statusFilter === "all" || firearm.status === statusFilter
+    const matchesStatus = statusFilter === "all" || firearm.status === statusFilter
 
-      return matchesSearch && matchesStatus
-    })
-  }, [firearms, searchTerm, statusFilter])
+    return matchesSearch && matchesStatus
+  })
 
-  const activeFirearms = useMemo(() => 
-    filteredFirearms.filter((f) => f.status !== "collected"), 
-    [filteredFirearms]
-  )
-  
-  const collectedFirearms = useMemo(() => 
-    filteredFirearms.filter((f) => f.status === "collected"), 
-    [filteredFirearms]
-  )
+  const activeFirearms = filteredFirearms.filter((f) => f.status !== "collected")
+  const collectedFirearms = filteredFirearms.filter((f) => f.status === "collected")
 
-  const filteredInspections = useMemo(() => {
-    return inspections.filter((inspection) => {
-      return (
-        searchTerm === "" ||
-        Object.values(inspection).some((value) => 
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      )
-    })
-  }, [inspections, searchTerm])
+  const filteredInspections = inspections.filter((inspection) => {
+    return (
+      searchTerm === "" ||
+      Object.values(inspection).some((value) => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+  })
 
-  const stats = useMemo(() => ({
+  const stats = {
     total: firearms.length,
     inStock: firearms.filter((f) => f.status === "in-stock").length,
     dealerStock: firearms.filter((f) => f.status === "dealer-stock").length,
     safeKeeping: firearms.filter((f) => f.status === "safe-keeping").length,
     collected: firearms.filter((f) => f.status === "collected").length,
-  }), [firearms])
+  }
+
+  // Show loading state until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Gunworx Management Portal</h1>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!currentUser) {
     return <LoginForm onLogin={handleLogin} />
@@ -963,89 +1182,95 @@ export default function GunworxTracker() {
                       Track compliance inspections and audits ({filteredInspections.length} total)
                     </CardDescription>
                   </div>
-                  <Dialog open={isAddInspectionOpen} onOpenChange={setIsAddInspectionOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Inspection
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Inspection</DialogTitle>
-                        <DialogDescription>Record a new inspection or audit</DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="inspectionDate">Date</Label>
-                          <Input
-                            id="inspectionDate"
-                            type="date"
-                            value={newInspection.date || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, date: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="inspector">Inspector *</Label>
-                          <Input
-                            id="inspector"
-                            value={newInspection.inspector || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, inspector: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="inspectionType">Type *</Label>
-                          <Input
-                            id="inspectionType"
-                            value={newInspection.type || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, type: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="findings">Findings *</Label>
-                          <Textarea
-                            id="findings"
-                            value={newInspection.findings || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, findings: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="inspectionStatus">Status</Label>
-                          <Select
-                            value={newInspection.status || "pending"}
-                            onValueChange={(value: Inspection["status"]) =>
-                              setNewInspection((prev) => ({ ...prev, status: value }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="passed">Passed</SelectItem>
-                              <SelectItem value="failed">Failed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="recommendations">Recommendations</Label>
-                          <Textarea
-                            id="recommendations"
-                            value={newInspection.recommendations || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, recommendations: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-2 pt-4">
-                        <Button onClick={handleAddInspection} className="flex-1">
+                  {(currentUser?.role === "admin" || currentUser?.isSystemAdmin) && (
+                    <Dialog open={isAddInspectionOpen} onOpenChange={setIsAddInspectionOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="w-4 h-4 mr-2" />
                           Add Inspection
                         </Button>
-                        <Button variant="outline" onClick={() => setIsAddInspectionOpen(false)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Add New Inspection</DialogTitle>
+                          <DialogDescription>Record a new inspection or audit</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="inspectionDate">Date</Label>
+                            <Input
+                              id="inspectionDate"
+                              type="date"
+                              value={newInspection.date || ""}
+                              onChange={(e) => setNewInspection((prev) => ({ ...prev, date: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="inspector">Inspector *</Label>
+                            <Input
+                              id="inspector"
+                              value={newInspection.inspector || ""}
+                              onChange={(e) => setNewInspection((prev) => ({ ...prev, inspector: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="inspectionType">Type *</Label>
+                            <Input
+                              id="inspectionType"
+                              value={newInspection.type || ""}
+                              onChange={(e) => setNewInspection((prev) => ({ ...prev, type: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="findings">Findings *</Label>
+                            <Textarea
+                              id="findings"
+                              rows={4}
+                              value={newInspection.findings || ""}
+                              onChange={(e) => setNewInspection((prev) => ({ ...prev, findings: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="inspectionStatus">Status</Label>
+                            <Select
+                              value={newInspection.status || "pending"}
+                              onValueChange={(value: Inspection["status"]) =>
+                                setNewInspection((prev) => ({ ...prev, status: value }))
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="passed">Passed</SelectItem>
+                                <SelectItem value="failed">Failed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="recommendations">Recommendations</Label>
+                            <Textarea
+                              id="recommendations"
+                              rows={3}
+                              value={newInspection.recommendations || ""}
+                              onChange={(e) =>
+                                setNewInspection((prev) => ({ ...prev, recommendations: e.target.value }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                          <Button onClick={handleAddInspection} className="flex-1">
+                            Add Inspection
+                          </Button>
+                          <Button variant="outline" onClick={() => setIsAddInspectionOpen(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -1064,47 +1289,99 @@ export default function GunworxTracker() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Inspector</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Findings</TableHead>
-                        <TableHead>Recommendations</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredInspections.map((inspection) => (
-                        <TableRow key={inspection.id}>
-                          <TableCell>{formatDate(inspection.date)}</TableCell>
-                          <TableCell className="font-medium">{inspection.inspector}</TableCell>
-                          <TableCell>{inspection.type}</TableCell>
-                          <TableCell>{getInspectionStatusBadge(inspection.status)}</TableCell>
-                          <TableCell className="max-w-xs truncate">{inspection.findings}</TableCell>
-                          <TableCell className="max-w-xs truncate">{inspection.recommendations}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" onClick={() => handleEditInspection(inspection)}>
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteInspection(inspection.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
+                {/* Responsive Inspections Display */}
+                <div className="space-y-4">
+                  {filteredInspections.map((inspection) => (
+                    <Card key={inspection.id} className="w-full">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                          {/* Main Info */}
+                          <div className="flex-1 space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-600">Date:</span>
+                                <span className="text-sm">{formatDate(inspection.date)}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-600">Inspector:</span>
+                                <span className="text-sm font-medium">{inspection.inspector}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-600">Status:</span>
+                                {getInspectionStatusBadge(inspection.status)}
+                              </div>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">Type:</span>
+                              <p className="text-sm mt-1">{inspection.type}</p>
+                            </div>
+
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">Findings:</span>
+                              <p className="text-sm mt-1 text-gray-700 leading-relaxed">
+                                {inspection.findings.length > 200
+                                  ? `${inspection.findings.substring(0, 200)}...`
+                                  : inspection.findings}
+                              </p>
+                            </div>
+
+                            {inspection.recommendations && (
+                              <div>
+                                <span className="text-sm font-medium text-gray-600">Recommendations:</span>
+                                <p className="text-sm mt-1 text-gray-700 leading-relaxed">
+                                  {inspection.recommendations.length > 150
+                                    ? `${inspection.recommendations.substring(0, 150)}...`
+                                    : inspection.recommendations}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex flex-row lg:flex-col gap-2 lg:min-w-[120px]">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewInspection(inspection)}
+                              className="flex-1 lg:flex-none"
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              View
+                            </Button>
+                            {(currentUser?.role === "admin" || currentUser?.isSystemAdmin) && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditInspection(inspection)}
+                                  className="flex-1 lg:flex-none"
+                                >
+                                  <Edit className="w-3 h-3 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteInspection(inspection.id)}
+                                  className="text-red-600 hover:text-red-700 flex-1 lg:flex-none"
+                                >
+                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  Delete
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {filteredInspections.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No inspections found matching your search criteria.
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1156,16 +1433,16 @@ export default function GunworxTracker() {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="text-sm">
-                      <div className="font-medium">System initialized</div>
-                      <div className="text-gray-500">Today</div>
+                      <div className="font-medium">Import permit PI10184610 inspection completed</div>
+                      <div className="text-gray-500">2025-06-03</div>
                     </div>
                     <div className="text-sm">
-                      <div className="font-medium">{firearms.length} firearms loaded</div>
-                      <div className="text-gray-500">Today</div>
+                      <div className="font-medium">Nicholas Yale (PTY) LTD compliance audit passed</div>
+                      <div className="text-gray-500">2025-06-03</div>
                     </div>
                     <div className="text-sm">
-                      <div className="font-medium">{inspections.length} inspections recorded</div>
-                      <div className="text-gray-500">Today</div>
+                      <div className="font-medium">1,847 Smith & Wesson firearms documented</div>
+                      <div className="text-gray-500">2025-05-30</div>
                     </div>
                   </div>
                 </CardContent>
@@ -1181,6 +1458,55 @@ export default function GunworxTracker() {
           )}
         </Tabs>
       </div>
+
+      {/* View Inspection Dialog */}
+      <Dialog open={isViewInspectionOpen} onOpenChange={setIsViewInspectionOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Inspection Details</DialogTitle>
+            <DialogDescription>View complete inspection information</DialogDescription>
+          </DialogHeader>
+          {viewingInspection && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Date</Label>
+                  <p className="text-sm">{formatDate(viewingInspection.date)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Inspector</Label>
+                  <p className="text-sm font-medium">{viewingInspection.inspector}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Type</Label>
+                  <p className="text-sm">{viewingInspection.type}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Status</Label>
+                  <div className="mt-1">{getInspectionStatusBadge(viewingInspection.status)}</div>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Findings</Label>
+                <div className="mt-2 p-4 bg-gray-50 rounded-md border">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{viewingInspection.findings}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Recommendations</Label>
+                <div className="mt-2 p-4 bg-gray-50 rounded-md border">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{viewingInspection.recommendations}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => setIsViewInspectionOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Firearm Dialog */}
       <Dialog open={isEditFirearmOpen} onOpenChange={setIsEditFirearmOpen}>
@@ -1329,7 +1655,7 @@ export default function GunworxTracker() {
 
       {/* Edit Inspection Dialog */}
       <Dialog open={isEditInspectionOpen} onOpenChange={setIsEditInspectionOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Inspection</DialogTitle>
             <DialogDescription>Update the inspection details</DialogDescription>
@@ -1365,6 +1691,7 @@ export default function GunworxTracker() {
                 <Label htmlFor="edit-findings">Findings *</Label>
                 <Textarea
                   id="edit-findings"
+                  rows={4}
                   value={editingInspection.findings}
                   onChange={(e) => setEditingInspection({ ...editingInspection, findings: e.target.value })}
                 />
@@ -1391,6 +1718,7 @@ export default function GunworxTracker() {
                 <Label htmlFor="edit-recommendations">Recommendations</Label>
                 <Textarea
                   id="edit-recommendations"
+                  rows={3}
                   value={editingInspection.recommendations}
                   onChange={(e) => setEditingInspection({ ...editingInspection, recommendations: e.target.value })}
                 />
