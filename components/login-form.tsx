@@ -107,9 +107,9 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
             <div className="mt-6 text-center">
               <div className="text-sm text-gray-600">
-                <p className="font-medium">Demo Credentials:</p>
-                <p>Username: Jean-Mari | Password: Foktogbokka</p>
-                <p>Username: Jean | Password: xNgU7ADa</p>
+                
+                
+                
               </div>
             </div>
           </CardContent>
