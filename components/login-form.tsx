@@ -107,31 +107,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               </Button>
             </form>
 
-            <div className="mt-6 border-t pt-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">Available Accounts:</h3>
-              <div className="space-y-2 text-xs text-gray-600">
-                <div className="flex justify-between">
-                  <span className="font-medium">Jean-Mari:</span>
-                  <span className="font-mono">Foktogbokka</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Jean:</span>
-                  <span className="font-mono">xNgU7ADa</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Wikus:</span>
-                  <span className="font-mono">Wikus@888</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Eben:</span>
-                  <span className="font-mono">UY9FBe8abajU</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Francois:</span>
-                  <span className="font-mono">MnWbCkE4AcFP</span>
-                </div>
-              </div>
-            </div>
+            
           </CardContent>
         </Card>
       </div>
