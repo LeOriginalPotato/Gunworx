@@ -1,140 +1,121 @@
 export interface User {
   id: string
-  username: string
   firstName: string
   lastName: string
-  email: string
+  username: string
+  password: string
   role: 'admin' | 'user'
-  isActive: boolean
-  lastLogin?: string
+  isSystemAdmin?: boolean
   createdAt: string
+  lastLogin?: string
 }
 
 class AuthService {
   private users: User[] = [
     {
-      id: '1',
-      username: 'Jean-Mari',
-      firstName: 'Jean-Mari',
-      lastName: '',
-      email: '',
-      role: 'admin',
-      isActive: true,
-      createdAt: '2020-01-01T00:00:00Z'
+      id: "1",
+      firstName: "Jean-Mari",
+      lastName: "",
+      username: "Jean-Mari",
+      password: "Foktogbokka",
+      role: "admin",
+      isSystemAdmin: true,
+      createdAt: "2024-01-01T00:00:00Z",
     },
     {
-      id: '2',
-      username: 'Jean',
-      firstName: 'Jean',
-      lastName: '',
-      email: '',
-      role: 'admin',
-      isActive: true,
-      createdAt: '2021-03-15T00:00:00Z'
+      id: "2",
+      firstName: "Jean",
+      lastName: "",
+      username: "Jean",
+      password: "xNgU7ADa",
+      role: "admin",
+      isSystemAdmin: true,
+      createdAt: "2024-01-01T00:00:00Z",
     },
     {
-      id: '3',
-      username: 'Wikus',
-      firstName: 'Wikus',
-      lastName: '',
-      email: '',
-      role: 'admin',
-      isActive: true,
-      createdAt: '2022-06-10T00:00:00Z'
+      id: "3",
+      firstName: "Wikus",
+      lastName: "",
+      username: "Wikus",
+      password: "Wikus@888",
+      role: "admin",
+      isSystemAdmin: false,
+      createdAt: "2024-01-01T00:00:00Z",
     },
     {
-      id: '4',
-      username: 'Eben',
-      firstName: 'Eben',
-      lastName: '',
-      email: '',
-      role: 'user',
-      isActive: true,
-      createdAt: '2022-08-22T00:00:00Z'
+      id: "4",
+      firstName: "Eben",
+      lastName: "",
+      username: "Eben",
+      password: "UY9FBe8abajU",
+      role: "user",
+      isSystemAdmin: false,
+      createdAt: "2024-01-01T00:00:00Z",
     },
     {
-      id: '5',
-      username: 'Francois',
-      firstName: 'Francois',
-      lastName: '',
-      email: '',
-      role: 'user',
-      isActive: true,
-      createdAt: '2023-01-18T00:00:00Z'
+      id: "5",
+      firstName: "Francois",
+      lastName: "",
+      username: "Francois",
+      password: "MnWbCkE4AcFP",
+      role: "user",
+      isSystemAdmin: false,
+      createdAt: "2024-01-01T00:00:00Z",
     }
   ]
 
-  private passwords: Record<string, string> = {
-    'Jean-Mari': 'Foktogbokka',
-    'Jean': 'xNgU7ADa',
-    'Wikus': 'Wikus@888',
-    'Eben': 'UY9FBe8abajU',
-    'Francois': 'MnWbCkE4AcFP'
-  }
-
   async login(username: string, password: string): Promise<User> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    const user = this.users.find(u => u.username === username && u.isActive)
-    const storedPassword = this.passwords[username]
-
-    if (!user || storedPassword !== password) {
-      throw new Error('Invalid username or password')
+    const user = this.users.find(u => u.username === username && u.password === password)
+    if (!user) {
+      throw new Error('Invalid credentials')
     }
-
+    
     // Update last login
     user.lastLogin = new Date().toISOString()
     
     // Store in localStorage
-    localStorage.setItem('currentUser', JSON.stringify(user))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('currentUser', JSON.stringify(user))
+    }
     
     return user
   }
 
   async logout(): Promise<void> {
-    localStorage.removeItem('currentUser')
-  }
-
-  getCurrentUser(): User | null {
-    try {
-      const stored = localStorage.getItem('currentUser')
-      return stored ? JSON.parse(stored) : null
-    } catch {
-      return null
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('currentUser')
     }
   }
 
-  async getUsers(): Promise<User[]> {
-    return this.users.filter(u => u.isActive)
+  getCurrentUser(): User | null {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('currentUser')
+      return stored ? JSON.parse(stored) : null
+    }
+    return null
   }
 
-  async createUser(userData: Omit<User, 'id' | 'createdAt'> & { password: string }): Promise<User> {
+  async getUsers(): Promise<User[]> {
+    return this.users
+  }
+
+  async createUser(userData: Omit<User, 'id' | 'createdAt'>): Promise<User> {
     const newUser: User = {
       ...userData,
       id: Date.now().toString(),
       createdAt: new Date().toISOString()
     }
-    
     this.users.push(newUser)
-    this.passwords[userData.username] = userData.password
-    
     return newUser
   }
 
-  async updateUser(id: string, userData: Partial<User> & { password?: string }): Promise<User> {
+  async updateUser(id: string, userData: Partial<User>): Promise<User> {
     const userIndex = this.users.findIndex(u => u.id === id)
     if (userIndex === -1) {
       throw new Error('User not found')
     }
-
-    const { password, ...userUpdate } = userData
-    this.users[userIndex] = { ...this.users[userIndex], ...userUpdate }
     
-    if (password && this.users[userIndex].username) {
-      this.passwords[this.users[userIndex].username] = password
-    }
-
+    this.users[userIndex] = { ...this.users[userIndex], ...userData }
     return this.users[userIndex]
   }
 
@@ -143,14 +124,21 @@ class AuthService {
     if (userIndex === -1) {
       throw new Error('User not found')
     }
-
-    const username = this.users[userIndex].username
+    
+    if (this.users[userIndex].isSystemAdmin) {
+      throw new Error('Cannot delete system administrator')
+    }
+    
     this.users.splice(userIndex, 1)
-    delete this.passwords[username]
   }
 
-  getPassword(username: string): string {
-    return this.passwords[username] || 'Not found'
+  async changePassword(id: string, newPassword: string): Promise<void> {
+    const user = this.users.find(u => u.id === id)
+    if (!user) {
+      throw new Error('User not found')
+    }
+    
+    user.password = newPassword
   }
 }
 

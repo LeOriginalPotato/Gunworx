@@ -16,19 +16,19 @@ interface LoginFormProps {
 export function LoginForm({ onLogin }: LoginFormProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError('')
+    setIsLoading(true)
 
     try {
       const user = await authService.login(username, password)
       onLogin(user)
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Login failed')
+      setError('Invalid username or password')
     } finally {
       setIsLoading(false)
     }
@@ -38,26 +38,31 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">GW</span>
+          <div className="mx-auto w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
+            <span className="text-white font-bold text-xl">GW</span>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Gunworx Tracker
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900">Gunworx Tracker</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your account
+            Sign in to access the firearms tracking system
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Login</CardTitle>
+            <CardTitle>Sign In</CardTitle>
             <CardDescription>
               Enter your credentials to access the system
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
               <div>
                 <Label htmlFor="username">Username</Label>
                 <Input
@@ -66,9 +71,11 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  disabled={isLoading}
+                  className="mt-1"
+                  placeholder="Enter your username"
                 />
               </div>
+
               <div>
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -77,16 +84,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isLoading}
+                  className="mt-1"
+                  placeholder="Enter your password"
                 />
               </div>
-
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
 
               <Button
                 type="submit"
@@ -94,22 +95,23 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Signing in...
-                  </>
+                  'Signing in...'
                 ) : (
                   <>
                     <LogIn className="h-4 w-4 mr-2" />
-                    Sign in
+                    Sign In
                   </>
                 )}
               </Button>
             </form>
-
-            
           </CardContent>
         </Card>
+
+        <div className="text-center text-sm text-gray-600">
+          
+          
+          
+        </div>
       </div>
     </div>
   )
