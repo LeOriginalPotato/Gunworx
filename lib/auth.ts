@@ -1,145 +1,142 @@
 export interface User {
   id: string
-  firstName: string
-  lastName: string
   username: string
-  password: string
-  role: 'admin' | 'user'
-  isSystemAdmin?: boolean
+  role: "admin" | "manager" | "user" | "inspector"
+  isSystemAdmin: boolean
   createdAt: string
   lastLogin?: string
 }
 
-class AuthService {
-  private users: User[] = [
-    {
-      id: "1",
-      firstName: "Jean-Mari",
-      lastName: "",
-      username: "Jean-Mari",
-      password: "Foktogbokka",
-      role: "admin",
-      isSystemAdmin: true,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "2",
-      firstName: "Jean",
-      lastName: "",
-      username: "Jean",
-      password: "xNgU7ADa",
-      role: "admin",
-      isSystemAdmin: true,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "3",
-      firstName: "Wikus",
-      lastName: "",
-      username: "Wikus",
-      password: "Wikus@888",
-      role: "admin",
-      isSystemAdmin: false,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "4",
-      firstName: "Eben",
-      lastName: "",
-      username: "Eben",
-      password: "UY9FBe8abajU",
-      role: "user",
-      isSystemAdmin: false,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "5",
-      firstName: "Francois",
-      lastName: "",
-      username: "Francois",
-      password: "MnWbCkE4AcFP",
-      role: "user",
-      isSystemAdmin: false,
-      createdAt: "2024-01-01T00:00:00Z",
-    }
+export const users: User[] = [
+  {
+    id: "1",
+    username: "Jean-Mari",
+    role: "admin",
+    isSystemAdmin: true,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "2",
+    username: "Jean",
+    role: "admin",
+    isSystemAdmin: true,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "3",
+    username: "Wikus",
+    role: "manager",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "4",
+    username: "Eben",
+    role: "user",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "5",
+    username: "Francois",
+    role: "user",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "6",
+    username: "Inspector",
+    role: "inspector",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+]
+
+export function validateCredentials(username: string, password: string): User | null {
+  const validCredentials = [
+    { username: "Jean-Mari", password: "Foktogbokka" },
+    { username: "Jean", password: "xNgU7ADa" },
+    { username: "Wikus", password: "Wikus@888" },
+    { username: "Eben", password: "UY9FBe8abajU" },
+    { username: "Francois", password: "MnWbCkE4AcFP" },
+    { username: "Inspector", password: "inspector123" },
   ]
 
-  async login(username: string, password: string): Promise<User> {
-    const user = this.users.find(u => u.username === username && u.password === password)
-    if (!user) {
-      throw new Error('Invalid credentials')
-    }
-    
-    // Update last login
-    user.lastLogin = new Date().toISOString()
-    
-    // Store in localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('currentUser', JSON.stringify(user))
-    }
-    
-    return user
+  const isValid = validCredentials.some((cred) => cred.username === username && cred.password === password)
+
+  if (isValid) {
+    return users.find((user) => user.username === username) || null
   }
 
-  async logout(): Promise<void> {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('currentUser')
-    }
-  }
-
-  getCurrentUser(): User | null {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('currentUser')
-      return stored ? JSON.parse(stored) : null
-    }
-    return null
-  }
-
-  async getUsers(): Promise<User[]> {
-    return this.users
-  }
-
-  async createUser(userData: Omit<User, 'id' | 'createdAt'>): Promise<User> {
-    const newUser: User = {
-      ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    }
-    this.users.push(newUser)
-    return newUser
-  }
-
-  async updateUser(id: string, userData: Partial<User>): Promise<User> {
-    const userIndex = this.users.findIndex(u => u.id === id)
-    if (userIndex === -1) {
-      throw new Error('User not found')
-    }
-    
-    this.users[userIndex] = { ...this.users[userIndex], ...userData }
-    return this.users[userIndex]
-  }
-
-  async deleteUser(id: string): Promise<void> {
-    const userIndex = this.users.findIndex(u => u.id === id)
-    if (userIndex === -1) {
-      throw new Error('User not found')
-    }
-    
-    if (this.users[userIndex].isSystemAdmin) {
-      throw new Error('Cannot delete system administrator')
-    }
-    
-    this.users.splice(userIndex, 1)
-  }
-
-  async changePassword(id: string, newPassword: string): Promise<void> {
-    const user = this.users.find(u => u.id === id)
-    if (!user) {
-      throw new Error('User not found')
-    }
-    
-    user.password = newPassword
-  }
+  return null
 }
 
-export const authService = new AuthService()
+export function getUserPermissions(role: string) {
+  switch (role) {
+    case "admin":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: true,
+        canDeleteFirearms: true,
+        canViewInspections: true,
+        canEditInspections: true,
+        canDeleteInspections: true,
+        canExportInspections: true,
+        canViewAnalytics: true,
+        canManageUsers: true,
+        canCaptureSignatures: true,
+      }
+    case "manager":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: true,
+        canDeleteFirearms: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canExportInspections: true,
+        canViewAnalytics: true,
+        canManageUsers: false,
+        canCaptureSignatures: true,
+      }
+    case "user":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canExportInspections: false,
+        canViewAnalytics: false,
+        canManageUsers: false,
+        canCaptureSignatures: false,
+      }
+    case "inspector":
+      return {
+        canViewFirearms: false,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canExportInspections: true,
+        canViewAnalytics: false,
+        canManageUsers: false,
+        canCaptureSignatures: false,
+      }
+    default:
+      return {
+        canViewFirearms: false,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canViewInspections: false,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canExportInspections: false,
+        canViewAnalytics: false,
+        canManageUsers: false,
+        canCaptureSignatures: false,
+      }
+  }
+}

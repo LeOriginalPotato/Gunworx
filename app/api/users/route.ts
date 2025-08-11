@@ -1,106 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
-
-// Mock user data
-const users = [
-  {
-    id: '1',
-    username: 'Jean-Mari',
-    firstName: 'Jean-Mari',
-    lastName: '',
-    email: '',
-    role: 'admin',
-    department: 'Management',
-    position: 'System Administrator',
-    hireDate: '2020-01-01',
-    isSystemAdmin: true
-  },
-  {
-    id: '2',
-    username: 'Jean',
-    firstName: 'Jean',
-    lastName: '',
-    email: '',
-    role: 'admin',
-    department: 'Operations',
-    position: 'Operations Manager',
-    hireDate: '2021-03-15',
-    isSystemAdmin: true
-  },
-  {
-    id: '3',
-    username: 'Wikus',
-    firstName: 'Wikus',
-    lastName: '',
-    email: '',
-    role: 'admin',
-    department: 'Sales',
-    position: 'Sales Manager',
-    hireDate: '2022-06-10',
-    isSystemAdmin: true
-  },
-  {
-    id: '4',
-    username: 'Eben',
-    firstName: 'Eben',
-    lastName: '',
-    email: '',
-    role: 'user',
-    department: 'Workshop',
-    position: 'Gunsmith',
-    hireDate: '2022-08-22',
-    isSystemAdmin: false
-  },
-  {
-    id: '5',
-    username: 'Francois',
-    firstName: 'Francois',
-    lastName: '',
-    email: '',
-    role: 'user',
-    department: 'Inventory',
-    position: 'Inventory Clerk',
-    hireDate: '2023-01-18',
-    isSystemAdmin: false
-  }
-]
-
-export async function GET() {
-  return NextResponse.json(users)
-}
+import { type NextRequest, NextResponse } from "next/server"
+import { users, validateCredentials } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const userData = await request.json()
-    
-    // Validate required fields
-    if (!userData.username || !userData.firstName) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
+    const { username, password } = await request.json()
+
+    if (!username || !password) {
+      return NextResponse.json({ error: "Username and password are required" }, { status: 400 })
     }
 
-    // Check if username already exists
-    if (users.some(u => u.username === userData.username)) {
-      return NextResponse.json(
-        { error: 'Username already exists' },
-        { status: 409 }
-      )
+    const user = validateCredentials(username, password)
+
+    if (!user) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    const newUser = {
-      id: Date.now().toString(),
-      ...userData,
-      isSystemAdmin: false
-    }
+    // Update last login
+    user.lastLogin = new Date().toISOString()
 
-    users.push(newUser)
-
-    return NextResponse.json(newUser, { status: 201 })
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        isSystemAdmin: user.isSystemAdmin,
+        lastLogin: user.lastLogin,
+      },
+    })
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Invalid request data' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ users: users.map(({ ...user }) => user) })
 }

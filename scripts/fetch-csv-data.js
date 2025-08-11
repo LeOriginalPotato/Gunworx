@@ -1,51 +1,38 @@
-// Fetch and parse the CSV data
+// Fetch and process the CSV data from the provided URL
 async function fetchCSVData() {
   try {
-    console.log("Fetching CSV data...")
     const response = await fetch(
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/safe%20keeping%20and%20dealer%20stock%20registar-bqaLG5BSlUIWbLjYL62qwIXiDm48ZH.csv",
+      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/safe%20keeping%20and%20dealer%20stock%20registar-31hmsCegEOMQapeGPystr3gGCpZw83.csv",
     )
     const csvText = await response.text()
 
-    console.log("CSV Content:")
-    console.log(csvText)
+    console.log("CSV Data fetched successfully")
+    console.log("First 500 characters:", csvText.substring(0, 500))
 
-    // Parse CSV manually
+    // Parse CSV data
     const lines = csvText.split("\n").filter((line) => line.trim())
-    console.log(`Found ${lines.length} lines in CSV`)
+    const headers = lines[0].split(",").map((header) => header.trim().replace(/"/g, ""))
 
-    // Show first few lines to understand structure
-    console.log("\nFirst 10 lines:")
-    lines.slice(0, 10).forEach((line, index) => {
-      console.log(`Line ${index + 1}: ${line}`)
-    })
+    console.log("Headers:", headers)
 
-    // Parse each line
-    const entries = []
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (line) {
-        // Split by comma, handling quoted values
-        const values = line.split(",").map((val) => val.replace(/^"|"$/g, "").trim())
-        entries.push({
-          lineNumber: i + 1,
-          values: values,
-          rawLine: line,
+    const csvData = []
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(",").map((value) => value.trim().replace(/"/g, ""))
+      if (values.length >= 2 && values[0] && values[1]) {
+        const row = {}
+        headers.forEach((header, index) => {
+          row[header] = values[index] || ""
         })
+        csvData.push(row)
       }
     }
 
-    console.log(`\nParsed ${entries.length} entries`)
+    console.log("Parsed CSV data:", csvData)
+    console.log("Total CSV records:", csvData.length)
 
-    // Show structure of entries
-    console.log("\nSample entries:")
-    entries.slice(0, 5).forEach((entry) => {
-      console.log(`Entry ${entry.lineNumber}:`, entry.values)
-    })
-
-    return entries
+    return csvData
   } catch (error) {
-    console.error("Error fetching CSV:", error)
+    console.error("Error fetching CSV data:", error)
     return []
   }
 }
