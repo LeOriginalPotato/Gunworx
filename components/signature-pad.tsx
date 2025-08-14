@@ -95,24 +95,72 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
     onSave(signatureData)
   }
 
+  // Touch events for mobile
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault()
+    const touch = e.touches[0]
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const rect = canvas.getBoundingClientRect()
+    const x = touch.clientX - rect.left
+    const y = touch.clientY - rect.top
+
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    setIsDrawing(true)
+    setIsEmpty(false)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault()
+    if (!isDrawing) return
+
+    const touch = e.touches[0]
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const rect = canvas.getBoundingClientRect()
+    const x = touch.clientX - rect.left
+    const y = touch.clientY - rect.top
+
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    ctx.lineTo(x, y)
+    ctx.stroke()
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault()
+    setIsDrawing(false)
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Digital Signature</CardTitle>
-        <CardDescription>Please sign in the box below to confirm collection</CardDescription>
+        <CardDescription>Please sign in the box below to confirm firearm collection</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
           <canvas
             ref={canvasRef}
-            className="border border-gray-200 rounded cursor-crosshair w-full"
+            className="border border-gray-300 rounded cursor-crosshair w-full"
             style={{ maxWidth: "100%", height: "200px" }}
             onMouseDown={startDrawing}
             onMouseMove={draw}
             onMouseUp={stopDrawing}
             onMouseLeave={stopDrawing}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           />
         </div>
+
         <div className="flex justify-between">
           <Button variant="outline" onClick={clearSignature}>
             Clear
