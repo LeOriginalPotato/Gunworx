@@ -3036,12 +3036,12 @@ export default function GunworxPortal() {
   const [showEditDialog, setShowEditDialog] = useState(false)
 
   const handleLogin = (username: string) => {
-    const user = validateCredentials(username, "")
+    setCurrentUser(username)
+    const user = validateCredentials(username, "dummy") // Get user object for role
     if (user) {
-      setCurrentUser(username)
       setUserPermissions(getUserPermissions(user.role))
-      setIsAuthenticated(true)
     }
+    setIsAuthenticated(true)
   }
 
   const handleLogout = () => {
