@@ -44,33 +44,6 @@ export const users = [
     isSystemAdmin: false,
     createdAt: "2024-01-01T00:00:00Z",
   },
-  {
-    id: "6",
-    username: "inspector",
-    password: "inspector123",
-    name: "Inspector",
-    role: "inspector",
-    isSystemAdmin: false,
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "7",
-    username: "operator",
-    password: "operator123",
-    name: "Operator",
-    role: "operator",
-    isSystemAdmin: false,
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "8",
-    username: "viewer",
-    password: "viewer123",
-    name: "Viewer",
-    role: "viewer",
-    isSystemAdmin: false,
-    createdAt: "2024-01-01T00:00:00Z",
-  },
 ]
 
 export function validateCredentials(username: string, password: string) {
@@ -93,48 +66,6 @@ export function getUserPermissions(role: string) {
         canCreateInspections: true,
         canViewAnalytics: true,
         canManageUsers: true,
-      }
-    case "inspector":
-      return {
-        canViewFirearms: false,
-        canEditFirearms: false,
-        canDeleteFirearms: false,
-        canCreateFirearms: false,
-        canCaptureSignatures: false,
-        canViewInspections: true,
-        canEditInspections: false,
-        canDeleteInspections: false,
-        canCreateInspections: true,
-        canViewAnalytics: false,
-        canManageUsers: false,
-      }
-    case "operator":
-      return {
-        canViewFirearms: true,
-        canEditFirearms: false,
-        canDeleteFirearms: false,
-        canCreateFirearms: true,
-        canCaptureSignatures: true,
-        canViewInspections: true,
-        canEditInspections: false,
-        canDeleteInspections: false,
-        canCreateInspections: true,
-        canViewAnalytics: false,
-        canManageUsers: false,
-      }
-    case "viewer":
-      return {
-        canViewFirearms: true,
-        canEditFirearms: false,
-        canDeleteFirearms: false,
-        canCreateFirearms: false,
-        canCaptureSignatures: false,
-        canViewInspections: true,
-        canEditInspections: false,
-        canDeleteInspections: false,
-        canCreateInspections: false,
-        canViewAnalytics: true,
-        canManageUsers: false,
       }
     case "user":
       return {

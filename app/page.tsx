@@ -1,5 +1,9 @@
 "use client"
 
+import { useState } from "react"
+import { LoginForm } from "@/components/login-form"
+import { validateCredentials, getUserPermissions } from "@/lib/auth"
+
 interface Firearm {
   id: string
   stockNo: string
@@ -20,8 +24,6 @@ interface Inspection {
   status: "passed" | "failed" | "pending"
   recommendations: string
 }
-
-import { useState } from "react"
 
 const initialFirearms: Firearm[] = [
   {
@@ -3022,12 +3024,35 @@ const initialInspections: Inspection[] = [
 ]
 
 export default function GunworxPortal() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [currentUser, setCurrentUser] = useState<string | null>(null)
+  const [userPermissions, setUserPermissions] = useState<any>({})
+
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedFirearms, setSelectedFirearms] = useState<string[]>([])
   const [editingFirearm, setEditingFirearm] = useState<any>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
+
+  const handleLogin = (username: string) => {
+    const user = validateCredentials(username, "")
+    if (user) {
+      setCurrentUser(username)
+      setUserPermissions(getUserPermissions(user.role))
+      setIsAuthenticated(true)
+    }
+  }
+
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    setCurrentUser(null)
+    setUserPermissions({})
+  }
+
+  if (!isAuthenticated) {
+    return <LoginForm onLogin={handleLogin} />
+  }
 
   const filteredFirearms = initialFirearms.filter((firearm) => {
     const matchesSearch =
@@ -3048,8 +3073,21 @@ export default function GunworxPortal() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Gunworx Employee Portal</h1>
-          <p className="text-gray-600">Firearms Management System</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Gunworx Portal</h1>
+              <p className="text-gray-600">Complete Firearm Management System</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">Welcome, {currentUser}</span>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow">
