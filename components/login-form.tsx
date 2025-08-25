@@ -94,31 +94,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             </form>
           </CardContent>
         </Card>
-
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Demo Credentials</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs">
-              <div>
-                <strong>Admin:</strong> Jean-Mari / Foktogbokka
-              </div>
-              <div>
-                <strong>Admin:</strong> Jean / xNgU7ADa
-              </div>
-              <div>
-                <strong>Manager:</strong> Wikus / Wikus@888
-              </div>
-              <div>
-                <strong>User:</strong> Eben / UY9FBe8abajU
-              </div>
-              <div>
-                <strong>Inspector:</strong> Inspector / inspector123
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   )
