@@ -1,33 +1,15 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "@/hooks/use-toast"
-import { Toaster } from "@/components/ui/toaster"
-import { LoginForm } from "@/components/login-form"
-import { generateInspectionPDF, generateMultipleInspectionsPDF } from "@/components/pdf-generator"
-import { getUserPermissions } from "@/lib/auth"
-import { firearmsData, getFirearmsStats, type Firearm } from "@/lib/firearms-data"
-import {
-  Search,
-  FileText,
-  BarChart3,
-  Package,
-  LogOut,
-  CheckSquare,
-  Square,
-  Printer,
-  Settings,
-  Activity,
-} from "lucide-react"
-import { users } from "@/lib/auth"
-import { UserManagement } from "@/components/user-management"
+interface Firearm {
+  id: string
+  stockNo: string
+  make: string
+  model: string
+  type: string
+  caliber: string
+  serialNo: string
+  status: "in-stock" | "dealer-stock" | "safe-keeping" | "collected"
+}
 
 interface Inspection {
   id: string
@@ -39,7 +21,111 @@ interface Inspection {
   recommendations: string
 }
 
-// Complete inspection database with 219 detailed records
+import { useState } from "react"
+
+const initialFirearms: Firearm[] = [
+  {
+    id: "1",
+    stockNo: "GW001",
+    make: "Glock",
+    model: "17",
+    type: "Pistol",
+    caliber: "9mm",
+    serialNo: "ABC1234",
+    status: "in-stock",
+  },
+  {
+    id: "2",
+    stockNo: "GW002",
+    make: "Smith & Wesson",
+    model: "M&P Shield",
+    type: "Pistol",
+    caliber: "9mm",
+    serialNo: "DEF5678",
+    status: "dealer-stock",
+  },
+  {
+    id: "3",
+    stockNo: "GW003",
+    make: "Sig Sauer",
+    model: "P320",
+    type: "Pistol",
+    caliber: "9mm",
+    serialNo: "GHI9012",
+    status: "safe-keeping",
+  },
+  {
+    id: "4",
+    stockNo: "GW004",
+    make: "Colt",
+    model: "AR-15",
+    type: "Rifle",
+    caliber: "5.56mm",
+    serialNo: "JKL3456",
+    status: "in-stock",
+  },
+  {
+    id: "5",
+    stockNo: "GW005",
+    make: "Remington",
+    model: "870",
+    type: "Shotgun",
+    caliber: "12 Gauge",
+    serialNo: "MNO7890",
+    status: "dealer-stock",
+  },
+  {
+    id: "6",
+    stockNo: "GW006",
+    make: "Springfield",
+    model: "XD-S",
+    type: "Pistol",
+    caliber: ".45 ACP",
+    serialNo: "PQR1234",
+    status: "safe-keeping",
+  },
+  {
+    id: "7",
+    stockNo: "GW007",
+    make: "Ruger",
+    model: "10/22",
+    type: "Rifle",
+    caliber: ".22 LR",
+    serialNo: "STU5678",
+    status: "in-stock",
+  },
+  {
+    id: "8",
+    stockNo: "GW008",
+    make: "Mossberg",
+    model: "500",
+    type: "Shotgun",
+    caliber: "12 Gauge",
+    serialNo: "VWX9012",
+    status: "dealer-stock",
+  },
+  {
+    id: "9",
+    stockNo: "GW009",
+    make: "CZ",
+    model: "75",
+    type: "Pistol",
+    caliber: "9mm",
+    serialNo: "YZA3456",
+    status: "safe-keeping",
+  },
+  {
+    id: "10",
+    stockNo: "GW010",
+    make: "Daniel Defense",
+    model: "M4A1",
+    type: "Rifle",
+    caliber: "5.56mm",
+    serialNo: "BCD7890",
+    status: "in-stock",
+  },
+]
+
 const initialInspections: Inspection[] = [
   {
     id: "1",
@@ -66,3076 +152,3051 @@ const initialInspections: Inspection[] = [
     id: "3",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Smith & Wesson .22 SHORT/LONG/LR Revolver Inspection",
+    type: "Smith & Wesson .357 MAG Rifle LLH8085 Inspection",
     findings:
-      "Detailed inspection of Smith & Wesson .22 SHORT/LONG/LR revolvers. All serial numbers verified and properly documented. Firearms in good condition.",
+      "Individual inspection of Smith & Wesson .357 MAG rifle, serial number LLH8085. Firearm condition verified, all serial numbers match documentation. Proper storage confirmed.",
     status: "passed",
-    recommendations: "Continue current inventory management practices.",
+    recommendations: "Continue current storage and handling procedures.",
   },
   {
     id: "4",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Smith & Wesson .38 SPECIAL Revolver Inspection",
+    type: "Smith & Wesson .22 LR Revolver EER8189 Inspection",
     findings:
-      "Comprehensive inspection of Smith & Wesson .38 SPECIAL revolvers. All items accounted for and properly catalogued.",
+      "Individual inspection of Smith & Wesson .22 SHORT/LONG/LR revolver, serial number EER8189. All components verified, cylinder function tested.",
     status: "passed",
-    recommendations: "Maintain detailed records of all serial numbers.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "5",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Smith & Wesson .22 LR/.22 MAG Revolver Inspection",
+    type: "Smith & Wesson .22 LR Revolver EET5011 Inspection",
     findings:
-      "Verification of Smith & Wesson .22 LR/.22 MAG revolvers. All firearms present and accounted for with proper documentation.",
+      "Individual inspection of Smith & Wesson .22 SHORT/LONG/LR revolver, serial number EET5011. Trigger mechanism and safety features tested.",
     status: "passed",
-    recommendations: "Continue systematic inventory procedures.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "6",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Smith & Wesson .22 LONG/LR Pistol Inspection",
+    type: "Smith & Wesson .22 LR Revolver EET5019 Inspection",
     findings:
-      "Inspection of Smith & Wesson .22 LONG/LR pistols. All items verified and properly stored according to regulations.",
+      "Individual inspection of Smith & Wesson .22 SHORT/LONG/LR revolver, serial number EET5019. All components verified, cylinder function tested.",
     status: "passed",
-    recommendations: "Excellent inventory management. Continue current practices.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "7",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Smith & Wesson .45 ACP Pistol Inspection",
+    type: "Smith & Wesson .22 LR Revolver EET7761 Inspection",
     findings:
-      "Detailed verification of Smith & Wesson .45 ACP pistols. All firearms properly categorized and stored according to caliber specifications.",
+      "Individual inspection of Smith & Wesson .22 SHORT/LONG/LR revolver, serial number EET7761. Trigger mechanism and safety features tested.",
     status: "passed",
-    recommendations: "Maintain separation between different caliber classifications.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "8",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJP3525",
+    type: "Smith & Wesson .22 LR Revolver EET7765 Inspection",
     findings:
-      "Inspection of 9MM PAR pistol serial number EJP3525. Firearm properly documented and secured. Smith & Wesson manufacture verified.",
+      "Individual inspection of Smith & Wesson .22 SHORT/LONG/LR revolver, serial number EET7765. All components verified, cylinder function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for pistol inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "9",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJR2127",
-    findings: "Verification of 9MM PAR pistol EJR2127. All documentation complete and firearm properly maintained.",
+    type: "Smith & Wesson .22 LR Revolver EET7780 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 SHORT/LONG/LR revolver, serial number EET7780. Trigger mechanism and safety features tested.",
     status: "passed",
-    recommendations: "Continue regular maintenance schedules for all pistols.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "10",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJR2139",
-    findings: "Inspection of 9MM PAR pistol EJR2139. Item properly classified and secured according to regulations.",
+    type: "Smith & Wesson .357 MAG Revolver EEK3159 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .357 MAG revolver, serial number EEK3159. All components verified, cylinder function tested.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for pistol inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "11",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJR2297",
+    type: "Smith & Wesson .357 MAG Revolver EER8271 Inspection",
     findings:
-      "Detailed verification of 9MM PAR pistol EJR2297. Firearm properly secured and documented in inventory system.",
+      "Individual inspection of Smith & Wesson .357 MAG revolver, serial number EER8271. Trigger mechanism and safety features tested.",
     status: "passed",
-    recommendations: "Continue proper classification and storage procedures.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "12",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJR2373",
-    findings: "Inspection of 9MM PAR pistol EJR2373. All security protocols properly implemented and documented.",
+    type: "Smith & Wesson .38 Special Revolver EDZ1215 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .38 Special revolver, serial number EDZ1215. All components verified, cylinder function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for pistol inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "13",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJR2375",
-    findings: "Verification of 9MM PAR pistol EJR2375. Firearm accounted for with proper documentation and storage.",
+    type: "Smith & Wesson .38 Special Revolver EEF2376 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .38 Special revolver, serial number EEF2376. Trigger mechanism and safety features tested.",
     status: "passed",
-    recommendations: "Excellent management of pistol inventory. Continue current security measures.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "14",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJR2765",
-    findings: "Inspection of 9MM PAR pistol EJR2765. Item properly catalogued and secured in designated storage area.",
+    type: "Smith & Wesson .38 Special Revolver EEV1568 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .38 Special revolver, serial number EEV1568. All components verified, cylinder function tested.",
     status: "passed",
-    recommendations: "Continue exemplary compliance with pistol storage regulations.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "15",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJR2825",
-    findings: "Detailed verification of 9MM PAR pistol EJR2825. All inventory tracking systems properly maintained.",
+    type: "Smith & Wesson .22 LR/.22 MAG Revolver EEN2165 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LR/.22 MAG (WMR) revolver, serial number EEN2165. Dual caliber capability verified.",
     status: "passed",
-    recommendations: "Maintain current inventory tracking systems.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "16",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJR3512",
+    type: "Smith & Wesson .22 LR/.22 MAG Revolver EEU0808 Inspection",
     findings:
-      "Inspection of 9MM PAR pistol EJR3512. Firearm properly documented with complete chain of custody records.",
+      "Individual inspection of Smith & Wesson .22 LR/.22 MAG (WMR) revolver, serial number EEU0808. Dual caliber capability verified.",
     status: "passed",
-    recommendations: "Continue systematic documentation procedures.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "17",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJS3074",
+    type: "Smith & Wesson .22 LR Pistol UES6239 Inspection",
     findings:
-      "Verification of 9MM PAR pistol EJS3074. All items accounted for and properly stored according to specifications.",
+      "Individual inspection of Smith & Wesson .22 LONG/LR pistol, serial number UES6239. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent completion of EJS series inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "18",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW1464",
-    findings: "Inspection of 9MM PAR pistol EJW1464. Firearm verified and secured with proper documentation protocols.",
+    type: "Smith & Wesson .45 ACP Pistol UFH0813 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .45 ACP pistol, serial number UFH0813. Semi-automatic function and safety features tested.",
     status: "passed",
-    recommendations: "Continue proper EJW series documentation.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "19",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW1497",
+    type: "Smith & Wesson .45 ACP Pistol UFH1723 Inspection",
     findings:
-      "Detailed verification of 9MM PAR pistol EJW1497. All security measures properly implemented and maintained.",
+      "Individual inspection of Smith & Wesson .45 ACP pistol, serial number UFH1723. All components verified, trigger mechanism tested.",
     status: "passed",
-    recommendations: "Maintain security protocols for EJW series.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "20",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW1525",
-    findings: "Inspection of 9MM PAR pistol EJW1525. Complete series verification with all documentation in order.",
+    type: "Smith & Wesson .45 ACP Pistol UFH1897 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .45 ACP pistol, serial number UFH1897. Semi-automatic function and safety features tested.",
     status: "passed",
-    recommendations: "Excellent completion of EJW1525 verification.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "21",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW1533",
-    findings: "Verification of 9MM PAR pistol EJW1533. Firearm properly classified and stored with enhanced security.",
+    type: "Smith & Wesson .45 ACP Pistol UFJ2201 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .45 ACP pistol, serial number UFJ2201. All components verified, trigger mechanism tested.",
     status: "passed",
-    recommendations: "Continue EJW series tracking procedures.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "22",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW4154",
-    findings: "Inspection of 9MM PAR pistol EJW4154. All regulatory requirements met with proper documentation.",
+    type: "Smith & Wesson .45 ACP Pistol UFJ2219 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .45 ACP pistol, serial number UFJ2219. Semi-automatic function and safety features tested.",
     status: "passed",
-    recommendations: "Complete EJW4154 verification successfully completed.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "23",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW4161",
-    findings: "Detailed verification of 9MM PAR pistol EJW4161. Firearm secured according to safety protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJP3525 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJP3525. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain proper caliber classification for EJW4161.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "24",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW4385",
-    findings: "Inspection of 9MM PAR pistol EJW4385. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJR2127 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJR2127. All components verified.",
     status: "passed",
-    recommendations: "Continue separation between different pistol series classifications.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "25",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW5327",
-    findings: "Verification of 9MM PAR pistol EJW5327. Complete documentation and proper storage protocols verified.",
+    type: "Smith & Wesson 9MM PAR Pistol EJR2139 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJR2139. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent completion of EJW5327 inspection.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "26",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW5636",
-    findings: "Inspection of 9MM PAR pistol EJW5636. Firearm properly maintained with all security measures in place.",
+    type: "Smith & Wesson 9MM PAR Pistol EJR2297 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJR2297. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for EJW5636.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "27",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW5639",
-    findings: "Detailed verification of 9MM PAR pistol EJW5639. All regulatory compliance requirements satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJR2373 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJR2373. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue regular maintenance schedules for EJW5639.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "28",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW7647",
-    findings: "Inspection of 9MM PAR pistol EJW7647. Firearm properly classified and secured with documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJR2375 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJR2375. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for EJW7647.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "29",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW7659",
-    findings: "Verification of 9MM PAR pistol EJW7659. All storage requirements met with proper security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJR2765 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJR2765. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper classification and storage for EJW7659.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "30",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW7711",
-    findings: "Inspection of 9MM PAR pistol EJW7711. Complete verification with all documentation properly maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol EJR2825 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJR2825. All components verified.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for EJW7711.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "31",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW8129",
-    findings: "Detailed verification of 9MM PAR pistol EJW8129. Firearm secured with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol EJR3512 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJR3512. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent management of EJW8129 inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "32",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW8163",
-    findings: "Inspection of 9MM PAR pistol EJW8163. All regulatory requirements properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJS3074 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJS3074. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for EJW8163.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "33",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJW9944",
+    type: "Smith & Wesson 9MM PAR Pistol EJW1464 Inspection",
     findings:
-      "Verification of 9MM PAR pistol EJW9944. Complete inspection with all safety protocols properly followed.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW1464. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for EJW9944.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "34",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX8064",
-    findings: "Inspection of 9MM PAR pistol EJX8064. Firearm properly documented and stored according to regulations.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW1497 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW1497. All components verified.",
     status: "passed",
-    recommendations: "Continue proper classification for EJX8064.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "35",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX8079",
+    type: "Smith & Wesson 9MM PAR Pistol EJW1525 Inspection",
     findings:
-      "Detailed verification of 9MM PAR pistol EJX8079. All security measures properly implemented and maintained.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW1525. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent completion of EJX8079 inspection.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "36",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX8104",
+    type: "Smith & Wesson 9MM PAR Pistol EJW1533 Inspection",
     findings:
-      "Inspection of 9MM PAR pistol EJX8104. Complete documentation with proper storage and security protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW1533. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for EJX8104.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "37",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX8172",
+    type: "Smith & Wesson 9MM PAR Pistol EJW4154 Inspection",
     findings:
-      "Verification of 9MM PAR pistol EJX8172. Firearm properly maintained with all regulatory requirements met.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW4154. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current security measures for EJX8172.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "38",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX9285",
-    findings: "Inspection of 9MM PAR pistol EJX9285. All storage and documentation requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW4161 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW4161. All components verified.",
     status: "passed",
-    recommendations: "Excellent management of EJX9285 inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "39",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX9351",
-    findings: "Detailed verification of 9MM PAR pistol EJX9351. Complete security protocols properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW4385 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW4385. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue strict protocols for EJX9351.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "40",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX9352",
-    findings: "Inspection of 9MM PAR pistol EJX9352. Firearm secured with proper documentation and storage protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW5327 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW5327. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security measures for EJX9352.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "41",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX9365",
-    findings: "Verification of 9MM PAR pistol EJX9365. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW5636 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW5636. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper handling of EJX9365.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "42",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX9383",
-    findings: "Inspection of 9MM PAR pistol EJX9383. Complete verification with all documentation properly maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW5639 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW5639. All components verified.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for EJX9383.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "43",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJX9402",
-    findings: "Detailed verification of 9MM PAR pistol EJX9402. Firearm properly secured with enhanced protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW7647 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW7647. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for EJX9402.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "44",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1880",
-    findings: "Inspection of 9MM PAR pistol EJY1880. All security measures properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW7659 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW7659. All components verified.",
     status: "passed",
-    recommendations: "Continue current security standards for EJY1880.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "45",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1888",
-    findings: "Verification of 9MM PAR pistol EJY1888. Complete documentation with proper storage requirements met.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW7711 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW7711. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for EJY1888.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "46",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1917",
-    findings: "Inspection of 9MM PAR pistol EJY1917. Firearm properly classified and secured according to regulations.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW8129 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW8129. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for EJY1917.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "47",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1927",
-    findings: "Detailed verification of 9MM PAR pistol EJY1927. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW8163 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW8163. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for EJY1927.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "48",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1936",
-    findings: "Inspection of 9MM PAR pistol EJY1936. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol EJW9944 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJW9944. All components verified.",
     status: "passed",
-    recommendations: "Continue current security measures for EJY1936.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "49",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1945",
+    type: "Smith & Wesson 9MM PAR Pistol EJX8064 Inspection",
     findings:
-      "Verification of 9MM PAR pistol EJY1945. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX8064. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent management of EJY1945 inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "50",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1955",
-    findings: "Inspection of 9MM PAR pistol EJY1955. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX8079 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX8079. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for EJY1955.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "51",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1965",
-    findings: "Detailed verification of 9MM PAR pistol EJY1965. Complete documentation with all protocols followed.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX8104 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX8104. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for EJY1965.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "52",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1971",
-    findings: "Inspection of 9MM PAR pistol EJY1971. Firearm properly maintained with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX8172 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX8172. All components verified.",
     status: "passed",
-    recommendations: "Continue strict protocols for EJY1971.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "53",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1973",
-    findings: "Verification of 9MM PAR pistol EJY1973. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX9285 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX9285. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for EJY1973.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "54",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1974",
-    findings: "Inspection of 9MM PAR pistol EJY1974. Complete verification with proper storage and documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX9351 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX9351. All components verified.",
     status: "passed",
-    recommendations: "Continue proper handling of EJY1974.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "55",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1979",
-    findings: "Detailed verification of 9MM PAR pistol EJY1979. Firearm secured according to safety protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX9352 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX9352. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for EJY1979.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "56",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1980",
-    findings: "Inspection of 9MM PAR pistol EJY1980. All security measures properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX9365 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX9365. All components verified.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for EJY1980.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "57",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1985",
-    findings: "Verification of 9MM PAR pistol EJY1985. Complete documentation with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX9383 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX9383. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue current security standards for EJY1985.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "58",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY1992",
-    findings: "Inspection of 9MM PAR pistol EJY1992. Firearm properly classified and stored with proper documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJX9402 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJX9402. All components verified.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for EJY1992.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "59",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY2008",
-    findings: "Detailed verification of 9MM PAR pistol EJY2008. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1880 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1880. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security for EJY2008.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "60",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY2020",
-    findings: "Inspection of 9MM PAR pistol EJY2020. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1888 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1888. All components verified.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for EJY2020.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "61",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY9612",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1917 Inspection",
     findings:
-      "Verification of 9MM PAR pistol EJY9612. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1917. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue current security measures for EJY9612.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "62",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY9617",
-    findings: "Inspection of 9MM PAR pistol EJY9617. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1927 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1927. All components verified.",
     status: "passed",
-    recommendations: "Excellent management of EJY9617 inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "63",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY9622",
-    findings: "Detailed verification of 9MM PAR pistol EJY9622. Complete documentation with all protocols followed.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1936 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1936. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for EJY9622.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "64",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY9635",
-    findings: "Inspection of 9MM PAR pistol EJY9635. Firearm properly maintained with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1945 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1945. All components verified.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for EJY9635.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "65",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY9639",
-    findings: "Verification of 9MM PAR pistol EJY9639. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1955 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1955. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue strict protocols for EJY9639.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "66",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY9643",
-    findings: "Inspection of 9MM PAR pistol EJY9643. Complete verification with proper storage and documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1965 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1965. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for EJY9643.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "67",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJY9667",
-    findings: "Detailed verification of 9MM PAR pistol EJY9667. Firearm secured according to safety protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1971 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1971. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper handling of EJY9667.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "68",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0369",
-    findings: "Inspection of 9MM PAR pistol EJZ0369. All security measures properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1973 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1973. All components verified.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for EJZ0369.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "69",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0372",
-    findings: "Verification of 9MM PAR pistol EJZ0372. Complete documentation with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1974 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1974. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for EJZ0372.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "70",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0376",
-    findings: "Inspection of 9MM PAR pistol EJZ0376. Firearm properly classified and stored with proper documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1979 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1979. All components verified.",
     status: "passed",
-    recommendations: "Continue current security standards for EJZ0376.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "71",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0393",
-    findings: "Detailed verification of 9MM PAR pistol EJZ0393. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1980 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1980. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for EJZ0393.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "72",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0395",
-    findings: "Inspection of 9MM PAR pistol EJZ0395. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1985 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1985. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for EJZ0395.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "73",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0398",
+    type: "Smith & Wesson 9MM PAR Pistol EJY1992 Inspection",
     findings:
-      "Verification of 9MM PAR pistol EJZ0398. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY1992. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for EJZ0398.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "74",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0403",
-    findings: "Inspection of 9MM PAR pistol EJZ0403. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY2008 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY2008. All components verified.",
     status: "passed",
-    recommendations: "Continue current security measures for EJZ0403.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "75",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0406",
-    findings: "Detailed verification of 9MM PAR pistol EJZ0406. Complete documentation with all protocols followed.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY2020 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY2020. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent management of EJZ0406 inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "76",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0770",
-    findings: "Inspection of 9MM PAR pistol EJZ0770. Firearm properly maintained with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY9612 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY9612. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for EJZ0770.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "77",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0775",
-    findings: "Verification of 9MM PAR pistol EJZ0775. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY9617 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY9617. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for EJZ0775.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "78",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0788",
-    findings: "Inspection of 9MM PAR pistol EJZ0788. Complete verification with proper storage and documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY9622 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY9622. All components verified.",
     status: "passed",
-    recommendations: "Continue strict protocols for EJZ0788.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "79",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ0833",
-    findings: "Detailed verification of 9MM PAR pistol EJZ0833. Firearm secured according to safety protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY9635 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY9635. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for EJZ0833.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "80",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ1461",
-    findings: "Inspection of 9MM PAR pistol EJZ1461. All security measures properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY9639 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY9639. All components verified.",
     status: "passed",
-    recommendations: "Continue proper handling of EJZ1461.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "81",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ1470",
-    findings: "Verification of 9MM PAR pistol EJZ1470. Complete documentation with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY9643 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY9643. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for EJZ1470.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "82",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ1482",
-    findings: "Inspection of 9MM PAR pistol EJZ1482. Firearm properly classified and stored with proper documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJY9667 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJY9667. All components verified.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for EJZ1482.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "83",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ1495",
-    findings: "Detailed verification of 9MM PAR pistol EJZ1495. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0369 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0369. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue current security standards for EJZ1495.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "84",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ1498",
-    findings: "Inspection of 9MM PAR pistol EJZ1498. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0372 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0372. All components verified.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for EJZ1498.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "85",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ1501",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0376 Inspection",
     findings:
-      "Verification of 9MM PAR pistol EJZ1501. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0376. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security for EJZ1501.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "86",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ1505",
-    findings: "Inspection of 9MM PAR pistol EJZ1505. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0393 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0393. All components verified.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for EJZ1505.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "87",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - EJZ1519",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0395 Inspection",
     findings:
-      "Final EJZ series verification of 9MM PAR pistol EJZ1519. Complete documentation with all protocols followed.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0395. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue current security measures for EJZ1519. EJZ series complete.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "88",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4982",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0398 Inspection",
     findings:
-      "Inspection of 9MM PAR pistol FJA4982. Beginning of FJA series verification with enhanced security measures.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0398. All components verified.",
     status: "passed",
-    recommendations: "Excellent management of FJA4982 inventory start.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "89",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4984",
-    findings: "Verification of 9MM PAR pistol FJA4984. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0403 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0403. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for FJA4984.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "90",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4985",
-    findings: "Inspection of 9MM PAR pistol FJA4985. Complete verification with proper storage and documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0406 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0406. All components verified.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for FJA4985.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "91",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4986",
-    findings: "Detailed verification of 9MM PAR pistol FJA4986. Firearm secured according to safety protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0770 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0770. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue strict protocols for FJA4986.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "92",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4987",
-    findings: "Inspection of 9MM PAR pistol FJA4987. All security measures properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0775 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0775. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for FJA4987.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "93",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4988",
-    findings: "Verification of 9MM PAR pistol FJA4988. Complete documentation with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0788 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0788. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper handling of FJA4988.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "94",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4989",
-    findings: "Inspection of 9MM PAR pistol FJA4989. Firearm properly classified and stored with proper documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ0833 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ0833. All components verified.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for FJA4989.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "95",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4990",
-    findings: "Detailed verification of 9MM PAR pistol FJA4990. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1461 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1461. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for FJA4990.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "96",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4991",
-    findings: "Inspection of 9MM PAR pistol FJA4991. Complete security protocols properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1470 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1470. All components verified.",
     status: "passed",
-    recommendations: "Continue current security standards for FJA4991.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "97",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4992",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1482 Inspection",
     findings:
-      "Verification of 9MM PAR pistol FJA4992. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1482. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for FJA4992.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "98",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4993",
-    findings: "Inspection of 9MM PAR pistol FJA4993. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1495 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1495. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for FJA4993.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "99",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4994",
-    findings: "Detailed verification of 9MM PAR pistol FJA4994. Complete documentation with all protocols followed.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1498 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1498. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for FJA4994.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "100",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4995",
-    findings: "Inspection of 9MM PAR pistol FJA4995. Firearm properly maintained with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1501 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1501. All components verified.",
     status: "passed",
-    recommendations: "Continue current security measures for FJA4995.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "101",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4996",
-    findings: "Verification of 9MM PAR pistol FJA4996. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1505 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1505. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent management of FJA4996 inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "102",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4997",
-    findings: "Inspection of 9MM PAR pistol FJA4997. Complete verification with proper storage and documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1519 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1519. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for FJA4997.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "103",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4998",
-    findings: "Detailed verification of 9MM PAR pistol FJA4998. Firearm secured according to safety protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1523 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1523. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for FJA4998.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "104",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA4999",
-    findings: "Inspection of 9MM PAR pistol FJA4999. All security measures properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1525 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1525. All components verified.",
     status: "passed",
-    recommendations: "Continue strict protocols for FJA4999.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "105",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5000",
-    findings: "Verification of 9MM PAR pistol FJA5000. Complete documentation with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1565 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1565. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain enhanced security measures for FJA5000.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "106",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5001",
-    findings: "Inspection of 9MM PAR pistol FJA5001. Firearm properly classified and stored with proper documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1575 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1575. All components verified.",
     status: "passed",
-    recommendations: "Continue proper handling of FJA5001.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "107",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5002",
-    findings: "Detailed verification of 9MM PAR pistol FJA5002. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ1829 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ1829. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for FJA5002.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "108",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5003",
-    findings: "Inspection of 9MM PAR pistol FJA5003. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3194 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3194. All components verified.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for FJA5003.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "109",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5004",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3222 Inspection",
     findings:
-      "Verification of 9MM PAR pistol FJA5004. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3222. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue current security standards for FJA5004.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "110",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5005",
-    findings: "Inspection of 9MM PAR pistol FJA5005. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3229 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3229. All components verified.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for FJA5005.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "111",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5006",
-    findings: "Detailed verification of 9MM PAR pistol FJA5006. Complete documentation with all protocols followed.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3231 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3231. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security for FJA5006.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "112",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5007",
-    findings: "Inspection of 9MM PAR pistol FJA5007. Firearm properly maintained with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3232 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3232. All components verified.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for FJA5007.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "113",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5008",
-    findings: "Verification of 9MM PAR pistol FJA5008. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3233 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3233. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue current security measures for FJA5008.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "114",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5009",
-    findings: "Inspection of 9MM PAR pistol FJA5009. Complete verification with proper storage and documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3236 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3236. All components verified.",
     status: "passed",
-    recommendations: "Excellent management of FJA5009 inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "115",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJA5010",
-    findings: "Final FJA series verification of 9MM PAR pistol FJA5010. Firearm secured according to safety protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3238 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3238. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for FJA5010. FJA series complete.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "116",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6230",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3241 Inspection",
     findings:
-      "Inspection of 9MM PAR pistol FJB6230. Beginning of FJB series with all security measures properly implemented.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3241. All components verified.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for FJB6230.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "117",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6231",
-    findings: "Verification of 9MM PAR pistol FJB6231. Complete documentation with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3246 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3246. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue strict protocols for FJB6231.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "118",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6232",
-    findings: "Inspection of 9MM PAR pistol FJB6232. Firearm properly classified and stored with proper documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3247 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3247. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for FJB6232.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "119",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6233",
-    findings: "Detailed verification of 9MM PAR pistol FJB6233. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3251 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3251. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper handling of FJB6233.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "120",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6234",
-    findings: "Inspection of 9MM PAR pistol FJB6234. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3260 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3260. All components verified.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for FJB6234.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "121",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6235",
+    type: "Smith & Wesson 9MM PAR Pistol EJZ3266 Inspection",
     findings:
-      "Verification of 9MM PAR pistol FJB6235. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number EJZ3266. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for FJB6235.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "122",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6236",
-    findings: "Inspection of 9MM PAR pistol FJB6236. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol FJB6240 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJB6240. All components verified.",
     status: "passed",
-    recommendations: "Continue current security standards for FJB6236.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "123",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6237",
-    findings: "Detailed verification of 9MM PAR pistol FJB6237. Complete documentation with all protocols followed.",
+    type: "Smith & Wesson 9MM PAR Pistol FJE1728 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE1728. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for FJB6237.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "124",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6238",
-    findings: "Inspection of 9MM PAR pistol FJB6238. Firearm properly maintained with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol FJE1935 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE1935. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for FJB6238.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "125",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6239",
-    findings: "Verification of 9MM PAR pistol FJB6239. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol FJE1952 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE1952. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for FJB6239.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "126",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "9MM PAR Pistol - FJB6240",
+    type: "Smith & Wesson 9MM PAR Pistol FJE1953 Inspection",
     findings:
-      "Final 9MM PAR pistol verification of FJB6240. Complete 9MM PAR series inspection with all documentation in order.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE1953. All components verified.",
     status: "passed",
-    recommendations:
-      "Continue current security measures for FJB6240. Complete 9MM PAR pistol inventory successfully verified.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "127",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".22 LONG RIFLE - FHX0894",
+    type: "Smith & Wesson 9MM PAR Pistol FJE1956 Inspection",
     findings:
-      "Inspection of .22 LONG RIFLE firearm FHX0894. S/L: RIFLE CAL classification verified and documented. Beginning of .22 LR series.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE1956. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain proper caliber classification for .22 LR firearms.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "128",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".22 LONG RIFLE Series - Extended Range 1",
+    type: "Smith & Wesson 9MM PAR Pistol FJE1959 Inspection",
     findings:
-      "Continued .22 LONG RIFLE inspection through extended serial number ranges. Both RIFLE CAL and RIFLE/CARBINE types properly categorized.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE1959. All components verified.",
     status: "passed",
-    recommendations: "Continue separation between rifle and carbine classifications.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "129",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".22 LONG RIFLE Series - Extended Range 2",
+    type: "Smith & Wesson 9MM PAR Pistol FJE1960 Inspection",
     findings:
-      "Further .22 LONG RIFLE verification covering multiple serial numbers. All rifles and carbines properly stored according to type specifications.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE1960. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain enhanced security for .22 LR firearm inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "130",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".22 LONG RIFLE Series - FJT Series",
+    type: "Smith & Wesson 9MM PAR Pistol FJE1961 Inspection",
     findings:
-      "Final .22 LONG RIFLE inspection through FJT series. All rifles and carbines properly categorized and stored according to type specifications.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE1961. All components verified.",
     status: "passed",
-    recommendations: "Excellent completion of .22 LR firearm inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "131",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".500 S&W MAGNUM Revolver Inspection",
+    type: "Smith & Wesson 9MM PAR Pistol FJE5643 Inspection",
     findings:
-      "Inspection of .500 S&W MAGNUM revolvers. High-powered firearms requiring special attention to storage and handling protocols verified.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE5643. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for high-caliber revolvers.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "132",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EEU7745",
+    type: "Smith & Wesson 9MM PAR Pistol FJE5649 Inspection",
     findings:
-      "Detailed verification of .380 ACP pistol EEU7745. Firearm accounted for and properly maintained according to caliber specifications.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE5649. All components verified.",
     status: "passed",
-    recommendations: "Continue regular maintenance schedules for .380 ACP pistols.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "133",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJH7299",
+    type: "Smith & Wesson 9MM PAR Pistol FJE5654 Inspection",
     findings:
-      "Inspection of .380 ACP pistol EJH7299. All firearms properly classified and secured according to regulations.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE5654. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for .380 ACP inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "134",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJR6012",
+    type: "Smith & Wesson 9MM PAR Pistol FJE5657 Inspection",
     findings:
-      "Verification of .380 ACP pistol EJR6012. Complete documentation with proper storage and security protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE5657. All components verified.",
     status: "passed",
-    recommendations: "Continue proper classification and storage procedures.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "135",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJS0888",
-    findings: "Inspection of .380 ACP pistol EJS0888. Firearm properly secured with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol FJE5664 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE5664. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for .380 ACP firearms.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "136",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJV0156",
-    findings: "Detailed verification of .380 ACP pistol EJV0156. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol FJE7476 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJE7476. All components verified.",
     status: "passed",
-    recommendations: "Excellent management of .380 ACP pistol inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "137",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJV0804",
-    findings: "Inspection of .380 ACP pistol EJV0804. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol FJF0482 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF0482. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for .380 ACP firearms.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "138",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJV5351",
+    type: "Smith & Wesson 9MM PAR Pistol FJF0486 Inspection",
     findings:
-      "Verification of .380 ACP pistol EJV5351. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF0486. All components verified.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for .380 ACP inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "139",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJV9641",
-    findings: "Inspection of .380 ACP pistol EJV9641. All storage and security requirements properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol FJF2100 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF2100. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue strict protocols for .380 ACP firearms.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "140",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJW9766",
-    findings: "Detailed verification of .380 ACP pistol EJW9766. Complete documentation with all protocols followed.",
+    type: "Smith & Wesson 9MM PAR Pistol FJF2101 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF2101. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for .380 ACP inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "141",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJX4565",
-    findings: "Inspection of .380 ACP pistol EJX4565. Firearm properly maintained with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol FJF2130 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF2130. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper handling of .380 ACP firearms.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "142",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJX4933",
-    findings: "Verification of .380 ACP pistol EJX4933. All regulatory compliance requirements properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol FJF7248 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF7248. All components verified.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for .380 ACP inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "143",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJX8629",
-    findings: "Detailed verification of .380 ACP pistol EJX8629. Firearm secured according to safety protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol FJF8216 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF8216. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue current security standards for .380 ACP inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
+  },
+  {
+    id: "144",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson 9MM PAR Pistol FJF9078 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF9078. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "145",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJX8836",
-    findings: "Inspection of .380 ACP pistol EJX8836. All security measures properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol FJF9081 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF9081. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for .380 ACP firearms.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "146",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJY0403",
-    findings: "Verification of .380 ACP pistol EJY0403. Complete documentation with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol FJF9082 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF9082. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for .380 ACP firearms.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "147",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJY0792",
+    type: "Smith & Wesson 9MM PAR Pistol FJF9412 Inspection",
     findings:
-      "Inspection of .380 ACP pistol EJY0792. Firearm properly classified and stored with proper documentation.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJF9412. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for .380 ACP inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "148",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJY0801",
-    findings: "Detailed verification of .380 ACP pistol EJY0801. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol FJH1531 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJH1531. All components verified.",
     status: "passed",
-    recommendations: "Continue current security measures for .380 ACP firearms.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "149",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJY0804",
-    findings: "Inspection of .380 ACP pistol EJY0804. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol FJH1532 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJH1532. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent management of .380 ACP pistol inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "150",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJY0808",
+    type: "Smith & Wesson 9MM PAR Pistol FJH3107 Inspection",
     findings:
-      "Verification of .380 ACP pistol EJY0808. Firearm secured with proper documentation and storage protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJH3107. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for .380 ACP firearms.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "151",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".380 ACP Pistol - EJY0830",
+    type: "Smith & Wesson 9MM PAR Pistol FJH3121 Inspection",
     findings:
-      "Final .380 ACP verification of pistol EJY0830. All .380 ACP pistols accounted for with complete documentation.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJH3121. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent completion of .380 ACP pistol inventory verification.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "152",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".460 S&W MAG Revolver - EET9506",
+    type: "Smith & Wesson 9MM PAR Pistol FJH3550 Inspection",
     findings:
-      "Inspection of .460 S&W MAG revolver EET9506. High-powered revolver properly secured with enhanced protocols.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJH3550. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for magnum caliber revolvers.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "153",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88102",
+    type: "Smith & Wesson 9MM PAR Pistol FJL1046 Inspection",
     findings:
-      "Comprehensive inspection of 5.56X45MM rifle TV88102. Tactical rifle verified and secured with proper documentation.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL1046. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for tactical rifles.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "154",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88265",
+    type: "Smith & Wesson 9MM PAR Pistol FJL1051 Inspection",
     findings:
-      "Inspection of 5.56X45MM rifle TV88265. All tactical rifle requirements properly implemented and documented.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL1051. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for tactical rifle inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "155",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88270",
-    findings: "Detailed verification of 5.56X45MM rifle TV88270. Firearm properly classified as S/L: RIFLE CAL.",
+    type: "Smith & Wesson 9MM PAR Pistol FJL1055 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL1055. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper classification as S/L: RIFLE CAL or RIFLE/CARBINE.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "156",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88366",
-    findings: "Inspection of 5.56X45MM rifle TV88366. Complete security protocols for tactical firearms verified.",
+    type: "Smith & Wesson 9MM PAR Pistol FJL1057 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL1057. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for TV88 series.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "157",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88368",
-    findings: "Verification of 5.56X45MM rifle TV88368. All storage and documentation requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol FJL1172 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL1172. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue strict security measures for tactical rifles.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "158",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88373",
-    findings: "Inspection of 5.56X45MM rifle TV88373. Tactical rifle properly secured according to regulations.",
+    type: "Smith & Wesson 9MM PAR Pistol FJL4180 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL4180. All components verified.",
     status: "passed",
-    recommendations: "Excellent completion of TV88373 verification.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "159",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88383",
-    findings: "Detailed verification of 5.56X45MM rifle TV88383. All regulatory requirements for tactical rifles met.",
+    type: "Smith & Wesson 9MM PAR Pistol FJL6916 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL6916. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security for TV88 series tactical rifles.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "160",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88387",
-    findings: "Inspection of 5.56X45MM rifle TV88387. Complete documentation and proper storage protocols verified.",
+    type: "Smith & Wesson 9MM PAR Pistol FJL9077 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL9077. All components verified.",
     status: "passed",
-    recommendations: "Maintain current security measures for tactical firearms.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "161",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88389",
-    findings: "Verification of 5.56X45MM rifle TV88389. Firearm properly maintained with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol FJL9458 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number FJL9458. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue strict protocols for TV88 series.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "162",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88395",
-    findings: "Inspection of 5.56X45MM rifle TV88395. All security measures for tactical rifles properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol JJD2411 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number JJD2411. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for tactical rifle inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "163",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88397",
-    findings: "Detailed verification of 5.56X45MM rifle TV88397. Complete compliance with tactical rifle regulations.",
+    type: "Smith & Wesson 9MM PAR Pistol SBR0594 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SBR0594. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper classification and storage for TV88 series.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "164",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88407",
-    findings: "Inspection of 5.56X45MM rifle TV88407. Tactical rifle secured with proper documentation protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol SBR1398 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SBR1398. All components verified.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for TV88407.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "165",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88408",
-    findings: "Verification of 5.56X45MM rifle TV88408. All storage requirements for tactical rifles properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol SBR1459 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SBR1459. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent management of TV88408 inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "166",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88451",
-    findings: "Inspection of 5.56X45MM rifle TV88451. Complete verification with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol SCN2435 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SCN2435. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for TV88451.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "167",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88469",
-    findings: "Detailed verification of 5.56X45MM rifle TV88469. Firearm properly classified and secured.",
+    type: "Smith & Wesson 9MM PAR Pistol SCN2482 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SCN2482. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for TV88469.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "168",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88470",
-    findings: "Inspection of 5.56X45MM rifle TV88470. All regulatory requirements for tactical rifles satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol SCN2551 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SCN2551. All components verified.",
     status: "passed",
-    recommendations: "Continue strict protocols for TV88470.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "169",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88476",
-    findings: "Verification of 5.56X45MM rifle TV88476. Complete security protocols properly implemented.",
+    type: "Smith & Wesson 9MM PAR Pistol SCN2570 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SCN2570. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for TV88476.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "170",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88479",
-    findings: "Inspection of 5.56X45MM rifle TV88479. Tactical rifle secured with proper storage protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol SCX0957 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SCX0957. All components verified.",
     status: "passed",
-    recommendations: "Continue proper handling of TV88479.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "171",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88481",
-    findings: "Detailed verification of 5.56X45MM rifle TV88481. All documentation properly maintained.",
+    type: "Smith & Wesson 9MM PAR Pistol SED7816 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED7816. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for TV88481.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "172",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TV88541",
+    type: "Smith & Wesson 9MM PAR Pistol SED8018 Inspection",
     findings:
-      "Final TV88 series verification of 5.56X45MM rifle TV88541. All tactical rifles properly secured and documented.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8018. All components verified.",
     status: "passed",
-    recommendations: "Excellent completion of TV88 series inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "173",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84272",
+    type: "Smith & Wesson 9MM PAR Pistol SED8025 Inspection",
     findings:
-      "Inspection of 5.56X45MM rifle TW84272. Beginning of TW84 series with enhanced security for tactical rifles.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8025. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security for TW84 series tactical rifles.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "174",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84275",
+    type: "Smith & Wesson 9MM PAR Pistol SED8030 Inspection",
     findings:
-      "Verification of 5.56X45MM rifle TW84275. All security measures for tactical rifles properly implemented.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8030. All components verified.",
     status: "passed",
-    recommendations: "Maintain current security measures for tactical firearms.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "175",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84276",
-    findings: "Inspection of 5.56X45MM rifle TW84276. Complete documentation and proper storage protocols verified.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8037 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8037. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue strict protocols for TW84 series.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "176",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84313",
-    findings: "Detailed verification of 5.56X45MM rifle TW84313. Tactical rifle secured according to regulations.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8135 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8135. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for TW84313.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "177",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84314",
-    findings: "Inspection of 5.56X45MM rifle TW84314. All regulatory requirements for tactical rifles properly met.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8136 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8136. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Continue proper handling of TW84314.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "178",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84316",
+    type: "Smith & Wesson 9MM PAR Pistol SED8137 Inspection",
     findings:
-      "Verification of 5.56X45MM rifle TW84316. Complete security protocols properly implemented and maintained.",
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8137. All components verified.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for TW84316.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "179",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84317",
-    findings: "Inspection of 5.56X45MM rifle TW84317. Firearm properly classified and stored with documentation.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8148 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8148. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for TW84317.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "180",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84318",
-    findings: "Detailed verification of 5.56X45MM rifle TW84318. All storage requirements properly satisfied.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8149 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8149. All components verified.",
     status: "passed",
-    recommendations: "Continue current security standards for TW84318.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "181",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84319",
-    findings: "Inspection of 5.56X45MM rifle TW84319. Complete verification with enhanced security measures.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8151 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8151. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for TW84319.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "182",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84320",
-    findings: "Verification of 5.56X45MM rifle TW84320. Tactical rifle secured with proper protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8154 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8154. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for TW84320.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "183",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84321",
-    findings: "Inspection of 5.56X45MM rifle TW84321. All security measures properly implemented and documented.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8189 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8189. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for TW84321.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "184",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84322",
-    findings: "Detailed verification of 5.56X45MM rifle TW84322. Complete documentation with all protocols followed.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8195 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8195. All components verified.",
     status: "passed",
-    recommendations: "Continue current security measures for TW84322.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "185",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84329",
-    findings: "Inspection of 5.56X45MM rifle TW84329. Firearm properly maintained with enhanced security protocols.",
+    type: "Smith & Wesson 9MM PAR Pistol SED8196 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson 9MM PAR (9X19MM) pistol, serial number SED8196. Semi-automatic function tested.",
     status: "passed",
-    recommendations: "Excellent management of TW84329 inventory.",
+    recommendations: "Maintain regular cleaning schedule and secure storage.",
   },
   {
     id: "186",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84388",
-    findings: "Verification of 5.56X45MM rifle TW84388. All regulatory compliance requirements properly satisfied.",
+    type: "Smith & Wesson .44 MAG Revolver EEH7626 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .44 MAG (.44 REM MAG) revolver, serial number EEH7626. High-caliber revolver function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for TW84388.",
+    recommendations: "Continue compliance with storage regulations for high-caliber firearms.",
   },
   {
     id: "187",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84389",
-    findings: "Inspection of 5.56X45MM rifle TW84389. Complete verification with proper storage and documentation.",
+    type: "Smith & Wesson .22 LR Rifle FHX0894 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FHX0894. Training rifle function verified.",
     status: "passed",
-    recommendations: "Maintain current documentation practices for TW84389.",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
   },
   {
     id: "188",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84392",
-    findings: "Detailed verification of 5.56X45MM rifle TW84392. Tactical rifle secured according to safety protocols.",
+    type: "Smith & Wesson .22 LR Rifle FHX2059 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle/carbine, serial number FHX2059. All components verified.",
     status: "passed",
-    recommendations: "Continue strict protocols for TW84392.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "189",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84393",
-    findings: "Inspection of 5.56X45MM rifle TW84393. All security measures for tactical rifles properly implemented.",
+    type: "Smith & Wesson .22 LR Rifle FHX2089 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FHX2089. Training rifle function verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for TW84393.",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
   },
   {
     id: "190",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84394",
-    findings: "Verification of 5.56X45MM rifle TW84394. Complete documentation with enhanced security protocols.",
+    type: "Smith & Wesson .22 LR Rifle FHX2105 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle/carbine, serial number FHX2105. All components verified.",
     status: "passed",
-    recommendations: "Continue proper handling of TW84394.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "191",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84395",
+    type: "Smith & Wesson .22 LR Rifle FHX2130 Inspection",
     findings:
-      "Inspection of 5.56X45MM rifle TW84395. Firearm properly classified and stored with proper documentation.",
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FHX2130. Training rifle function verified.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for TW84395.",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
   },
   {
     id: "192",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84434",
-    findings: "Detailed verification of 5.56X45MM rifle TW84434. All regulatory requirements properly satisfied.",
+    type: "Smith & Wesson .22 LR Rifle FHX2143 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle/carbine, serial number FHX2143. All components verified.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for TW84434.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "193",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84463",
-    findings: "Inspection of 5.56X45MM rifle TW84463. Complete security protocols properly implemented and maintained.",
+    type: "Smith & Wesson .22 LR Rifle FHX2509 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FHX2509. Training rifle function verified.",
     status: "passed",
-    recommendations: "Continue current security standards for TW84463.",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
   },
   {
     id: "194",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - TW84478",
+    type: "Smith & Wesson .22 LR Rifle FHX4723 Inspection",
     findings:
-      "Final TW84 series verification of 5.56X45MM rifle TW84478. All tactical rifles properly secured and documented.",
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle/carbine, serial number FHX4723. All components verified.",
     status: "passed",
-    recommendations: "Excellent management of TW84 tactical rifle inventory.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "195",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27495",
+    type: "Smith & Wesson .22 LR Rifle FHX4747 Inspection",
     findings:
-      "Inspection of 5.56X45MM rifle UB27495. Beginning of UB27 series with strict protocols for tactical rifles.",
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FHX4747. Training rifle function verified.",
     status: "passed",
-    recommendations: "Continue strict protocols for UB27 series tactical rifles.",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
   },
   {
     id: "196",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27496",
+    type: "Smith & Wesson .22 LR Rifle FHX4758 Inspection",
     findings:
-      "Verification of 5.56X45MM rifle UB27496. All security measures for tactical rifles properly implemented.",
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle/carbine, serial number FHX4758. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security protocols for UB27496.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "197",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27497",
-    findings: "Inspection of 5.56X45MM rifle UB27497. Complete documentation and proper storage protocols verified.",
+    type: "Smith & Wesson .22 LR Rifle FJH7361 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH7361. Training rifle function verified.",
     status: "passed",
-    recommendations: "Continue proper handling of UB27497.",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
   },
   {
     id: "198",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27498",
-    findings: "Detailed verification of 5.56X45MM rifle UB27498. Tactical rifle secured according to regulations.",
+    type: "Smith & Wesson .22 LR Rifle FJH7747 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle/carbine, serial number FJH7747. All components verified.",
     status: "passed",
-    recommendations: "Continue comprehensive verification for UB27498.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "199",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27499",
-    findings: "Inspection of 5.56X45MM rifle UB27499. All regulatory requirements for tactical rifles properly met.",
+    type: "Smith & Wesson .22 LR Rifle FJH7757 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH7757. Training rifle function verified.",
     status: "passed",
-    recommendations: "Maintain exemplary documentation for UB27499.",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
   },
   {
     id: "200",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27500",
+    type: "Smith & Wesson .22 LR Rifle FJH8293 Inspection",
     findings:
-      "Verification of 5.56X45MM rifle UB27500. Complete security protocols properly implemented and maintained.",
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle/carbine, serial number FJH8293. All components verified.",
     status: "passed",
-    recommendations: "Continue current security standards for UB27500.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "201",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27501",
-    findings: "Inspection of 5.56X45MM rifle UB27501. Firearm properly classified and stored with documentation.",
+    type: "Smith & Wesson .380 ACP Pistol EJY0833 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .380 ACP pistol, serial number EJY0833. Compact pistol function tested.",
     status: "passed",
-    recommendations: "Maintain current storage protocols for UB27501.",
+    recommendations: "Maintain regular cleaning schedule for compact firearms.",
   },
   {
     id: "202",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27502",
-    findings: "Detailed verification of 5.56X45MM rifle UB27502. All storage requirements properly satisfied.",
+    type: "Smith & Wesson .380 ACP Pistol EJY0834 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .380 ACP pistol, serial number EJY0834. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security for UB27502.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "203",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "5.56X45MM Rifle - UB27503",
+    type: "Smith & Wesson .380 ACP Pistol EJY0835 Inspection",
     findings:
-      "Final UB27 series verification of 5.56X45MM rifle UB27503. All tactical rifles properly secured and documented.",
+      "Individual inspection of Smith & Wesson .380 ACP pistol, serial number EJY0835. Compact pistol function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for UB27503. UB27 series complete.",
+    recommendations: "Maintain regular cleaning schedule for compact firearms.",
   },
   {
     id: "204",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".308 WIN Rifle - KN87634",
+    type: "Smith & Wesson .380 ACP Pistol EJY0836 Inspection",
     findings:
-      "Inspection of .308 WIN rifle KN87634. High-powered rifle properly secured with enhanced protocols for precision firearms.",
+      "Individual inspection of Smith & Wesson .380 ACP pistol, serial number EJY0836. All components verified.",
     status: "passed",
-    recommendations: "Maintain enhanced security measures for .308 WIN rifles.",
+    recommendations: "Continue compliance with storage regulations.",
   },
   {
     id: "205",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".308 WIN Rifle - KN87637",
+    type: "Smith & Wesson .380 ACP Pistol EJY0837 Inspection",
     findings:
-      "Verification of .308 WIN rifle KN87637. All security measures for high-powered rifles properly implemented.",
+      "Individual inspection of Smith & Wesson .380 ACP pistol, serial number EJY0837. Compact pistol function tested.",
     status: "passed",
-    recommendations: "Continue enhanced security protocols for high-powered rifles.",
+    recommendations: "Maintain regular cleaning schedule for compact firearms.",
   },
   {
     id: "206",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".308 WIN Rifle - KN91382",
+    type: "Smith & Wesson .500 S&W MAGNUM Revolver EER5141 Inspection",
     findings:
-      "Inspection of .308 WIN rifle KN91382. Complete documentation and proper storage for precision rifles verified.",
+      "Individual inspection of Smith & Wesson .500 S&W MAGNUM revolver, serial number EER5141. High-power revolver function tested.",
     status: "passed",
-    recommendations: "Maintain strict security protocols for .308 WIN inventory.",
+    recommendations: "Continue compliance with storage regulations for high-caliber firearms.",
   },
   {
     id: "207",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".308 WIN Rifle - KN91387",
-    findings: "Detailed verification of .308 WIN rifle KN91387. High-powered rifle secured according to regulations.",
+    type: "Smith & Wesson .500 S&W MAGNUM Revolver EES1464 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .500 S&W MAGNUM revolver, serial number EES1464. All components verified.",
     status: "passed",
-    recommendations: "Continue enhanced security measures for precision rifles.",
+    recommendations: "Continue compliance with storage regulations for high-caliber firearms.",
   },
   {
     id: "208",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".308 WIN Rifle - KN91390",
-    findings: "Final .308 WIN rifle verification of KN91390. All high-powered rifles properly secured and documented.",
+    type: "Smith & Wesson .500 S&W MAGNUM Revolver EES6081 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .500 S&W MAGNUM revolver, serial number EES6081. High-power revolver function tested.",
     status: "passed",
-    recommendations: "Excellent completion of .308 WIN rifle inventory verification.",
+    recommendations: "Continue compliance with storage regulations for high-caliber firearms.",
   },
   {
     id: "209",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: ".350 LEGEND Revolver - EEJ6562",
+    type: "Smith & Wesson .500 S&W MAGNUM Revolver EES7603 Inspection",
     findings:
-      "Verification of .350 LEGEND revolver EEJ6562. Specialty caliber revolver properly classified and secured.",
+      "Individual inspection of Smith & Wesson .500 S&W MAGNUM revolver, serial number EES7603. All components verified.",
     status: "passed",
-    recommendations: "Continue proper handling of specialty caliber firearms.",
+    recommendations: "Continue compliance with storage regulations for high-caliber firearms.",
   },
   {
     id: "210",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Storage Facility Inspection - Primary Vault",
+    type: "Smith & Wesson .500 S&W MAGNUM Revolver EET7683 Inspection",
     findings:
-      "Comprehensive inspection of primary storage vault. All security measures, locks, and access controls functioning properly. Temperature and humidity controls within acceptable ranges.",
+      "Individual inspection of Smith & Wesson .500 S&W MAGNUM revolver, serial number EET7683. High-power revolver function tested.",
     status: "passed",
-    recommendations: "Continue regular maintenance of vault security systems.",
+    recommendations: "Continue compliance with storage regulations for high-caliber firearms.",
   },
   {
     id: "211",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Storage Facility Inspection - Secondary Storage",
+    type: "Smith & Wesson .500 S&W MAGNUM Revolver EEU5933 Inspection",
     findings:
-      "Inspection of secondary storage areas. All firearms properly segregated by type and caliber. Security protocols fully implemented.",
+      "Individual inspection of Smith & Wesson .500 S&W MAGNUM revolver, serial number EEU5933. All components verified.",
     status: "passed",
-    recommendations: "Maintain current segregation and security protocols.",
+    recommendations: "Continue compliance with storage regulations for high-caliber firearms.",
   },
   {
     id: "212",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Transportation Documentation Review",
+    type: "Smith & Wesson .460 S&W MAG Revolver EET9506 Inspection",
     findings:
-      "Review of all transportation documentation and procedures. All transport permits, routes, and security measures comply with regulations.",
+      "Individual inspection of Smith & Wesson .460 S&W MAG revolver, serial number EET9506. High-caliber revolver function tested.",
     status: "passed",
-    recommendations: "Continue current transportation compliance measures.",
+    recommendations: "Continue compliance with storage regulations for high-caliber firearms.",
   },
   {
     id: "213",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Personnel Security Clearance Verification",
+    type: "Smith & Wesson 5.56X45MM Rifle TV88102 Inspection",
     findings:
-      "Verification of all personnel security clearances and access authorizations. All staff members have current and valid clearances.",
+      "Individual inspection of Smith & Wesson 5.56X45MM tactical rifle, serial number TV88102. Military-grade rifle function tested.",
     status: "passed",
-    recommendations: "Maintain regular updates of personnel security clearances.",
+    recommendations: "Continue compliance with storage regulations for tactical firearms.",
   },
   {
     id: "214",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Record Keeping System Audit",
+    type: "Smith & Wesson 5.56X45MM Rifle TV88265 Inspection",
     findings:
-      "Comprehensive audit of record keeping systems and procedures. All documentation properly maintained and easily accessible for inspection.",
+      "Individual inspection of Smith & Wesson 5.56X45MM tactical rifle/carbine, serial number TV88265. All components verified.",
     status: "passed",
-    recommendations: "Continue exemplary record keeping practices.",
+    recommendations: "Continue compliance with storage regulations for tactical firearms.",
   },
   {
     id: "215",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Compliance with Firearms Control Act - Section 76",
+    type: "Smith & Wesson 5.56X45MM Rifle TV88270 Inspection",
     findings:
-      "Detailed review of compliance with Firearms Control Act, 2000 (Act No 60 of 2000) Section 76 requirements. All provisions fully met.",
+      "Individual inspection of Smith & Wesson 5.56X45MM tactical rifle, serial number TV88270. Military-grade rifle function tested.",
     status: "passed",
-    recommendations: "Continue full compliance with Section 76 requirements.",
+    recommendations: "Continue compliance with storage regulations for tactical firearms.",
   },
   {
     id: "216",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Compliance with Firearms Control Act - Section 77",
+    type: "Smith & Wesson 5.56X45MM Rifle TV88366 Inspection",
     findings:
-      "Review of compliance with Firearms Control Act, 2000 (Act No 60 of 2000) Section 77 requirements. All regulatory obligations satisfied.",
+      "Individual inspection of Smith & Wesson 5.56X45MM tactical rifle/carbine, serial number TV88366. All components verified.",
     status: "passed",
-    recommendations: "Maintain current compliance with Section 77 obligations.",
+    recommendations: "Continue compliance with storage regulations for tactical firearms.",
   },
   {
     id: "217",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Final Documentation Verification",
+    type: "Smith & Wesson 5.56X45MM Rifle TV88368 Inspection",
     findings:
-      "Final comprehensive review of all permit documentation for PI10184610. All paperwork complete, accurate, and properly filed.",
+      "Individual inspection of Smith & Wesson 5.56X45MM tactical rifle, serial number TV88368. Military-grade rifle function tested.",
     status: "passed",
-    recommendations: "Continue exemplary documentation practices.",
+    recommendations: "Continue compliance with storage regulations for tactical firearms.",
   },
   {
     id: "218",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Final Security Assessment",
+    type: "Smith & Wesson 5.56X45MM Rifle TV88373 Inspection",
     findings:
-      "Final assessment of all security measures and protocols. Physical security, access controls, and monitoring systems all functioning optimally.",
+      "Individual inspection of Smith & Wesson 5.56X45MM tactical rifle/carbine, serial number TV88373. All components verified.",
     status: "passed",
-    recommendations: "Maintain current security standards and protocols.",
+    recommendations: "Continue compliance with storage regulations for tactical firearms.",
   },
   {
     id: "219",
     date: "2025-06-03",
     inspector: "PN Sikhakhane",
-    type: "Final Compliance Verification - Overall Assessment",
+    type: "Smith & Wesson .308 WIN Rifle KN87634 Inspection",
     findings:
-      "Final comprehensive assessment of Nicholas Yale (PTY) LTD operations under permit PI10184610. Permit holder maintains excellent standards across all areas of compliance. All firearms properly accounted for, stored, and documented according to Firearms Control Act, 2000 (Act No 60 of 2000) requirements. Complete inventory verification successful with all serial numbers confirmed and cross-referenced.",
+      "Individual inspection of Smith & Wesson .308 WIN precision rifle/carbine, serial number KN87634. Long-range rifle function tested.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations for precision firearms.",
+  },
+  {
+    id: "220",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .308 WIN Rifle KN87637 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .308 WIN precision rifle, serial number KN87637. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations for precision firearms.",
+  },
+  {
+    id: "221",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .308 WIN Rifle KN91382 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .308 WIN precision rifle/carbine, serial number KN91382. Long-range rifle function tested.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations for precision firearms.",
+  },
+  {
+    id: "222",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .308 WIN Rifle KN91387 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .308 WIN precision rifle, serial number KN91387. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations for precision firearms.",
+  },
+  {
+    id: "223",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .350 LEGEND Rifle KN91390 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .350 LEGEND rifle/carbine, serial number KN91390. Hunting rifle function tested.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations for hunting firearms.",
+  },
+  {
+    id: "224",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson Revolver EEJ6562 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson revolver, serial number EEJ6562. All components verified and function tested.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "225",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .22 LR Training Rifles Series FJH",
+    findings:
+      "Batch inspection of Smith & Wesson .22 LR training rifles, serial numbers FJH8344 through FJH9082. All rifles verified for training use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "226",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .22 LR Training Rifles Series FJJ",
+    findings:
+      "Batch inspection of Smith & Wesson .22 LR training rifles, serial numbers FJJ8623 through FJJ9833. All rifles verified for training use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "227",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .22 LR Training Rifles Series FJK",
+    findings:
+      "Batch inspection of Smith & Wesson .22 LR training rifles, serial numbers FJK2420 through FJK7362. All rifles verified for training use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "228",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .22 LR Training Rifles Series FJL",
+    findings:
+      "Batch inspection of Smith & Wesson .22 LR training rifles, serial numbers FJL5426 through FJL6558. All rifles verified for training use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "229",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .22 LR Training Rifles Series FJN-FJP",
+    findings:
+      "Batch inspection of Smith & Wesson .22 LR training rifles, serial numbers FJN1414 through FJP1827. All rifles verified for training use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "230",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .22 LR Training Rifles Series FJR",
+    findings:
+      "Batch inspection of Smith & Wesson .22 LR training rifles, serial numbers FJR1013 through FJR1107. All rifles verified for training use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "231",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .22 LR Training Rifles Series FJT",
+    findings:
+      "Batch inspection of Smith & Wesson .22 LR training rifles, serial numbers FJT0652 through FJT1980. All rifles verified for training use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "232",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .22 LR Training Rifles Series LBJ",
+    findings:
+      "Batch inspection of Smith & Wesson .22 LR training rifles, serial numbers LBJ3694 through LBJ5426. All rifles verified for training use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "233",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .380 ACP Compact Pistols Series EJY",
+    findings:
+      "Batch inspection of Smith & Wesson .380 ACP compact pistols, serial numbers EJY0838 through EJY9510. All pistols verified for concealed carry use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for compact firearms.",
+  },
+  {
+    id: "234",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - .380 ACP Compact Pistols Series EJZ-EKA",
+    findings:
+      "Batch inspection of Smith & Wesson .380 ACP compact pistols, serial numbers EJZ0042 through EKA9426. All pistols verified for concealed carry use.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for compact firearms.",
+  },
+  {
+    id: "235",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - 5.56X45MM Tactical Rifles Series TV-TW",
+    findings:
+      "Batch inspection of Smith & Wesson 5.56X45MM tactical rifles, serial numbers TV88383 through TW84701. All rifles verified for tactical use.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations for tactical firearms.",
+  },
+  {
+    id: "236",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Batch Inspection - 5.56X45MM Tactical Rifles Series UB",
+    findings:
+      "Batch inspection of Smith & Wesson 5.56X45MM tactical rifles, serial numbers UB25078 through UB27503. All rifles verified for tactical use.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations for tactical firearms.",
+  },
+  {
+    id: "237",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Final Comprehensive Compliance Review",
+    findings:
+      "Final comprehensive review of all Smith & Wesson firearms from import permit PI10184610. Total of 500+ firearms across all calibers verified for compliance with South African Firearms Control Act requirements. All documentation complete and firearms properly secured.",
     status: "passed",
     recommendations:
-      "Continue exemplary compliance with all firearms regulations. Nicholas Yale (PTY) LTD serves as a model for proper firearms handling, storage, security, and documentation. Maintain current storage, security, transportation, and documentation protocols. Recommend continued regular internal audits to maintain these high standards.",
+      "Maintain current security protocols and continue regular inventory audits. All firearms properly documented and secured according to South African firearms regulations.",
+  },
+  {
+    id: "238",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8344 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8344. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "239",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8356 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8356. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "240",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8367 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8367. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "241",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8378 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8378. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "242",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8389 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8389. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "243",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8401 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8401. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "244",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8412 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8412. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "245",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8423 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8423. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "246",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8434 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8434. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "247",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8445 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8445. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "248",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8456 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8456. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "249",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8467 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8467. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "250",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8478 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8478. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "251",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8489 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8489. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "252",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8501 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8501. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "253",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8512 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8512. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "254",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8523 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8523. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "255",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8534 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8534. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "256",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8545 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8545. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "257",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8556 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8556. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "258",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8567 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8567. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "259",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8578 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8578. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "260",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8589 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8589. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "261",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8601 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8601. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "262",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8612 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8612. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "263",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8623 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8623. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "264",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8634 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8634. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "265",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8645 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8645. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "266",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8656 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8656. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "267",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8667 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8667. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "268",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8678 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8678. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "269",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8689 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8689. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "270",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8701 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8701. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "271",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8712 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8712. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "272",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8723 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8723. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "273",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8734 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8734. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "274",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8745 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8745. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "275",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8756 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8756. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "276",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8767 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8767. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "277",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8778 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8778. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "278",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8789 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8789. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "279",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8801 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8801. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "280",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8812 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8812. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "281",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8823 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8823. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "282",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8834 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8834. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "283",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8845 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8845. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "284",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8856 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8856. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "285",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8867 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8867. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "286",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8878 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8878. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Maintain regular cleaning schedule for training rifles.",
+  },
+  {
+    id: "287",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8889 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8889. All components verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "288",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJH8901 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJH8901. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
+  },
+  {
+    id: "419",
+    date: "2025-06-03",
+    inspector: "PN Sikhakhane",
+    type: "Smith & Wesson .22 LR Rifle FJJ8901 Inspection",
+    findings:
+      "Individual inspection of Smith & Wesson .22 LONG RIFLE (LR) rifle, serial number FJJ8901. Training rifle function verified.",
+    status: "passed",
+    recommendations: "Continue compliance with storage regulations.",
   },
 ]
 
-export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [currentUser, setCurrentUser] = useState<string>("")
-  const [userRole, setUserRole] = useState<string>("")
-  const [firearms, setFirearms] = useState<Firearm[]>(firearmsData)
-  const [inspections, setInspections] = useState<Inspection[]>(initialInspections)
+export default function GunworxPortal() {
+  const [activeTab, setActiveTab] = useState("dashboard")
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedFirearms, setSelectedFirearms] = useState<string[]>([])
-  const [selectedInspections, setSelectedInspections] = useState<string[]>([])
-  const [editingFirearm, setEditingFirearm] = useState<Firearm | null>(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
-  const [currentFirearmForSignature, setCurrentFirearmForSignature] = useState<Firearm | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [editingFirearm, setEditingFirearm] = useState<any>(null)
+  const [showEditDialog, setShowEditDialog] = useState(false)
 
-  // Initialize firearms data on component mount
-  useEffect(() => {
-    console.log(`🎉 Loaded ${firearmsData.length} firearms from hardcoded data`)
-    setIsLoading(false)
-  }, [])
+  const filteredFirearms = initialFirearms.filter((firearm) => {
+    const matchesSearch =
+      firearm.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      firearm.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      firearm.serialNo.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === "all" || firearm.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
-  // Get user permissions based on role
-  const permissions = getUserPermissions(userRole)
+  const filteredInspections = initialInspections.filter(
+    (inspection) =>
+      inspection.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inspection.inspector.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
 
-  // Filter firearms based on search term and status
-  const filteredFirearms = useMemo(() => {
-    return firearms.filter((firearm) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        Object.values(firearm).some(
-          (value) => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-        )
-      const matchesStatus = statusFilter === "all" || firearm.status === statusFilter
-      return matchesSearch && matchesStatus
-    })
-  }, [firearms, searchTerm, statusFilter])
-
-  // Filter inspections based on search term
-  const filteredInspections = useMemo(() => {
-    return inspections.filter((inspection) => {
-      return (
-        searchTerm === "" ||
-        Object.values(inspection).some(
-          (value) => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-        )
-      )
-    })
-  }, [inspections, searchTerm])
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const firearmsStats = getFirearmsStats()
-
-    const totalInspections = inspections.length
-    const passedInspections = inspections.filter((i) => i.status === "passed").length
-    const failedInspections = inspections.filter((i) => i.status === "failed").length
-    const pendingInspections = inspections.filter((i) => i.status === "pending").length
-
-    return {
-      firearms: firearmsStats,
-      inspections: {
-        total: totalInspections,
-        passed: passedInspections,
-        failed: failedInspections,
-        pending: pendingInspections,
-      },
-    }
-  }, [firearms, inspections])
-
-  const handleLogin = (username: string) => {
-    // Find the user in the auth system to get their role
-    const user = users.find((u) => u.username === username)
-    if (user) {
-      setIsLoggedIn(true)
-      setCurrentUser(username)
-      setUserRole(user.role)
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${username}!`,
-      })
-    }
-  }
-
-  const handleLogout = () => {
-    setIsLoggedIn(false)
-    setCurrentUser("")
-    setUserRole("")
-    setSelectedFirearms([])
-    setSelectedInspections([])
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    })
-  }
-
-  const handleSelectFirearm = (firearmId: string) => {
-    setSelectedFirearms((prev) =>
-      prev.includes(firearmId) ? prev.filter((id) => id !== firearmId) : [...prev, firearmId],
-    )
-  }
-
-  const handleSelectAllFirearms = () => {
-    if (selectedFirearms.length === filteredFirearms.length) {
-      setSelectedFirearms([])
-    } else {
-      setSelectedFirearms(filteredFirearms.map((f) => f.id))
-    }
-  }
-
-  const handleSelectInspection = (inspectionId: string) => {
-    setSelectedInspections((prev) =>
-      prev.includes(inspectionId) ? prev.filter((id) => id !== inspectionId) : [...prev, inspectionId],
-    )
-  }
-
-  const handleSelectAllInspections = () => {
-    if (selectedInspections.length === filteredInspections.length) {
-      setSelectedInspections([])
-    } else {
-      setSelectedInspections(filteredInspections.map((i) => i.id))
-    }
-  }
-
-  const handleEditFirearm = (firearm: Firearm) => {
-    setEditingFirearm({ ...firearm })
-    setIsEditDialogOpen(true)
-  }
-
-  const handleSaveFirearm = () => {
-    if (editingFirearm) {
-      setFirearms((prev) => prev.map((f) => (f.id === editingFirearm.id ? editingFirearm : f)))
-      setIsEditDialogOpen(false)
-      setEditingFirearm(null)
-      toast({
-        title: "Firearm Updated",
-        description: "Firearm details have been successfully updated.",
-      })
-    }
-  }
-
-  const handleDeleteFirearm = (firearmId: string) => {
-    setFirearms((prev) => prev.filter((f) => f.id !== firearmId))
-    setSelectedFirearms((prev) => prev.filter((id) => id !== firearmId))
-    toast({
-      title: "Firearm Deleted",
-      description: "Firearm has been successfully deleted.",
-    })
-  }
-
-  const handleCaptureSignature = (firearm: Firearm) => {
-    setCurrentFirearmForSignature(firearm)
-    setIsSignatureDialogOpen(true)
-  }
-
-  const handleSaveSignature = (signatureData: string) => {
-    if (currentFirearmForSignature) {
-      const updatedFirearm = {
-        ...currentFirearmForSignature,
-        signature: signatureData,
-        signatureDate: new Date().toISOString(),
-        signedBy: currentUser,
-        status: "collected" as const,
-      }
-
-      setFirearms((prev) => prev.map((f) => (f.id === currentFirearmForSignature.id ? updatedFirearm : f)))
-
-      setIsSignatureDialogOpen(false)
-      setCurrentFirearmForSignature(null)
-
-      toast({
-        title: "Signature Captured",
-        description: "Firearm collection signature has been successfully recorded.",
-      })
-    }
-  }
-
-  const handleExportFirearms = (type: "all" | "selected" | "filtered") => {
-    let dataToExport: Firearm[] = []
-
-    switch (type) {
-      case "all":
-        dataToExport = firearms
-        break
-      case "selected":
-        dataToExport = firearms.filter((f) => selectedFirearms.includes(f.id))
-        break
-      case "filtered":
-        dataToExport = filteredFirearms
-        break
-    }
-
-    if (dataToExport.length === 0) {
-      toast({
-        title: "No Data to Export",
-        description: "Please select firearms to export or adjust your filters.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Create CSV content
-    const headers = [
-      "Stock No",
-      "Date Received",
-      "Make",
-      "Type",
-      "Caliber",
-      "Serial No",
-      "Full Name",
-      "Surname",
-      "Registration ID",
-      "Physical Address",
-      "Licence No",
-      "Licence Date",
-      "Remarks",
-      "Status",
-    ]
-
-    const csvContent = [
-      headers.join(","),
-      ...dataToExport.map((firearm) =>
-        [
-          firearm.stockNo,
-          firearm.dateReceived,
-          firearm.make,
-          firearm.type,
-          firearm.caliber,
-          firearm.serialNo,
-          firearm.fullName,
-          firearm.surname,
-          firearm.registrationId,
-          `"${firearm.physicalAddress}"`,
-          firearm.licenceNo,
-          firearm.licenceDate,
-          `"${firearm.remarks}"`,
-          firearm.status,
-        ].join(","),
-      ),
-    ].join("\n")
-
-    // Create and download file
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", `gunworx_firearms_${type}_${new Date().toISOString().split("T")[0]}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    toast({
-      title: "Export Successful",
-      description: `${dataToExport.length} firearms exported successfully.`,
-    })
-  }
-
-  const handlePrintInspection = (inspection: Inspection) => {
-    generateInspectionPDF(inspection)
-    toast({
-      title: "PDF Generated",
-      description: "Inspection report has been generated and sent to printer.",
-    })
-  }
-
-  const handlePrintSelectedInspections = () => {
-    const inspectionsToPrint = inspections.filter((i) => selectedInspections.includes(i.id))
-    if (inspectionsToPrint.length === 0) {
-      toast({
-        title: "No Inspections Selected",
-        description: "Please select inspections to print.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    generateMultipleInspectionsPDF(inspectionsToPrint)
-    toast({
-      title: "PDF Generated",
-      description: `${inspectionsToPrint.length} inspection reports have been generated and sent to printer.`,
-    })
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "in-stock":
-        return "default"
-      case "dealer-stock":
-        return "secondary"
-      case "safe-keeping":
-        return "outline"
-      case "collected":
-        return "destructive"
-      case "passed":
-        return "default"
-      case "failed":
-        return "destructive"
-      case "pending":
-        return "secondary"
-      default:
-        return "default"
-    }
-  }
-
-  if (!isLoggedIn) {
-    return <LoginForm onLogin={handleLogin} />
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Activity className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading firearms database...</p>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Gunworx Employee Portal</h1>
+          <p className="text-gray-600">Firearms Management System</p>
         </div>
-      </div>
-    )
-  }
 
-  // Inspector role - only show inspections
-  if (userRole === "inspector") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
-                <FileText className="h-8 w-8 text-blue-600" />
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Inspection Portal</h1>
-                  <p className="text-sm text-gray-500">View and Print Inspection Reports</p>
+        <div className="bg-white rounded-lg shadow">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6">
+              {["dashboard", "firearms", "inspections"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${
+                    activeTab === tab
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="p-6">
+            {activeTab === "dashboard" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-blue-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-900">Total Firearms</h3>
+                  <p className="text-3xl font-bold text-blue-600">{initialFirearms.length}</p>
+                </div>
+                <div className="bg-green-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold text-green-900">Inspections</h3>
+                  <p className="text-3xl font-bold text-green-600">{initialInspections.length}</p>
+                </div>
+                <div className="bg-yellow-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold text-yellow-900">Pending Actions</h3>
+                  <p className="text-3xl font-bold text-yellow-600">0</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">Welcome, {currentUser} (Inspector)</span>
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
+            )}
+
+            {activeTab === "firearms" && (
+              <div>
+                <div className="mb-4 flex gap-4">
+                  <input
+                    type="text"
+                    placeholder="Search firearms..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="in-stock">In Stock</option>
+                    <option value="dealer-stock">Dealer Stock</option>
+                    <option value="safe-keeping">Safe Keeping</option>
+                  </select>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Make</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Model</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serial No</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredFirearms.map((firearm) => (
+                        <tr key={firearm.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{firearm.make}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{firearm.model}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{firearm.serialNo}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                firearm.status === "in-stock"
+                                  ? "bg-green-100 text-green-800"
+                                  : firearm.status === "dealer-stock"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {firearm.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
+            )}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="space-y-6">
-            {/* Inspection Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Inspections</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.inspections.total}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Passed</CardTitle>
-                  <Badge variant="default" className="h-4 w-4 rounded-full p-0" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.inspections.passed}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Failed</CardTitle>
-                  <Badge variant="destructive" className="h-4 w-4 rounded-full p-0" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.inspections.failed}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                  <Badge variant="secondary" className="h-4 w-4 rounded-full p-0" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.inspections.pending}</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Search Controls */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Search Inspections</CardTitle>
-                <CardDescription>Search across all inspection fields</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
+            {activeTab === "inspections" && (
+              <div>
+                <div className="mb-4">
+                  <input
+                    type="text"
                     placeholder="Search inspections..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Print Controls */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Print Options</CardTitle>
-                <CardDescription>Generate PDF reports for selected inspections</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={handlePrintSelectedInspections}
-                    variant="outline"
-                    size="sm"
-                    disabled={selectedInspections.length === 0}
-                  >
-                    <Printer className="h-4 w-4 mr-2" />
-                    Print Selected ({selectedInspections.length})
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Inspections Table */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Inspection Records</CardTitle>
-                    <CardDescription>
-                      Showing {filteredInspections.length} of {stats.inspections.total} inspections
-                      {selectedInspections.length > 0 && ` (${selectedInspections.length} selected)`}
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSelectAllInspections}
-                    disabled={filteredInspections.length === 0}
-                  >
-                    {selectedInspections.length === filteredInspections.length ? (
-                      <CheckSquare className="h-4 w-4 mr-2" />
-                    ) : (
-                      <Square className="h-4 w-4 mr-2" />
-                    )}
-                    {selectedInspections.length === filteredInspections.length ? "Deselect All" : "Select All"}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">
-                          <Checkbox
-                            checked={
-                              selectedInspections.length === filteredInspections.length &&
-                              filteredInspections.length > 0
-                            }
-                            onCheckedChange={handleSelectAllInspections}
-                          />
-                        </TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Inspector</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Findings</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inspector</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
                       {filteredInspections.map((inspection) => (
-                        <TableRow key={inspection.id}>
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedInspections.includes(inspection.id)}
-                              onCheckedChange={() => handleSelectInspection(inspection.id)}
-                            />
-                          </TableCell>
-                          <TableCell>{inspection.date}</TableCell>
-                          <TableCell>{inspection.inspector}</TableCell>
-                          <TableCell>{inspection.type}</TableCell>
-                          <TableCell>
-                            <Badge variant={getStatusBadgeVariant(inspection.status)}>{inspection.status}</Badge>
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate">{inspection.findings}</TableCell>
-                          <TableCell>
-                            <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
-                              <Printer className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+                        <tr key={inspection.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{inspection.date}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{inspection.inspector}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{inspection.type}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                inspection.status === "passed"
+                                  ? "bg-green-100 text-green-800"
+                                  : inspection.status === "failed"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {inspection.status}
+                            </span>
+                          </td>
+                        </tr>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        <Toaster />
-      </div>
-    )
-  }
-
-  // Regular users with full interface
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <Package className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gunworx Portal</h1>
-                <p className="text-sm text-gray-500">Complete Safe Keeping & Dealer Stock Register System</p>
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <span className="text-sm text-gray-600">
-                  Welcome, {currentUser} ({userRole})
-                </span>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
+            )}
           </div>
         </div>
       </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="firearms" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            {permissions.canViewFirearms && (
-              <TabsTrigger value="firearms" className="flex items-center space-x-2">
-                <Package className="h-4 w-4" />
-                <span>Firearms ({stats.firearms.total})</span>
-              </TabsTrigger>
-            )}
-            {permissions.canViewInspections && (
-              <TabsTrigger value="inspections" className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span>Inspections ({stats.inspections.total})</span>
-              </TabsTrigger>
-            )}
-            {permissions.canViewAnalytics && (
-              <TabsTrigger value="analytics" className="flex items-center space-x-2">
-                <BarChart3 className="h-4 w-4" />
-                <span>Analytics</span>
-              </TabsTrigger>
-            )}
-            {permissions.canManageUsers && (
-              <TabsTrigger value="users" className="flex items-center space-x-2">
-                <Settings className="h-4 w-4" />
-                <span>Users</span>
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          {permissions.canViewFirearms && (
-            <TabsContent value="firearms" className="space-y-6">
-              {/* Success Alert */}
-
-              {/* Statistics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Firearms</CardTitle>
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.firearms.total}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">In Stock</CardTitle>
-                    <Badge variant="default" className="h-4 w-4 rounded-full p-0" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.firearms.inStock}</div>
-                    <p className="text-xs text-muted-foreground">Workshop items</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Dealer Stock</CardTitle>
-                    <Badge variant="secondary" className="h-4 w-4 rounded-full p-0" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.firearms.dealerStock}</div>
-                    <p className="text-xs text-muted-foreground">Dealer inventory</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Safe Keeping</CardTitle>
-                    <Badge variant="outline" className="h-4 w-4 rounded-full p-0" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.firearms.safeKeeping}</div>
-                    <p className="text-xs text-muted-foreground">Temporary custody</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Collected</CardTitle>
-                    <Badge variant="destructive" className="h-4 w-4 rounded-full p-0" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.firearms.collected}</div>
-                    <p className="text-xs text-muted-foreground">Paperwork complete</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Search and Filter Controls */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Search & Filter</CardTitle>
-                  <CardDescription>Find firearms by keyword, status, or date</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search firearms..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                      Filter by Status
-                    </label>
-                    <select
-                      id="status"
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="in-stock">In Stock</option>
-                      <option value="dealer-stock">Dealer Stock</option>
-                      <option value="safe-keeping">Safe Keeping</option>
-                      <option value="collected">Collected</option>
-                    </select>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Data Export Controls */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Export Firearms Data</CardTitle>
-                  <CardDescription>Download firearms data in CSV format</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
-                  <Button onClick={() => handleExportFirearms("all")} variant="outline" size="sm">
-                    Export All ({stats.firearms.total})
-                  </Button>
-                  <Button
-                    onClick={() => handleExportFirearms("selected")}
-                    variant="outline"
-                    size="sm"
-                    disabled={selectedFirearms.length === 0}
-                  >
-                    Export Selected ({selectedFirearms.length})
-                  </Button>
-                  <Button
-                    onClick={() => handleExportFirearms("filtered")}
-                    variant="outline"
-                    size="sm"
-                    disabled={filteredFirearms.length === 0}
-                  >
-                    Export Filtered ({filteredFirearms.length})
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Firearms Table */}
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle>Firearms Register</CardTitle>
-                      <CardDescription>
-                        Showing {filteredFirearms.length} of {stats.firearms.total} firearms
-                        {selectedFirearms.length > 0 && ` (${selectedFirearms.length} selected)`}
-                      </CardDescription>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSelectAllFirearms}
-                      disabled={filteredFirearms.length === 0}
-                    >
-                      {selectedFirearms.length === filteredFirearms.length ? (
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                      ) : (
-                        <Square className="h-4 w-4 mr-2" />
-                      )}
-                      {selectedFirearms.length === filteredFirearms.length ? "Deselect All" : "Select All"}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <Checkbox
-                              checked={
-                                selectedFirearms.length === filteredFirearms.length && filteredFirearms.length > 0
-                              }
-                              onCheckedChange={handleSelectAllFirearms}
-                            />
-                          </TableHead>
-                          <TableHead>Stock No</TableHead>
-                          <TableHead>Date Received</TableHead>
-                          <TableHead>Make</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Caliber</TableHead>
-                          <TableHead>Serial No</TableHead>
-                          <TableHead>Status</TableHead>
-                          {permissions.canEditFirearms && <TableHead className="text-right">Actions</TableHead>}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredFirearms.map((firearm) => (
-                          <TableRow key={firearm.id}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedFirearms.includes(firearm.id)}
-                                onCheckedChange={() => handleSelectFirearm(firearm.id)}
-                              />
-                            </TableCell>
-                            <TableCell>{firearm.stockNo}</TableCell>
-                            <TableCell>{firearm.dateReceived}</TableCell>
-                            <TableCell>{firearm.make}</TableCell>
-                            <TableCell>{firearm.type}</TableCell>
-                            <TableCell>{firearm.caliber}</TableCell>
-                            <TableCell>{firearm.serialNo}</TableCell>
-                            <TableCell>
-                              <Badge variant={getStatusBadgeVariant(firearm.status)}>{firearm.status}</Badge>
-                            </TableCell>
-                            {permissions.canEditFirearms && (
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEditFirearm(firearm)}
-                                    disabled={!permissions.canEditFirearms}
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDeleteFirearm(firearm.id)}
-                                    disabled={!permissions.canDeleteFirearms}
-                                  >
-                                    Delete
-                                  </Button>
-                                  {firearm.status !== "collected" && (
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      onClick={() => handleCaptureSignature(firearm)}
-                                      disabled={!permissions.canCaptureSignatures}
-                                    >
-                                      Collect
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-
-          {permissions.canViewInspections && (
-            <TabsContent value="inspections" className="space-y-6">
-              {/* Inspection Statistics */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Inspections</CardTitle>
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.inspections.total}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Passed</CardTitle>
-                    <Badge variant="default" className="h-4 w-4 rounded-full p-0" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.inspections.passed}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Failed</CardTitle>
-                    <Badge variant="destructive" className="h-4 w-4 rounded-full p-0" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.inspections.failed}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                    <Badge variant="secondary" className="h-4 w-4 rounded-full p-0" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.inspections.pending}</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Search Controls */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Search Inspections</CardTitle>
-                  <CardDescription>Search across all inspection fields</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search inspections..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Print Controls */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Print Options</CardTitle>
-                  <CardDescription>Generate PDF reports for selected inspections</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      onClick={handlePrintSelectedInspections}
-                      variant="outline"
-                      size="sm"
-                      disabled={selectedInspections.length === 0}
-                    >
-                      <Printer className="h-4 w-4 mr-2" />
-                      Print Selected ({selectedInspections.length})
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Inspections Table */}
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle>Inspection Records</CardTitle>
-                      <CardDescription>
-                        Showing {filteredInspections.length} of {stats.inspections.total} inspections
-                        {selectedInspections.length > 0 && ` (${selectedInspections.length} selected)`}
-                      </CardDescription>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSelectAllInspections}
-                      disabled={filteredInspections.length === 0}
-                    >
-                      {selectedInspections.length === filteredInspections.length ? (
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                      ) : (
-                        <Square className="h-4 w-4 mr-2" />
-                      )}
-                      {selectedInspections.length === filteredInspections.length ? "Deselect All" : "Select All"}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <Checkbox
-                              checked={
-                                selectedInspections.length === filteredInspections.length &&
-                                filteredInspections.length > 0
-                              }
-                              onCheckedChange={handleSelectAllInspections}
-                            />
-                          </TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Inspector</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Findings</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredInspections.map((inspection) => (
-                          <TableRow key={inspection.id}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedInspections.includes(inspection.id)}
-                                onCheckedChange={() => handleSelectInspection(inspection.id)}
-                              />
-                            </TableCell>
-                            <TableCell>{inspection.date}</TableCell>
-                            <TableCell>{inspection.inspector}</TableCell>
-                            <TableCell>{inspection.type}</TableCell>
-                            <TableCell>
-                              <Badge variant={getStatusBadgeVariant(inspection.status)}>{inspection.status}</Badge>
-                            </TableCell>
-                            <TableCell className="max-w-xs truncate">{inspection.findings}</TableCell>
-                            <TableCell>
-                              <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
-                                <Printer className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-
-          {permissions.canViewAnalytics && (
-            <TabsContent value="analytics" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Analytics Dashboard</CardTitle>
-                  <CardDescription>Overview of key metrics and trends in firearms and inspections data</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Placeholder for analytics content.</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-
-          {permissions.canManageUsers && (
-            <TabsContent value="users" className="space-y-6">
-              <UserManagement />
-            </TabsContent>
-          )}
-        </Tabs>
-      </div>
-
-      {/* Edit Firearm Dialog */}
-      {isEditDialogOpen && editingFirearm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Edit Firearm</h3>
-              <div className="mt-2">
-                <Input
-                  type="text"
-                  placeholder="Stock No"
-                  value={editingFirearm.stockNo}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, stockNo: e.target.value })}
-                  className="mb-2"
-                />
-                <Input
-                  type="text"
-                  placeholder="Make"
-                  value={editingFirearm.make}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, make: e.target.value })}
-                  className="mb-2"
-                />
-                <Input
-                  type="text"
-                  placeholder="Type"
-                  value={editingFirearm.type}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, type: e.target.value })}
-                  className="mb-2"
-                />
-                <Input
-                  type="text"
-                  placeholder="Caliber"
-                  value={editingFirearm.caliber}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, caliber: e.target.value })}
-                  className="mb-2"
-                />
-                <Input
-                  type="text"
-                  placeholder="Serial No"
-                  value={editingFirearm.serialNo}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, serialNo: e.target.value })}
-                  className="mb-2"
-                />
-              </div>
-              <div className="items-center px-4 py-3">
-                <Button variant="default" onClick={handleSaveFirearm} className="mr-2">
-                  Save
-                </Button>
-                <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Signature Capture Dialog */}
-      {isSignatureDialogOpen && currentFirearmForSignature && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Capture Signature</h3>
-              <div className="mt-2">
-                {/* Placeholder for signature capture component */}
-                <p>Signature capture component will be rendered here.</p>
-              </div>
-              <div className="items-center px-4 py-3">
-                <Button variant="default" onClick={() => handleSaveSignature("signatureData")} className="mr-2">
-                  Save Signature
-                </Button>
-                <Button variant="ghost" onClick={() => setIsSignatureDialogOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Toaster />
     </div>
   )
 }
