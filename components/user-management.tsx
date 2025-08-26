@@ -1,426 +1,453 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/hooks/use-toast"
-import { users as initialUsers } from "@/lib/auth"
-import { Plus, Edit, Trash2, Users, Eye, EyeOff } from "lucide-react"
-
-interface User {
-  id: string
-  username: string
-  password: string
-  name: string
-  role: string
-  isSystemAdmin?: boolean
-  createdAt: string
-}
+import React, { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { authService, User } from '@/lib/auth'
+import { Plus, Edit, Trash2, Users, Shield, Eye, EyeOff } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 export function UserManagement() {
-  const [users, setUsers] = useState<User[]>(initialUsers)
+  const [users, setUsers] = useState<User[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({})
-  const [newUser, setNewUser] = useState({
-    username: "",
-    password: "",
-    name: "",
-    role: "user",
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showPasswords, setShowPasswords] = useState<{[key: string]: boolean}>({})
+  const { toast } = useToast()
+
+  const [newUser, setNewUser] = useState<Omit<User, 'id' | 'createdAt'>>({
+    firstName: '',
+    lastName: '',
+    username: '',
+    password: '',
+    role: 'user',
+    isSystemAdmin: false
   })
 
-  const handleAddUser = async () => {
-    if (!newUser.username || !newUser.password || !newUser.name) {
-      toast({
-        title: "Validation Error",
-        description: "Username, password, and name are required.",
-        variant: "destructive",
-      })
-      return
-    }
+  useEffect(() => {
+    loadUsers()
+  }, [])
 
-    if (users.some((u) => u.username === newUser.username)) {
-      toast({
-        title: "Username Exists",
-        description: "A user with this username already exists.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    const user: User = {
-      id: Date.now().toString(),
-      username: newUser.username,
-      password: newUser.password,
-      name: newUser.name,
-      role: newUser.role,
-      isSystemAdmin: newUser.role === "admin",
-      createdAt: new Date().toISOString(),
-    }
-
+  const loadUsers = async () => {
     try {
-      // In a real app, this would be an API call
-      setUsers([...users, user])
-      setNewUser({ username: "", password: "", name: "", role: "user" })
-      setIsAddDialogOpen(false)
+      const userList = await authService.getUsers()
+      setUsers(userList)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load users.",
+        variant: "destructive"
+      })
+    }
+  }
 
+  const handleAddUser = async () => {
+    try {
+      await authService.createUser(newUser)
+      await loadUsers()
+      setNewUser({
+        firstName: '',
+        lastName: '',
+        username: '',
+        password: '',
+        role: 'user',
+        isSystemAdmin: false
+      })
+      setIsAddDialogOpen(false)
       toast({
         title: "User Added",
-        description: `User ${newUser.username} has been successfully added.`,
+        description: "New user has been successfully created.",
       })
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add user. Please try again.",
-        variant: "destructive",
+        description: "Failed to create user.",
+        variant: "destructive"
       })
     }
   }
 
-  const handleEditUser = (user: User) => {
-    setEditingUser({ ...user })
-    setIsEditDialogOpen(true)
-  }
-
-  const handleSaveUser = async () => {
-    if (!editingUser) return
-
-    if (!editingUser.username || !editingUser.password || !editingUser.name) {
-      toast({
-        title: "Validation Error",
-        description: "Username, password, and name are required.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (users.some((u) => u.id !== editingUser.id && u.username === editingUser.username)) {
-      toast({
-        title: "Username Exists",
-        description: "A user with this username already exists.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      const updatedUser = {
-        ...editingUser,
-        isSystemAdmin: editingUser.role === "admin",
-      }
-
-      setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)))
-      setIsEditDialogOpen(false)
-      setEditingUser(null)
-
-      toast({
-        title: "User Updated",
-        description: "User details have been successfully updated.",
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update user. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleDeleteUser = async (userId: string) => {
-    const user = users.find((u) => u.id === userId)
-    if (!user) return
-
-    if (user.isSystemAdmin && users.filter((u) => u.isSystemAdmin).length <= 1) {
-      toast({
-        title: "Cannot Delete",
-        description: "Cannot delete the last system administrator.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
+  const handleEditUser = async () => {
+    if (selectedUser) {
       try {
-        setUsers(users.filter((u) => u.id !== userId))
+        await authService.updateUser(selectedUser.id, selectedUser)
+        await loadUsers()
+        setIsEditDialogOpen(false)
+        setSelectedUser(null)
         toast({
-          title: "User Deleted",
-          description: `User ${user.username} has been deleted.`,
+          title: "User Updated",
+          description: "User details have been successfully updated.",
         })
       } catch (error) {
         toast({
           title: "Error",
-          description: "Failed to delete user. Please try again.",
-          variant: "destructive",
+          description: "Failed to update user.",
+          variant: "destructive"
         })
       }
     }
   }
 
+  const handleDeleteUser = async (id: string) => {
+    try {
+      await authService.deleteUser(id)
+      await loadUsers()
+      toast({
+        title: "User Deleted",
+        description: "User has been successfully removed.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete user.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleChangePassword = async (userId: string, newPassword: string) => {
+    try {
+      await authService.changePassword(userId, newPassword)
+      await loadUsers()
+      toast({
+        title: "Password Changed",
+        description: "User password has been successfully updated.",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to change password.",
+        variant: "destructive"
+      })
+    }
+  }
+
   const togglePasswordVisibility = (userId: string) => {
-    setShowPasswords((prev) => ({
+    setShowPasswords(prev => ({
       ...prev,
-      [userId]: !prev[userId],
+      [userId]: !prev[userId]
     }))
   }
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case "admin":
-        return "destructive"
-      case "manager":
-        return "default"
-      case "inspector":
-        return "secondary"
-      case "operator":
-        return "outline"
-      case "viewer":
-        return "outline"
-      default:
-        return "outline"
+  const getRoleBadge = (role: string, isSystemAdmin?: boolean) => {
+    if (isSystemAdmin) {
+      return <Badge variant="destructive" className="flex items-center gap-1">
+        <Shield className="h-3 w-3" />
+        System Admin
+      </Badge>
+    }
+    
+    return role === 'admin' 
+      ? <Badge variant="default" className="flex items-center gap-1">
+          <Shield className="h-3 w-3" />
+          Admin
+        </Badge>
+      : <Badge variant="secondary">User</Badge>
+  }
+
+  const getStatistics = () => {
+    return {
+      total: users.length,
+      admins: users.filter(u => u.role === 'admin').length,
+      users: users.filter(u => u.role === 'user').length,
+      systemAdmins: users.filter(u => u.isSystemAdmin).length
     }
   }
 
-  const generatePassword = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
-    let password = ""
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return password
-  }
+  const stats = getStatistics()
 
   return (
     <div className="space-y-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Admins</p>
+                <p className="text-2xl font-bold">{stats.admins}</p>
+              </div>
+              <Shield className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Regular Users</p>
+                <p className="text-2xl font-bold">{stats.users}</p>
+              </div>
+              <Users className="h-8 w-8 text-gray-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">System Admins</p>
+                <p className="text-2xl font-bold">{stats.systemAdmins}</p>
+              </div>
+              <Shield className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Controls */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">User Management</h2>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+              <DialogDescription>
+                Create a new user account with appropriate permissions.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={newUser.firstName}
+                  onChange={(e) => setNewUser({...newUser, firstName: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={newUser.lastName}
+                  onChange={(e) => setNewUser({...newUser, lastName: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={newUser.username}
+                  onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Select value={newUser.role} onValueChange={(value: 'admin' | 'user') => setNewUser({...newUser, role: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddUser}>Add User</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Users Table */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="flex items-center space-x-2">
-                <Users className="h-5 w-5" />
-                <span>User Management</span>
-              </CardTitle>
-              <CardDescription>Manage system users, roles, and permissions</CardDescription>
-            </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                  <DialogDescription>Create a new user account for the system</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="new-username">Username</Label>
-                    <Input
-                      id="new-username"
-                      value={newUser.username}
-                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                      placeholder="Enter username"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-name">Full Name</Label>
-                    <Input
-                      id="new-name"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                      placeholder="Enter full name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-password">Password</Label>
-                    <div className="flex space-x-2">
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={newUser.password}
-                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                        placeholder="Enter password"
-                      />
+          <CardTitle>Users</CardTitle>
+          <CardDescription>Manage user accounts and permissions</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Username</TableHead>
+                <TableHead>Password</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Last Login</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">
+                    {user.firstName} {user.lastName}
+                  </TableCell>
+                  <TableCell>{user.username}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-sm">
+                        {showPasswords[user.id] ? user.password : '••••••••'}
+                      </span>
                       <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setNewUser({ ...newUser, password: generatePassword() })}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => togglePasswordVisibility(user.id)}
                       >
-                        Generate
+                        {showPasswords[user.id] ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="new-role">Role</Label>
-                    <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="operator">Operator</SelectItem>
-                        <SelectItem value="inspector">Inspector</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddUser}>Add User</Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Full Name</TableHead>
-                  <TableHead>Password</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.username}</TableCell>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-sm">{showPasswords[user.id] ? user.password : "••••••••"}</span>
-                        <Button variant="ghost" size="sm" onClick={() => togglePasswordVisibility(user.id)}>
-                          {showPasswords[user.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>{user.role}</Badge>
-                    </TableCell>
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      {user.isSystemAdmin ? (
-                        <Badge variant="secondary">System Admin</Badge>
-                      ) : (
-                        <Badge variant="outline">Active</Badge>
+                  </TableCell>
+                  <TableCell>{getRoleBadge(user.role, user.isSystemAdmin)}</TableCell>
+                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUser(user)
+                          setIsEditDialogOpen(true)
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      {!user.isSystemAdmin && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the user account.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteUser(user.id)}
-                          disabled={user.isSystemAdmin && users.filter((u) => u.isSystemAdmin).length <= 1}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Update user account details</DialogDescription>
+            <DialogDescription>
+              Update user account details and permissions.
+            </DialogDescription>
           </DialogHeader>
-          {editingUser && (
-            <div className="space-y-4">
+          {selectedUser && (
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit-username">Username</Label>
+                <Label htmlFor="editFirstName">First Name</Label>
                 <Input
-                  id="edit-username"
-                  value={editingUser.username}
-                  onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                  id="editFirstName"
+                  value={selectedUser.firstName}
+                  onChange={(e) => setSelectedUser({...selectedUser, firstName: e.target.value})}
                 />
               </div>
               <div>
-                <Label htmlFor="edit-name">Full Name</Label>
+                <Label htmlFor="editLastName">Last Name</Label>
                 <Input
-                  id="edit-name"
-                  value={editingUser.name}
-                  onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                  id="editLastName"
+                  value={selectedUser.lastName}
+                  onChange={(e) => setSelectedUser({...selectedUser, lastName: e.target.value})}
                 />
               </div>
               <div>
-                <Label htmlFor="edit-password">Password</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    id="edit-password"
-                    type="password"
-                    value={editingUser.password}
-                    onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setEditingUser({ ...editingUser, password: generatePassword() })}
-                  >
-                    Generate
-                  </Button>
-                </div>
+                <Label htmlFor="editUsername">Username</Label>
+                <Input
+                  id="editUsername"
+                  value={selectedUser.username}
+                  onChange={(e) => setSelectedUser({...selectedUser, username: e.target.value})}
+                />
               </div>
               <div>
-                <Label htmlFor="edit-role">Role</Label>
-                <Select
-                  value={editingUser.role}
-                  onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
+                <Label htmlFor="editPassword">Password</Label>
+                <Input
+                  id="editPassword"
+                  type="password"
+                  value={selectedUser.password}
+                  onChange={(e) => setSelectedUser({...selectedUser, password: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editRole">Role</Label>
+                <Select 
+                  value={selectedUser.role} 
+                  onValueChange={(value: 'admin' | 'user') => setSelectedUser({...selectedUser, role: value})}
+                  disabled={selectedUser.isSystemAdmin}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="operator">Operator</SelectItem>
-                    <SelectItem value="inspector">Inspector</SelectItem>
-                    <SelectItem value="viewer">Viewer</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveUser}>Save Changes</Button>
-              </div>
             </div>
           )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditUser}>Save Changes</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
