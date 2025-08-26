@@ -307,7 +307,7 @@ export function generateMultipleInspectionsPDF(inspections: Inspection[]) {
     </head>
     <body>
       <div class="header">
-        <div class="logo">🔫 GUNWORX PORTAL</div>
+        <div class="logo">GUNWORX PORTAL</div>
         <div class="report-title">MULTIPLE INSPECTION REPORTS</div>
         <div class="report-subtitle">Firearms Control Act, 2000 (Act No. 60 of 2000)</div>
         <div style="margin-top: 10px; font-size: 14px;">
