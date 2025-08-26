@@ -125,7 +125,7 @@ export function generateInspectionPDF(inspection: Inspection) {
     </head>
     <body>
       <div class="header">
-        <div class="logo">🔫 GUNWORX PORTAL</div>
+        <div class="logo">GUNWORX PORTAL</div>
         <div class="report-title">FIREARMS INSPECTION REPORT</div>
         <div class="report-subtitle">Firearms Control Act, 2000 (Act No. 60 of 2000)</div>
       </div>
