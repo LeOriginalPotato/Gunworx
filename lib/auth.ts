@@ -1,145 +1,168 @@
-export interface User {
-  id: string
-  firstName: string
-  lastName: string
-  username: string
-  password: string
-  role: "admin" | "user"
-  isSystemAdmin?: boolean
-  createdAt: string
-  lastLogin?: string
+export const users = [
+  {
+    id: "1",
+    username: "Jean-Mari",
+    password: "Foktogbokka",
+    name: "Jean-Mari",
+    role: "admin",
+    isSystemAdmin: true,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "2",
+    username: "Jean",
+    password: "xNgU7ADa",
+    name: "Jean",
+    role: "admin",
+    isSystemAdmin: true,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "3",
+    username: "Wikus",
+    password: "Wikus@888",
+    name: "Wikus",
+    role: "admin",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "4",
+    username: "Eben",
+    password: "UY9FBe8abajU",
+    name: "Eben",
+    role: "user",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "5",
+    username: "Francois",
+    password: "MnWbCkE4AcFP",
+    name: "Francois",
+    role: "user",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "6",
+    username: "inspector",
+    password: "inspector123",
+    name: "Inspector",
+    role: "inspector",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "7",
+    username: "operator",
+    password: "operator123",
+    name: "Operator",
+    role: "operator",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "8",
+    username: "viewer",
+    password: "viewer123",
+    name: "Viewer",
+    role: "viewer",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+]
+
+export function validateCredentials(username: string, password: string) {
+  const user = users.find((u) => u.username === username && u.password === password)
+  return user || null
 }
 
-class AuthService {
-  private users: User[] = [
-    {
-      id: "1",
-      firstName: "Jean-Mari",
-      lastName: "",
-      username: "Jean-Mari",
-      password: "Foktogbokka",
-      role: "admin",
-      isSystemAdmin: true,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "2",
-      firstName: "Jean",
-      lastName: "",
-      username: "Jean",
-      password: "xNgU7ADa",
-      role: "admin",
-      isSystemAdmin: false,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "3",
-      firstName: "Wikus",
-      lastName: "",
-      username: "Wikus",
-      password: "Wikus@888",
-      role: "admin",
-      isSystemAdmin: false,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "4",
-      firstName: "Eben",
-      lastName: "",
-      username: "Eben",
-      password: "UY9FBe8abajU",
-      role: "user",
-      isSystemAdmin: false,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-    {
-      id: "5",
-      firstName: "Francois",
-      lastName: "",
-      username: "Francois",
-      password: "MnWbCkE4AcFP",
-      role: "user",
-      isSystemAdmin: false,
-      createdAt: "2024-01-01T00:00:00Z",
-    },
-  ]
-
-  async login(username: string, password: string): Promise<User> {
-    const user = this.users.find((u) => u.username === username && u.password === password)
-    if (!user) {
-      throw new Error("Invalid credentials")
-    }
-
-    // Update last login
-    user.lastLogin = new Date().toISOString()
-
-    // Store in localStorage
-    if (typeof window !== "undefined") {
-      localStorage.setItem("currentUser", JSON.stringify(user))
-    }
-
-    return user
-  }
-
-  async logout(): Promise<void> {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("currentUser")
-    }
-  }
-
-  getCurrentUser(): User | null {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("currentUser")
-      return stored ? JSON.parse(stored) : null
-    }
-    return null
-  }
-
-  async getUsers(): Promise<User[]> {
-    return this.users
-  }
-
-  async createUser(userData: Omit<User, "id" | "createdAt">): Promise<User> {
-    const newUser: User = {
-      ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    }
-    this.users.push(newUser)
-    return newUser
-  }
-
-  async updateUser(id: string, userData: Partial<User>): Promise<User> {
-    const userIndex = this.users.findIndex((u) => u.id === id)
-    if (userIndex === -1) {
-      throw new Error("User not found")
-    }
-
-    this.users[userIndex] = { ...this.users[userIndex], ...userData }
-    return this.users[userIndex]
-  }
-
-  async deleteUser(id: string): Promise<void> {
-    const userIndex = this.users.findIndex((u) => u.id === id)
-    if (userIndex === -1) {
-      throw new Error("User not found")
-    }
-
-    if (this.users[userIndex].isSystemAdmin) {
-      throw new Error("Cannot delete system administrator")
-    }
-
-    this.users.splice(userIndex, 1)
-  }
-
-  async changePassword(id: string, newPassword: string): Promise<void> {
-    const user = this.users.find((u) => u.id === id)
-    if (!user) {
-      throw new Error("User not found")
-    }
-
-    user.password = newPassword
+export function getUserPermissions(role: string) {
+  switch (role) {
+    case "admin":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: true,
+        canDeleteFirearms: true,
+        canCreateFirearms: true,
+        canCaptureSignatures: true,
+        canViewInspections: true,
+        canEditInspections: true,
+        canDeleteInspections: true,
+        canCreateInspections: true,
+        canViewAnalytics: true,
+        canManageUsers: true,
+      }
+    case "inspector":
+      return {
+        canViewFirearms: false,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: false,
+        canCaptureSignatures: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: true,
+        canViewAnalytics: false,
+        canManageUsers: false,
+      }
+    case "operator":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: true,
+        canCaptureSignatures: true,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: true,
+        canViewAnalytics: false,
+        canManageUsers: false,
+      }
+    case "viewer":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: false,
+        canCaptureSignatures: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: false,
+        canViewAnalytics: true,
+        canManageUsers: false,
+      }
+    case "user":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: true,
+        canCaptureSignatures: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: true,
+        canViewAnalytics: false,
+        canManageUsers: false,
+      }
+    default:
+      return {
+        canViewFirearms: false,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: false,
+        canCaptureSignatures: false,
+        canViewInspections: false,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: false,
+        canViewAnalytics: false,
+        canManageUsers: false,
+      }
   }
 }
-
-export const authService = new AuthService()
