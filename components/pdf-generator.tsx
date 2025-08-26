@@ -1,354 +1,435 @@
 "use client"
 
-import { toast } from "@/hooks/use-toast"
+import jsPDF from "jspdf"
 
 interface Inspection {
   id: string
   date: string
   inspector: string
-  type: string
-  findings: string
+  inspectorId: string
+  companyName: string
+  dealerCode: string
+  firearmType: {
+    pistol: boolean
+    revolver: boolean
+    rifle: boolean
+    selfLoadingRifle: boolean
+    shotgun: boolean
+    combination: boolean
+    other: boolean
+    otherDetails: string
+  }
+  caliber: string
+  cartridgeCode: string
+  serialNumbers: {
+    barrel: string
+    barrelMake: string
+    frame: string
+    frameMake: string
+    receiver: string
+    receiverMake: string
+  }
+  actionType: {
+    manual: boolean
+    semiAuto: boolean
+    automatic: boolean
+    bolt: boolean
+    breakneck: boolean
+    pump: boolean
+    cappingBreechLoader: boolean
+    lever: boolean
+    cylinder: boolean
+    fallingBlock: boolean
+    other: boolean
+    otherDetails: string
+  }
+  make: string
+  countryOfOrigin: string
+  observations: string
+  comments: string
+  signature: string
+  inspectorTitle: string
   status: "passed" | "failed" | "pending"
-  recommendations: string
 }
 
 export function generateInspectionPDF(inspection: Inspection) {
-  // Create a new window for printing
-  const printWindow = window.open("", "_blank")
+  const doc = new jsPDF()
 
-  if (!printWindow) {
-    toast({
-      title: "Error",
-      description: "Unable to open print window. Please check your popup blocker.",
-      variant: "destructive",
-    })
-    return
+  // Set up the document
+  doc.setFontSize(16)
+  doc.setFont("helvetica", "bold")
+
+  // Header
+  doc.text("FIREARM INSPECTION REPORT", 105, 20, { align: "center" })
+
+  // Company header
+  doc.setFontSize(12)
+  doc.text("GUNWORX", 20, 35)
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(10)
+  doc.text("Professional Firearm Services", 20, 42)
+
+  // Inspector Information
+  let yPos = 55
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text("INSPECTOR INFORMATION", 20, yPos)
+
+  yPos += 8
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.text(`Inspector: ${inspection.inspector || "N/A"}`, 20, yPos)
+  doc.text(`ID Number: ${inspection.inspectorId || "N/A"}`, 120, yPos)
+
+  yPos += 6
+  doc.text(`Date: ${inspection.date || "N/A"}`, 20, yPos)
+  doc.text(`Company: ${inspection.companyName || "N/A"}`, 120, yPos)
+
+  yPos += 6
+  doc.text(`Dealer Code: ${inspection.dealerCode || "N/A"}`, 20, yPos)
+
+  // Firearm Type Section
+  yPos += 15
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text("FIREARM TYPE", 20, yPos)
+
+  yPos += 8
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+
+  const firearmTypes = []
+  if (inspection.firearmType?.pistol) firearmTypes.push("Pistol")
+  if (inspection.firearmType?.revolver) firearmTypes.push("Revolver")
+  if (inspection.firearmType?.rifle) firearmTypes.push("Rifle")
+  if (inspection.firearmType?.selfLoadingRifle) firearmTypes.push("Self-Loading Rifle/Carbine")
+  if (inspection.firearmType?.shotgun) firearmTypes.push("Shotgun")
+  if (inspection.firearmType?.combination) firearmTypes.push("Combination")
+  if (inspection.firearmType?.other) firearmTypes.push(`Other: ${inspection.firearmType.otherDetails}`)
+
+  doc.text(`Selected Types: ${firearmTypes.length > 0 ? firearmTypes.join(", ") : "None selected"}`, 20, yPos)
+
+  // Caliber/Cartridge
+  yPos += 12
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text("CALIBER/CARTRIDGE", 20, yPos)
+
+  yPos += 8
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.text(`Caliber: ${inspection.caliber || "N/A"}`, 20, yPos)
+  doc.text(`Code: ${inspection.cartridgeCode || "N/A"}`, 120, yPos)
+
+  // Serial Numbers
+  yPos += 15
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text("SERIAL NUMBERS", 20, yPos)
+
+  yPos += 8
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.text("BARREL:", 20, yPos)
+  doc.text(`${inspection.serialNumbers?.barrel || "N/A"}`, 50, yPos)
+  doc.text(`Make: ${inspection.serialNumbers?.barrelMake || "N/A"}`, 120, yPos)
+
+  yPos += 6
+  doc.text("FRAME:", 20, yPos)
+  doc.text(`${inspection.serialNumbers?.frame || "N/A"}`, 50, yPos)
+  doc.text(`Make: ${inspection.serialNumbers?.frameMake || "N/A"}`, 120, yPos)
+
+  yPos += 6
+  doc.text("RECEIVER:", 20, yPos)
+  doc.text(`${inspection.serialNumbers?.receiver || "N/A"}`, 50, yPos)
+  doc.text(`Make: ${inspection.serialNumbers?.receiverMake || "N/A"}`, 120, yPos)
+
+  // Action Type
+  yPos += 15
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text("ACTION TYPE", 20, yPos)
+
+  yPos += 8
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+
+  const actionTypes = []
+  if (inspection.actionType?.manual) actionTypes.push("Manual")
+  if (inspection.actionType?.semiAuto) actionTypes.push("Semi Auto")
+  if (inspection.actionType?.automatic) actionTypes.push("Automatic")
+  if (inspection.actionType?.bolt) actionTypes.push("Bolt")
+  if (inspection.actionType?.breakneck) actionTypes.push("Breakneck")
+  if (inspection.actionType?.pump) actionTypes.push("Pump")
+  if (inspection.actionType?.cappingBreechLoader) actionTypes.push("Capping Breech Loader")
+  if (inspection.actionType?.lever) actionTypes.push("Lever")
+  if (inspection.actionType?.cylinder) actionTypes.push("Cylinder")
+  if (inspection.actionType?.fallingBlock) actionTypes.push("Falling Block")
+  if (inspection.actionType?.other) actionTypes.push(`Other: ${inspection.actionType.otherDetails}`)
+
+  doc.text(`Selected Actions: ${actionTypes.length > 0 ? actionTypes.join(", ") : "None selected"}`, 20, yPos)
+
+  // Make & Origin
+  yPos += 15
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text("MAKE & ORIGIN", 20, yPos)
+
+  yPos += 8
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.text(`Make: ${inspection.make || "N/A"}`, 20, yPos)
+  doc.text(`Country of Origin: ${inspection.countryOfOrigin || "N/A"}`, 120, yPos)
+
+  // Check if we need a new page
+  if (yPos > 220) {
+    doc.addPage()
+    yPos = 20
   }
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Inspection Report - ${inspection.id}</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          margin: 20px;
-          line-height: 1.6;
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 30px;
-          border-bottom: 2px solid #333;
-          padding-bottom: 20px;
-        }
-        .logo {
-          font-size: 24px;
-          font-weight: bold;
-          color: #2563eb;
-          margin-bottom: 10px;
-        }
-        .report-title {
-          font-size: 20px;
-          margin-bottom: 5px;
-        }
-        .report-subtitle {
-          color: #666;
-          font-size: 14px;
-        }
-        .section {
-          margin-bottom: 25px;
-        }
-        .section-title {
-          font-size: 16px;
-          font-weight: bold;
-          margin-bottom: 10px;
-          color: #333;
-          border-bottom: 1px solid #ddd;
-          padding-bottom: 5px;
-        }
-        .field {
-          margin-bottom: 10px;
-        }
-        .field-label {
-          font-weight: bold;
-          display: inline-block;
-          width: 150px;
-        }
-        .field-value {
-          display: inline-block;
-        }
-        .status-badge {
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: bold;
-          text-transform: uppercase;
-        }
-        .status-passed {
-          background-color: #dcfce7;
-          color: #166534;
-        }
-        .status-failed {
-          background-color: #fef2f2;
-          color: #dc2626;
-        }
-        .status-pending {
-          background-color: #fef3c7;
-          color: #d97706;
-        }
-        .findings-section {
-          background-color: #f9fafb;
-          padding: 15px;
-          border-radius: 8px;
-          border-left: 4px solid #2563eb;
-        }
-        .recommendations-section {
-          background-color: #f0f9ff;
-          padding: 15px;
-          border-radius: 8px;
-          border-left: 4px solid #0ea5e9;
-        }
-        .footer {
-          margin-top: 40px;
-          text-align: center;
-          font-size: 12px;
-          color: #666;
-          border-top: 1px solid #ddd;
-          padding-top: 20px;
-        }
-        @media print {
-          body { margin: 0; }
-          .no-print { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="logo">🔫 GUNWORX PORTAL</div>
-        <div class="report-title">FIREARMS INSPECTION REPORT</div>
-        <div class="report-subtitle">Firearms Control Act, 2000 (Act No. 60 of 2000)</div>
-      </div>
+  // Observations & Comments
+  yPos += 15
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text("OBSERVATIONS & COMMENTS", 20, yPos)
 
-      <div class="section">
-        <div class="section-title">Inspection Details</div>
-        <div class="field">
-          <span class="field-label">Report ID:</span>
-          <span class="field-value">${inspection.id}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Date:</span>
-          <span class="field-value">${new Date(inspection.date).toLocaleDateString("en-ZA")}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Inspector:</span>
-          <span class="field-value">${inspection.inspector}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Type:</span>
-          <span class="field-value">${inspection.type}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">Status:</span>
-          <span class="field-value">
-            <span class="status-badge status-${inspection.status}">${inspection.status}</span>
-          </span>
-        </div>
-      </div>
+  yPos += 8
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.text("Observations:", 20, yPos)
+  yPos += 6
 
-      <div class="section">
-        <div class="section-title">Inspection Findings</div>
-        <div class="findings-section">
-          ${inspection.findings}
-        </div>
-      </div>
+  // Handle long text for observations
+  const observationsText = inspection.observations || "No observations recorded"
+  const observationsLines = doc.splitTextToSize(observationsText, 170)
+  doc.text(observationsLines, 20, yPos)
+  yPos += observationsLines.length * 5
 
-      <div class="section">
-        <div class="section-title">Recommendations</div>
-        <div class="recommendations-section">
-          ${inspection.recommendations}
-        </div>
-      </div>
+  yPos += 5
+  doc.text("Comments:", 20, yPos)
+  yPos += 6
 
-      <div class="footer">
-        <p><strong>Gunworx Firearms Management Portal</strong></p>
-        <p>Generated on: ${new Date().toLocaleDateString("en-ZA")} at ${new Date().toLocaleTimeString("en-ZA")}</p>
-        <p>This report is generated in compliance with the Firearms Control Act, 2000</p>
-      </div>
+  // Handle long text for comments
+  const commentsText = inspection.comments || "No comments recorded"
+  const commentsLines = doc.splitTextToSize(commentsText, 170)
+  doc.text(commentsLines, 20, yPos)
+  yPos += commentsLines.length * 5
 
-      <script>
-        window.onload = function() {
-          window.print();
-          window.onafterprint = function() {
-            window.close();
-          };
-        };
-      </script>
-    </body>
-    </html>
-  `
+  // Inspector Certification
+  yPos += 15
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(11)
+  doc.text("INSPECTOR CERTIFICATION", 20, yPos)
 
-  printWindow.document.write(htmlContent)
-  printWindow.document.close()
+  yPos += 8
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.text(`Inspector Title: ${inspection.inspectorTitle || "N/A"}`, 20, yPos)
+  doc.text(`Status: ${inspection.status || "Pending"}`, 120, yPos)
+
+  yPos += 15
+  doc.text("Inspector Signature: _________________________", 20, yPos)
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 120, yPos)
+
+  // Footer
+  yPos += 20
+  doc.setFontSize(8)
+  doc.text("This report was generated by the Gunworx Inspection System", 105, yPos, { align: "center" })
+
+  // Save the PDF
+  doc.save(`inspection-report-${inspection.id}-${inspection.date}.pdf`)
 }
 
 export function generateMultipleInspectionsPDF(inspections: Inspection[]) {
-  // Create a new window for printing
-  const printWindow = window.open("", "_blank")
+  const doc = new jsPDF()
 
-  if (!printWindow) {
-    toast({
-      title: "Error",
-      description: "Unable to open print window. Please check your popup blocker.",
-      variant: "destructive",
-    })
-    return
-  }
+  inspections.forEach((inspection, index) => {
+    if (index > 0) {
+      doc.addPage()
+    }
 
-  const inspectionRows = inspections
-    .map(
-      (inspection) => `
-    <tr>
-      <td>${inspection.id}</td>
-      <td>${new Date(inspection.date).toLocaleDateString("en-ZA")}</td>
-      <td>${inspection.inspector}</td>
-      <td>${inspection.type}</td>
-      <td>
-        <span class="status-badge status-${inspection.status}">${inspection.status}</span>
-      </td>
-      <td class="findings-cell">${inspection.findings.substring(0, 100)}${inspection.findings.length > 100 ? "..." : ""}</td>
-    </tr>
-  `,
-    )
-    .join("")
+    // Set up the document
+    doc.setFontSize(16)
+    doc.setFont("helvetica", "bold")
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Multiple Inspection Reports</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          margin: 20px;
-          line-height: 1.4;
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 30px;
-          border-bottom: 2px solid #333;
-          padding-bottom: 20px;
-        }
-        .logo {
-          font-size: 24px;
-          font-weight: bold;
-          color: #2563eb;
-          margin-bottom: 10px;
-        }
-        .report-title {
-          font-size: 20px;
-          margin-bottom: 5px;
-        }
-        .report-subtitle {
-          color: #666;
-          font-size: 14px;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 20px;
-        }
-        th, td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-          font-size: 12px;
-        }
-        th {
-          background-color: #f5f5f5;
-          font-weight: bold;
-        }
-        .status-badge {
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 10px;
-          font-weight: bold;
-          text-transform: uppercase;
-        }
-        .status-passed {
-          background-color: #dcfce7;
-          color: #166534;
-        }
-        .status-failed {
-          background-color: #fef2f2;
-          color: #dc2626;
-        }
-        .status-pending {
-          background-color: #fef3c7;
-          color: #d97706;
-        }
-        .findings-cell {
-          max-width: 200px;
-          word-wrap: break-word;
-        }
-        .footer {
-          margin-top: 40px;
-          text-align: center;
-          font-size: 12px;
-          color: #666;
-          border-top: 1px solid #ddd;
-          padding-top: 20px;
-        }
-        @media print {
-          body { margin: 0; }
-          .no-print { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="logo">🔫 GUNWORX PORTAL</div>
-        <div class="report-title">MULTIPLE INSPECTION REPORTS</div>
-        <div class="report-subtitle">Firearms Control Act, 2000 (Act No. 60 of 2000)</div>
-        <div style="margin-top: 10px; font-size: 14px;">
-          <strong>Total Reports: ${inspections.length}</strong>
-        </div>
-      </div>
+    // Header
+    doc.text("FIREARM INSPECTION REPORT", 105, 20, { align: "center" })
 
-      <table>
-        <thead>
-          <tr>
-            <th>Report ID</th>
-            <th>Date</th>
-            <th>Inspector</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Findings (Summary)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${inspectionRows}
-        </tbody>
-      </table>
+    // Company header
+    doc.setFontSize(12)
+    doc.text("GUNWORX", 20, 35)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+    doc.text("Professional Firearm Services", 20, 42)
 
-      <div class="footer">
-        <p><strong>Gunworx Firearms Management Portal</strong></p>
-        <p>Generated on: ${new Date().toLocaleDateString("en-ZA")} at ${new Date().toLocaleTimeString("en-ZA")}</p>
-        <p>This report contains ${inspections.length} inspection records in compliance with the Firearms Control Act, 2000</p>
-      </div>
+    // Inspector Information
+    let yPos = 55
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("INSPECTOR INFORMATION", 20, yPos)
 
-      <script>
-        window.onload = function() {
-          window.print();
-          window.onafterprint = function() {
-            window.close();
-          };
-        };
-      </script>
-    </body>
-    </html>
-  `
+    yPos += 8
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text(`Inspector: ${inspection.inspector || "N/A"}`, 20, yPos)
+    doc.text(`ID Number: ${inspection.inspectorId || "N/A"}`, 120, yPos)
 
-  printWindow.document.write(htmlContent)
-  printWindow.document.close()
+    yPos += 6
+    doc.text(`Date: ${inspection.date || "N/A"}`, 20, yPos)
+    doc.text(`Company: ${inspection.companyName || "N/A"}`, 120, yPos)
+
+    yPos += 6
+    doc.text(`Dealer Code: ${inspection.dealerCode || "N/A"}`, 20, yPos)
+
+    // Firearm Type Section
+    yPos += 15
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("FIREARM TYPE", 20, yPos)
+
+    yPos += 8
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+
+    const firearmTypes = []
+    if (inspection.firearmType?.pistol) firearmTypes.push("Pistol")
+    if (inspection.firearmType?.revolver) firearmTypes.push("Revolver")
+    if (inspection.firearmType?.rifle) firearmTypes.push("Rifle")
+    if (inspection.firearmType?.selfLoadingRifle) firearmTypes.push("Self-Loading Rifle/Carbine")
+    if (inspection.firearmType?.shotgun) firearmTypes.push("Shotgun")
+    if (inspection.firearmType?.combination) firearmTypes.push("Combination")
+    if (inspection.firearmType?.other) firearmTypes.push(`Other: ${inspection.firearmType.otherDetails}`)
+
+    doc.text(`Selected Types: ${firearmTypes.length > 0 ? firearmTypes.join(", ") : "None selected"}`, 20, yPos)
+
+    // Caliber/Cartridge
+    yPos += 12
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("CALIBER/CARTRIDGE", 20, yPos)
+
+    yPos += 8
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text(`Caliber: ${inspection.caliber || "N/A"}`, 20, yPos)
+    doc.text(`Code: ${inspection.cartridgeCode || "N/A"}`, 120, yPos)
+
+    // Serial Numbers
+    yPos += 15
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("SERIAL NUMBERS", 20, yPos)
+
+    yPos += 8
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text("BARREL:", 20, yPos)
+    doc.text(`${inspection.serialNumbers?.barrel || "N/A"}`, 50, yPos)
+    doc.text(`Make: ${inspection.serialNumbers?.barrelMake || "N/A"}`, 120, yPos)
+
+    yPos += 6
+    doc.text("FRAME:", 20, yPos)
+    doc.text(`${inspection.serialNumbers?.frame || "N/A"}`, 50, yPos)
+    doc.text(`Make: ${inspection.serialNumbers?.frameMake || "N/A"}`, 120, yPos)
+
+    yPos += 6
+    doc.text("RECEIVER:", 20, yPos)
+    doc.text(`${inspection.serialNumbers?.receiver || "N/A"}`, 50, yPos)
+    doc.text(`Make: ${inspection.serialNumbers?.receiverMake || "N/A"}`, 120, yPos)
+
+    // Action Type
+    yPos += 15
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("ACTION TYPE", 20, yPos)
+
+    yPos += 8
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+
+    const actionTypes = []
+    if (inspection.actionType?.manual) actionTypes.push("Manual")
+    if (inspection.actionType?.semiAuto) actionTypes.push("Semi Auto")
+    if (inspection.actionType?.automatic) actionTypes.push("Automatic")
+    if (inspection.actionType?.bolt) actionTypes.push("Bolt")
+    if (inspection.actionType?.breakneck) actionTypes.push("Breakneck")
+    if (inspection.actionType?.pump) actionTypes.push("Pump")
+    if (inspection.actionType?.cappingBreechLoader) actionTypes.push("Capping Breech Loader")
+    if (inspection.actionType?.lever) actionTypes.push("Lever")
+    if (inspection.actionType?.cylinder) actionTypes.push("Cylinder")
+    if (inspection.actionType?.fallingBlock) actionTypes.push("Falling Block")
+    if (inspection.actionType?.other) actionTypes.push(`Other: ${inspection.actionType.otherDetails}`)
+
+    doc.text(`Selected Actions: ${actionTypes.length > 0 ? actionTypes.join(", ") : "None selected"}`, 20, yPos)
+
+    // Make & Origin
+    yPos += 15
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("MAKE & ORIGIN", 20, yPos)
+
+    yPos += 8
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text(`Make: ${inspection.make || "N/A"}`, 20, yPos)
+    doc.text(`Country of Origin: ${inspection.countryOfOrigin || "N/A"}`, 120, yPos)
+
+    // Check if we need a new page
+    if (yPos > 220) {
+      doc.addPage()
+      yPos = 20
+    }
+
+    // Observations & Comments
+    yPos += 15
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("OBSERVATIONS & COMMENTS", 20, yPos)
+
+    yPos += 8
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text("Observations:", 20, yPos)
+    yPos += 6
+
+    // Handle long text for observations
+    const observationsText = inspection.observations || "No observations recorded"
+    const observationsLines = doc.splitTextToSize(observationsText, 170)
+    doc.text(observationsLines, 20, yPos)
+    yPos += observationsLines.length * 5
+
+    yPos += 5
+    doc.text("Comments:", 20, yPos)
+    yPos += 6
+
+    // Handle long text for comments
+    const commentsText = inspection.comments || "No comments recorded"
+    const commentsLines = doc.splitTextToSize(commentsText, 170)
+    doc.text(commentsLines, 20, yPos)
+    yPos += commentsLines.length * 5
+
+    // Inspector Certification
+    yPos += 15
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("INSPECTOR CERTIFICATION", 20, yPos)
+
+    yPos += 8
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text(`Inspector Title: ${inspection.inspectorTitle || "N/A"}`, 20, yPos)
+    doc.text(`Status: ${inspection.status || "Pending"}`, 120, yPos)
+
+    yPos += 15
+    doc.text("Inspector Signature: _________________________", 20, yPos)
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 120, yPos)
+
+    // Footer
+    yPos += 20
+    doc.setFontSize(8)
+    doc.text("This report was generated by the Gunworx Inspection System", 105, yPos, { align: "center" })
+  })
+
+  // Save the PDF
+  doc.save(`inspection-reports-batch-${new Date().toISOString().split("T")[0]}.pdf`)
 }

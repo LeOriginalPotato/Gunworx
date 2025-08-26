@@ -119,7 +119,58 @@
     }
 
     getDefaultInspections() {
-      return []
+      return [
+        {
+          id: "1",
+          date: "2024-04-04",
+          inspector: "Wikus Fourie",
+          inspectorId: "910604 5129 083",
+          companyName: "Delta",
+          dealerCode: "1964",
+          firearmType: {
+            pistol: false,
+            revolver: false,
+            rifle: true,
+            selfLoadingRifle: false,
+            shotgun: false,
+            combination: false,
+            other: false,
+            otherDetails: "",
+          },
+          caliber: ".308 WIN",
+          cartridgeCode: "123",
+          serialNumbers: {
+            barrel: "690745661",
+            barrelMake: "RUGER",
+            frame: "690745661",
+            frameMake: "RUGER",
+            receiver: "690745661",
+            receiverMake: "RUGER",
+          },
+          actionType: {
+            manual: false,
+            semiAuto: false,
+            automatic: false,
+            bolt: true,
+            breakneck: false,
+            pump: false,
+            cappingBreechLoader: false,
+            lever: false,
+            cylinder: false,
+            fallingBlock: false,
+            other: false,
+            otherDetails: "",
+          },
+          make: "RUGER",
+          countryOfOrigin: "USA",
+          observations:
+            "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+          comments: "",
+          signature: "",
+          inspectorTitle: "Head Gunsmith",
+          status: "passed",
+        },
+      ]
     }
 
     getDefaultUsers() {

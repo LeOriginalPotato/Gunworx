@@ -14,8 +14,6 @@ import { LoginForm } from "@/components/login-form"
 import { generateInspectionPDF, generateMultipleInspectionsPDF } from "@/components/pdf-generator"
 import { getUserPermissions } from "@/lib/auth"
 import type { Firearm } from "@/lib/firearms-data"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import {
   Search,
   FileText,
@@ -446,24 +444,14 @@ export default function Home() {
 
   const handleAddInspection = async () => {
     try {
-      if (
-        !newInspection.inspector ||
-        !newInspection.inspectorId ||
-        !newInspection.companyName ||
-        !newInspection.dealerCode
-      ) {
-        toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields (Inspector, ID, Company Name, Dealer Code).",
-          variant: "destructive",
-        })
-        return
-      }
-
       const inspectionToAdd = {
         ...newInspection,
         date: newInspection.date || new Date().toISOString().split("T")[0],
         status: newInspection.status || "pending",
+        inspector: newInspection.inspector || "Unknown Inspector",
+        inspectorId: newInspection.inspectorId || "",
+        companyName: newInspection.companyName || "",
+        dealerCode: newInspection.dealerCode || "",
       } as Omit<Inspection, "id">
 
       const addedInspection = await window.DataService.createInspection(inspectionToAdd)
@@ -757,6 +745,655 @@ export default function Home() {
               </CardContent>
             </Card>
 
+            {/* Add Inspection Dialog */}
+            {isAddInspectionDialogOpen && (
+              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div className="relative top-5 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+                  <div className="mt-3">
+                    <div className="flex justify-between items-center mb-6">
+                      <div>
+                        <h3 className="text-xl leading-6 font-bold text-gray-900">FIREARM INSPECTION REPORT</h3>
+                        <p className="text-sm text-gray-600 mt-1">Complete firearm inspection form</p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => setIsAddInspectionDialogOpen(false)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* Inspector Information */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">Inspector Information</h4>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <label htmlFor="inspector" className="block text-sm font-medium text-gray-700">
+                              Inspector Name
+                            </label>
+                            <Input
+                              id="inspector"
+                              type="text"
+                              placeholder="Inspector Name"
+                              value={newInspection.inspector || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, inspector: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="inspectorId" className="block text-sm font-medium text-gray-700">
+                              Inspector ID Number
+                            </label>
+                            <Input
+                              id="inspectorId"
+                              type="text"
+                              placeholder="ID Number"
+                              value={newInspection.inspectorId || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, inspectorId: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="inspectionDate" className="block text-sm font-medium text-gray-700">
+                              Inspection Date
+                            </label>
+                            <Input
+                              id="inspectionDate"
+                              type="date"
+                              value={newInspection.date || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, date: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Company Information */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">Company Information</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                              Company Name
+                            </label>
+                            <Input
+                              id="companyName"
+                              type="text"
+                              placeholder="Company Name"
+                              value={newInspection.companyName || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, companyName: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="dealerCode" className="block text-sm font-medium text-gray-700">
+                              Dealer Code
+                            </label>
+                            <Input
+                              id="dealerCode"
+                              type="text"
+                              placeholder="Dealer Code"
+                              value={newInspection.dealerCode || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, dealerCode: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Firearm Type */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">FIREARM TYPE</h4>
+                        <div className="grid grid-cols-4 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="pistol"
+                              checked={newInspection.firearmType?.pistol || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  firearmType: { ...newInspection.firearmType, pistol: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="pistol" className="text-sm">
+                              Pistol
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="revolver"
+                              checked={newInspection.firearmType?.revolver || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  firearmType: { ...newInspection.firearmType, revolver: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="revolver" className="text-sm">
+                              Revolver
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="rifle"
+                              checked={newInspection.firearmType?.rifle || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  firearmType: { ...newInspection.firearmType, rifle: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="rifle" className="text-sm">
+                              Rifle
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="selfLoadingRifle"
+                              checked={newInspection.firearmType?.selfLoadingRifle || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  firearmType: { ...newInspection.firearmType, selfLoadingRifle: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="selfLoadingRifle" className="text-sm">
+                              Self-Loading Rifle/Carbine
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="shotgun"
+                              checked={newInspection.firearmType?.shotgun || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  firearmType: { ...newInspection.firearmType, shotgun: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="shotgun" className="text-sm">
+                              Shotgun
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="combination"
+                              checked={newInspection.firearmType?.combination || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  firearmType: { ...newInspection.firearmType, combination: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="combination" className="text-sm">
+                              Combination
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="otherFirearmType"
+                              checked={newInspection.firearmType?.other || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  firearmType: { ...newInspection.firearmType, other: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="otherFirearmType" className="text-sm">
+                              Other
+                            </label>
+                          </div>
+                        </div>
+                        {newInspection.firearmType?.other && (
+                          <div className="mt-3">
+                            <label htmlFor="otherFirearmDetails" className="block text-sm font-medium text-gray-700">
+                              Other Details
+                            </label>
+                            <Input
+                              id="otherFirearmDetails"
+                              type="text"
+                              placeholder="Provide details"
+                              value={newInspection.firearmType?.otherDetails || ""}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  firearmType: { ...newInspection.firearmType, otherDetails: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Caliber/Cartridge */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">CALIBER/CARTRIDGE</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="caliber" className="block text-sm font-medium text-gray-700">
+                              Caliber/Cartridge
+                            </label>
+                            <Input
+                              id="caliber"
+                              type="text"
+                              placeholder="e.g., .308 WIN"
+                              value={newInspection.caliber || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, caliber: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="cartridgeCode" className="block text-sm font-medium text-gray-700">
+                              Code
+                            </label>
+                            <Input
+                              id="cartridgeCode"
+                              type="text"
+                              placeholder="e.g., 123"
+                              value={newInspection.cartridgeCode || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, cartridgeCode: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Serial Numbers */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">SERIAL NUMBERS</h4>
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-3 gap-4">
+                            <label className="font-medium text-sm">Component</label>
+                            <label className="font-medium text-sm">Serial Number</label>
+                            <label className="font-medium text-sm">Make</label>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <label className="text-sm">BARREL:</label>
+                            <Input
+                              type="text"
+                              placeholder="Serial Number"
+                              value={newInspection.serialNumbers?.barrel || ""}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  serialNumbers: { ...newInspection.serialNumbers, barrel: e.target.value },
+                                })
+                              }
+                            />
+                            <Input
+                              type="text"
+                              placeholder="Make"
+                              value={newInspection.serialNumbers?.barrelMake || ""}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  serialNumbers: { ...newInspection.serialNumbers, barrelMake: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <label className="text-sm">FRAME:</label>
+                            <Input
+                              type="text"
+                              placeholder="Serial Number"
+                              value={newInspection.serialNumbers?.frame || ""}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  serialNumbers: { ...newInspection.serialNumbers, frame: e.target.value },
+                                })
+                              }
+                            />
+                            <Input
+                              type="text"
+                              placeholder="Make"
+                              value={newInspection.serialNumbers?.frameMake || ""}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  serialNumbers: { ...newInspection.serialNumbers, frameMake: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <label className="text-sm">RECEIVER:</label>
+                            <Input
+                              type="text"
+                              placeholder="Serial Number"
+                              value={newInspection.serialNumbers?.receiver || ""}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  serialNumbers: { ...newInspection.serialNumbers, receiver: e.target.value },
+                                })
+                              }
+                            />
+                            <Input
+                              type="text"
+                              placeholder="Make"
+                              value={newInspection.serialNumbers?.receiverMake || ""}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  serialNumbers: { ...newInspection.serialNumbers, receiverMake: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Type */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">ACTION TYPE</h4>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="manual"
+                              checked={newInspection.actionType?.manual || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, manual: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="manual" className="text-sm">
+                              Manual
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="semiAuto"
+                              checked={newInspection.actionType?.semiAuto || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, semiAuto: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="semiAuto" className="text-sm">
+                              Semi Auto
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="automatic"
+                              checked={newInspection.actionType?.automatic || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, automatic: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="automatic" className="text-sm">
+                              Automatic
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="bolt"
+                              checked={newInspection.actionType?.bolt || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, bolt: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="bolt" className="text-sm">
+                              Bolt
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="breakneck"
+                              checked={newInspection.actionType?.breakneck || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, breakneck: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="breakneck" className="text-sm">
+                              Breakneck
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="pump"
+                              checked={newInspection.actionType?.pump || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, pump: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="pump" className="text-sm">
+                              Pump
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="cappingBreechLoader"
+                              checked={newInspection.actionType?.cappingBreechLoader || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, cappingBreechLoader: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="cappingBreechLoader" className="text-sm">
+                              Capping Breech Loader
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="lever"
+                              checked={newInspection.actionType?.lever || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, lever: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="lever" className="text-sm">
+                              Lever
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="cylinder"
+                              checked={newInspection.actionType?.cylinder || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, cylinder: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="cylinder" className="text-sm">
+                              Cylinder
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="fallingBlock"
+                              checked={newInspection.actionType?.fallingBlock || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, fallingBlock: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="fallingBlock" className="text-sm">
+                              Falling Block
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="otherActionType"
+                              checked={newInspection.actionType?.other || false}
+                              onCheckedChange={(checked) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, other: checked as boolean },
+                                })
+                              }
+                            />
+                            <label htmlFor="otherActionType" className="text-sm">
+                              Other
+                            </label>
+                          </div>
+                        </div>
+                        {newInspection.actionType?.other && (
+                          <div className="mt-3">
+                            <label htmlFor="otherActionDetails" className="block text-sm font-medium text-gray-700">
+                              Other Details
+                            </label>
+                            <Input
+                              id="otherActionDetails"
+                              type="text"
+                              placeholder="Provide details"
+                              value={newInspection.actionType?.otherDetails || ""}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  actionType: { ...newInspection.actionType, otherDetails: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Make and Country */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">MAKE & ORIGIN</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="make" className="block text-sm font-medium text-gray-700">
+                              MAKE
+                            </label>
+                            <Input
+                              id="make"
+                              type="text"
+                              placeholder="e.g., RUGER"
+                              value={newInspection.make || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, make: e.target.value })}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              (As engraved on the firearm i.e Beretta/Colt/Glock/Ruger, etc.)
+                            </p>
+                          </div>
+                          <div>
+                            <label htmlFor="countryOfOrigin" className="block text-sm font-medium text-gray-700">
+                              COUNTRY OF ORIGIN
+                            </label>
+                            <Input
+                              id="countryOfOrigin"
+                              type="text"
+                              placeholder="e.g., USA"
+                              value={newInspection.countryOfOrigin || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, countryOfOrigin: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Observations and Comments */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">OBSERVATIONS & COMMENTS</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label htmlFor="observations" className="block text-sm font-medium text-gray-700">
+                              Observations
+                            </label>
+                            <textarea
+                              id="observations"
+                              placeholder="According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm."
+                              value={newInspection.observations || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, observations: e.target.value })}
+                              rows={3}
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="comments" className="block text-sm font-medium text-gray-700">
+                              Comments
+                            </label>
+                            <textarea
+                              id="comments"
+                              placeholder="Additional comments"
+                              value={newInspection.comments || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, comments: e.target.value })}
+                              rows={3}
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Inspector Details */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="font-semibold mb-3">INSPECTOR CERTIFICATION</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="inspectorTitle" className="block text-sm font-medium text-gray-700">
+                              Inspector Title
+                            </label>
+                            <Input
+                              id="inspectorTitle"
+                              type="text"
+                              placeholder="e.g., Head Gunsmith"
+                              value={newInspection.inspectorTitle || ""}
+                              onChange={(e) => setNewInspection({ ...newInspection, inspectorTitle: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="inspectionStatus" className="block text-sm font-medium text-gray-700">
+                              Status
+                            </label>
+                            <select
+                              id="inspectionStatus"
+                              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                              value={newInspection.status || "pending"}
+                              onChange={(e) =>
+                                setNewInspection({
+                                  ...newInspection,
+                                  status: e.target.value as "passed" | "failed" | "pending",
+                                })
+                              }
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="passed">Passed</option>
+                              <option value="failed">Failed</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                      <Button variant="ghost" onClick={() => setIsAddInspectionDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button variant="default" onClick={handleAddInspection}>
+                        Create Inspection Report
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Search Controls */}
             <Card>
               <CardHeader>
@@ -839,9 +1476,9 @@ export default function Home() {
                         </TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Inspector</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Make</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Findings</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -856,11 +1493,11 @@ export default function Home() {
                           </TableCell>
                           <TableCell>{inspection.date}</TableCell>
                           <TableCell>{inspection.inspector}</TableCell>
-                          <TableCell>{inspection.type}</TableCell>
+                          <TableCell>{inspection.companyName}</TableCell>
+                          <TableCell>{inspection.make}</TableCell>
                           <TableCell>
                             <Badge variant={getStatusBadgeVariant(inspection.status)}>{inspection.status}</Badge>
                           </TableCell>
-                          <TableCell className="max-w-xs truncate">{inspection.findings}</TableCell>
                           <TableCell>
                             <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
                               <Printer className="h-4 w-4" />
@@ -968,7 +1605,7 @@ export default function Home() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{stats.firearms.dealerStock}</div>
-                    <p className="text-xs text-muted-foreground">Dealer inventory</p>
+                    <p className="text-xs text-muted-foreground">Items in dealer stock</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -978,7 +1615,7 @@ export default function Home() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{stats.firearms.safeKeeping}</div>
-                    <p className="text-xs text-muted-foreground">Temporary custody</p>
+                    <p className="text-xs text-muted-foreground">Items under safe keeping</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -988,204 +1625,16 @@ export default function Home() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{stats.firearms.collected}</div>
-                    <p className="text-xs text-muted-foreground">Paperwork complete</p>
+                    <p className="text-xs text-muted-foreground">Collected firearms</p>
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Add Firearm Button */}
-              {permissions.canEditFirearms && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Add New Firearm</CardTitle>
-                    <CardDescription>Register a new firearm in the system</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button onClick={() => setIsAddFirearmDialogOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Firearm
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Search and Filter Controls */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Search & Filter</CardTitle>
-                  <CardDescription>Find firearms by keyword, status, or date</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search firearms..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                      Filter by Status
-                    </label>
-                    <select
-                      id="status"
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="in-stock">In Stock</option>
-                      <option value="dealer-stock">Dealer Stock</option>
-                      <option value="safe-keeping">Safe Keeping</option>
-                      <option value="collected">Collected</option>
-                    </select>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Data Export Controls */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Export Firearms Data</CardTitle>
-                  <CardDescription>Download firearms data in CSV format</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
-                  <Button onClick={() => handleExportFirearms("all")} variant="outline" size="sm">
-                    Export All ({stats.firearms.total})
-                  </Button>
-                  <Button
-                    onClick={() => handleExportFirearms("selected")}
-                    variant="outline"
-                    size="sm"
-                    disabled={selectedFirearms.length === 0}
-                  >
-                    Export Selected ({selectedFirearms.length})
-                  </Button>
-                  <Button
-                    onClick={() => handleExportFirearms("filtered")}
-                    variant="outline"
-                    size="sm"
-                    disabled={filteredFirearms.length === 0}
-                  >
-                    Export Filtered ({filteredFirearms.length})
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Firearms Table */}
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle>Firearms Register</CardTitle>
-                      <CardDescription>
-                        Showing {filteredFirearms.length} of {stats.firearms.total} firearms
-                        {selectedFirearms.length > 0 && ` (${selectedFirearms.length} selected)`}
-                      </CardDescription>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSelectAllFirearms}
-                      disabled={filteredFirearms.length === 0}
-                    >
-                      {selectedFirearms.length === filteredFirearms.length ? (
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                      ) : (
-                        <Square className="h-4 w-4 mr-2" />
-                      )}
-                      {selectedFirearms.length === filteredFirearms.length ? "Deselect All" : "Select All"}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <Checkbox
-                              checked={
-                                selectedFirearms.length === filteredFirearms.length && filteredFirearms.length > 0
-                              }
-                              onCheckedChange={handleSelectAllFirearms}
-                            />
-                          </TableHead>
-                          <TableHead>Stock No</TableHead>
-                          <TableHead>Date Received</TableHead>
-                          <TableHead>Make</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Caliber</TableHead>
-                          <TableHead>Serial No</TableHead>
-                          <TableHead>Status</TableHead>
-                          {permissions.canEditFirearms && <TableHead className="text-right">Actions</TableHead>}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredFirearms.map((firearm) => (
-                          <TableRow key={firearm.id}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedFirearms.includes(firearm.id)}
-                                onCheckedChange={() => handleSelectFirearm(firearm.id)}
-                              />
-                            </TableCell>
-                            <TableCell>{firearm.stockNo}</TableCell>
-                            <TableCell>{firearm.dateReceived}</TableCell>
-                            <TableCell>{firearm.make}</TableCell>
-                            <TableCell>{firearm.type}</TableCell>
-                            <TableCell>{firearm.caliber}</TableCell>
-                            <TableCell>{firearm.serialNo}</TableCell>
-                            <TableCell>
-                              <Badge variant={getStatusBadgeVariant(firearm.status)}>{firearm.status}</Badge>
-                            </TableCell>
-                            {permissions.canEditFirearms && (
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEditFirearm(firearm)}
-                                    disabled={!permissions.canEditFirearms}
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDeleteFirearm(firearm.id)}
-                                    disabled={!permissions.canDeleteFirearms}
-                                  >
-                                    Delete
-                                  </Button>
-                                  {firearm.status !== "collected" && (
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      onClick={() => handleCaptureSignature(firearm)}
-                                      disabled={!permissions.canCaptureSignatures}
-                                    >
-                                      Collect
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
           )}
 
           {permissions.canViewInspections && (
             <TabsContent value="inspections" className="space-y-6">
-              {/* Inspection Statistics */}
+              {/* Inspections Statistics */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1321,9 +1770,9 @@ export default function Home() {
                           </TableHead>
                           <TableHead>Date</TableHead>
                           <TableHead>Inspector</TableHead>
-                          <TableHead>Type</TableHead>
+                          <TableHead>Company</TableHead>
+                          <TableHead>Make</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Findings</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1338,11 +1787,11 @@ export default function Home() {
                             </TableCell>
                             <TableCell>{inspection.date}</TableCell>
                             <TableCell>{inspection.inspector}</TableCell>
-                            <TableCell>{inspection.type}</TableCell>
+                            <TableCell>{inspection.companyName}</TableCell>
+                            <TableCell>{inspection.make}</TableCell>
                             <TableCell>
                               <Badge variant={getStatusBadgeVariant(inspection.status)}>{inspection.status}</Badge>
                             </TableCell>
-                            <TableCell className="max-w-xs truncate">{inspection.findings}</TableCell>
                             <TableCell>
                               <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
                                 <Printer className="h-4 w-4" />
@@ -1360,210 +1809,32 @@ export default function Home() {
 
           {permissions.canViewAnalytics && (
             <TabsContent value="analytics" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Analytics Dashboard</CardTitle>
-                  <CardDescription>Overview of key metrics and trends in firearms and inspections data</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Placeholder for analytics content.</p>
-                </CardContent>
-              </Card>
+              {/* Analytics Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Placeholder for Analytics */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Analytics</CardTitle>
+                    <CardDescription>View various analytics related to firearms and inspections</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-500">Analytics content goes here</p>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           )}
 
           {permissions.canManageUsers && (
             <TabsContent value="users" className="space-y-6">
-              <UserManagement />
+              {/* User Management Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <UserManagement />
+              </div>
             </TabsContent>
           )}
         </Tabs>
       </div>
-
-      {/* Add Firearm Dialog */}
-      {isAddFirearmDialogOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Add New Firearm</h3>
-                <Button variant="ghost" size="sm" onClick={() => setIsAddFirearmDialogOpen(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="stockNo">Stock No *</Label>
-                  <Input
-                    id="stockNo"
-                    type="text"
-                    placeholder="Stock No"
-                    value={newFirearm.stockNo || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, stockNo: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="dateReceived">Date Received</Label>
-                  <Input
-                    id="dateReceived"
-                    type="date"
-                    value={newFirearm.dateReceived || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, dateReceived: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="make">Make *</Label>
-                  <Input
-                    id="make"
-                    type="text"
-                    placeholder="Make"
-                    value={newFirearm.make || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, make: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="type">Type</Label>
-                  <Input
-                    id="type"
-                    type="text"
-                    placeholder="Type"
-                    value={newFirearm.type || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, type: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="caliber">Caliber</Label>
-                  <Input
-                    id="caliber"
-                    type="text"
-                    placeholder="Caliber"
-                    value={newFirearm.caliber || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, caliber: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="serialNo">Serial No *</Label>
-                  <Input
-                    id="serialNo"
-                    type="text"
-                    placeholder="Serial No"
-                    value={newFirearm.serialNo || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, serialNo: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="Full Name"
-                    value={newFirearm.fullName || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, fullName: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="surname">Surname</Label>
-                  <Input
-                    id="surname"
-                    type="text"
-                    placeholder="Surname"
-                    value={newFirearm.surname || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, surname: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="registrationId">Registration ID</Label>
-                  <Input
-                    id="registrationId"
-                    type="text"
-                    placeholder="Registration ID"
-                    value={newFirearm.registrationId || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, registrationId: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="licenceNo">Licence No</Label>
-                  <Input
-                    id="licenceNo"
-                    type="text"
-                    placeholder="Licence No"
-                    value={newFirearm.licenceNo || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, licenceNo: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="physicalAddress">Physical Address</Label>
-                  <Input
-                    id="physicalAddress"
-                    type="text"
-                    placeholder="Physical Address"
-                    value={newFirearm.physicalAddress || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, physicalAddress: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="licenceDate">Licence Date</Label>
-                  <Input
-                    id="licenceDate"
-                    type="date"
-                    value={newFirearm.licenceDate || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, licenceDate: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <select
-                    id="status"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={newFirearm.status || "in-stock"}
-                    onChange={(e) =>
-                      setNewFirearm({
-                        ...newFirearm,
-                        status: e.target.value as "in-stock" | "dealer-stock" | "safe-keeping" | "collected",
-                      })
-                    }
-                  >
-                    <option value="in-stock">In Stock</option>
-                    <option value="dealer-stock">Dealer Stock</option>
-                    <option value="safe-keeping">Safe Keeping</option>
-                    <option value="collected">Collected</option>
-                  </select>
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="remarks">Remarks</Label>
-                  <Textarea
-                    id="remarks"
-                    placeholder="Remarks"
-                    value={newFirearm.remarks || ""}
-                    onChange={(e) => setNewFirearm({ ...newFirearm, remarks: e.target.value })}
-                    className="mb-2"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="ghost" onClick={() => setIsAddFirearmDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button variant="default" onClick={handleAddFirearm}>
-                  Add Firearm
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add Inspection Dialog */}
       {isAddInspectionDialogOpen && (
@@ -1586,7 +1857,9 @@ export default function Home() {
                   <h4 className="font-semibold mb-3">Inspector Information</h4>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="inspector">Inspector Name *</Label>
+                      <label htmlFor="inspector" className="block text-sm font-medium text-gray-700">
+                        Inspector Name
+                      </label>
                       <Input
                         id="inspector"
                         type="text"
@@ -1596,7 +1869,9 @@ export default function Home() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="inspectorId">Inspector ID Number *</Label>
+                      <label htmlFor="inspectorId" className="block text-sm font-medium text-gray-700">
+                        Inspector ID Number
+                      </label>
                       <Input
                         id="inspectorId"
                         type="text"
@@ -1606,7 +1881,9 @@ export default function Home() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="inspectionDate">Inspection Date</Label>
+                      <label htmlFor="inspectionDate" className="block text-sm font-medium text-gray-700">
+                        Inspection Date
+                      </label>
                       <Input
                         id="inspectionDate"
                         type="date"
@@ -1622,7 +1899,9 @@ export default function Home() {
                   <h4 className="font-semibold mb-3">Company Information</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="companyName">Company Name *</Label>
+                      <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                        Company Name
+                      </label>
                       <Input
                         id="companyName"
                         type="text"
@@ -1632,7 +1911,9 @@ export default function Home() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="dealerCode">Dealer Code *</Label>
+                      <label htmlFor="dealerCode" className="block text-sm font-medium text-gray-700">
+                        Dealer Code
+                      </label>
                       <Input
                         id="dealerCode"
                         type="text"
@@ -1659,7 +1940,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="pistol">Pistol</Label>
+                      <label htmlFor="pistol" className="text-sm">
+                        Pistol
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1672,7 +1955,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="revolver">Revolver</Label>
+                      <label htmlFor="revolver" className="text-sm">
+                        Revolver
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1685,7 +1970,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="rifle">Rifle</Label>
+                      <label htmlFor="rifle" className="text-sm">
+                        Rifle
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1698,7 +1985,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="selfLoadingRifle">Self-Loading Rifle/Carbine</Label>
+                      <label htmlFor="selfLoadingRifle" className="text-sm">
+                        Self-Loading Rifle/Carbine
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1711,7 +2000,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="shotgun">Shotgun</Label>
+                      <label htmlFor="shotgun" className="text-sm">
+                        Shotgun
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1724,7 +2015,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="combination">Combination</Label>
+                      <label htmlFor="combination" className="text-sm">
+                        Combination
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1737,12 +2030,16 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="otherFirearmType">Other</Label>
+                      <label htmlFor="otherFirearmType" className="text-sm">
+                        Other
+                      </label>
                     </div>
                   </div>
                   {newInspection.firearmType?.other && (
                     <div className="mt-3">
-                      <Label htmlFor="otherFirearmDetails">Other Details</Label>
+                      <label htmlFor="otherFirearmDetails" className="block text-sm font-medium text-gray-700">
+                        Other Details
+                      </label>
                       <Input
                         id="otherFirearmDetails"
                         type="text"
@@ -1764,7 +2061,9 @@ export default function Home() {
                   <h4 className="font-semibold mb-3">CALIBER/CARTRIDGE</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="caliber">Caliber/Cartridge *</Label>
+                      <label htmlFor="caliber" className="block text-sm font-medium text-gray-700">
+                        Caliber/Cartridge
+                      </label>
                       <Input
                         id="caliber"
                         type="text"
@@ -1774,7 +2073,9 @@ export default function Home() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="cartridgeCode">Code</Label>
+                      <label htmlFor="cartridgeCode" className="block text-sm font-medium text-gray-700">
+                        Code
+                      </label>
                       <Input
                         id="cartridgeCode"
                         type="text"
@@ -1791,12 +2092,12 @@ export default function Home() {
                   <h4 className="font-semibold mb-3">SERIAL NUMBERS</h4>
                   <div className="space-y-3">
                     <div className="grid grid-cols-3 gap-4">
-                      <Label className="font-medium">Component</Label>
-                      <Label className="font-medium">Serial Number</Label>
-                      <Label className="font-medium">Make</Label>
+                      <label className="font-medium text-sm">Component</label>
+                      <label className="font-medium text-sm">Serial Number</label>
+                      <label className="font-medium text-sm">Make</label>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
-                      <Label>BARREL:</Label>
+                      <label className="text-sm">BARREL:</label>
                       <Input
                         type="text"
                         placeholder="Serial Number"
@@ -1821,7 +2122,7 @@ export default function Home() {
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
-                      <Label>FRAME:</Label>
+                      <label className="text-sm">FRAME:</label>
                       <Input
                         type="text"
                         placeholder="Serial Number"
@@ -1846,7 +2147,7 @@ export default function Home() {
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
-                      <Label>RECEIVER:</Label>
+                      <label className="text-sm">RECEIVER:</label>
                       <Input
                         type="text"
                         placeholder="Serial Number"
@@ -1888,7 +2189,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="manual">Manual</Label>
+                      <label htmlFor="manual" className="text-sm">
+                        Manual
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1901,7 +2204,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="semiAuto">Semi Auto</Label>
+                      <label htmlFor="semiAuto" className="text-sm">
+                        Semi Auto
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1914,7 +2219,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="automatic">Automatic</Label>
+                      <label htmlFor="automatic" className="text-sm">
+                        Automatic
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1927,7 +2234,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="bolt">Bolt</Label>
+                      <label htmlFor="bolt" className="text-sm">
+                        Bolt
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1940,7 +2249,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="breakneck">Breakneck</Label>
+                      <label htmlFor="breakneck" className="text-sm">
+                        Breakneck
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1953,7 +2264,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="pump">Pump</Label>
+                      <label htmlFor="pump" className="text-sm">
+                        Pump
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1966,7 +2279,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="cappingBreechLoader">Capping Breech Loader</Label>
+                      <label htmlFor="cappingBreechLoader" className="text-sm">
+                        Capping Breech Loader
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1979,7 +2294,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="lever">Lever</Label>
+                      <label htmlFor="lever" className="text-sm">
+                        Lever
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -1992,7 +2309,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="cylinder">Cylinder</Label>
+                      <label htmlFor="cylinder" className="text-sm">
+                        Cylinder
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -2005,7 +2324,9 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="fallingBlock">Falling Block</Label>
+                      <label htmlFor="fallingBlock" className="text-sm">
+                        Falling Block
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -2018,12 +2339,16 @@ export default function Home() {
                           })
                         }
                       />
-                      <Label htmlFor="otherActionType">Other</Label>
+                      <label htmlFor="otherActionType" className="text-sm">
+                        Other
+                      </label>
                     </div>
                   </div>
                   {newInspection.actionType?.other && (
                     <div className="mt-3">
-                      <Label htmlFor="otherActionDetails">Other Details</Label>
+                      <label htmlFor="otherActionDetails" className="block text-sm font-medium text-gray-700">
+                        Other Details
+                      </label>
                       <Input
                         id="otherActionDetails"
                         type="text"
@@ -2045,7 +2370,9 @@ export default function Home() {
                   <h4 className="font-semibold mb-3">MAKE & ORIGIN</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="make">MAKE *</Label>
+                      <label htmlFor="make" className="block text-sm font-medium text-gray-700">
+                        MAKE
+                      </label>
                       <Input
                         id="make"
                         type="text"
@@ -2058,7 +2385,9 @@ export default function Home() {
                       </p>
                     </div>
                     <div>
-                      <Label htmlFor="countryOfOrigin">COUNTRY OF ORIGIN</Label>
+                      <label htmlFor="countryOfOrigin" className="block text-sm font-medium text-gray-700">
+                        COUNTRY OF ORIGIN
+                      </label>
                       <Input
                         id="countryOfOrigin"
                         type="text"
@@ -2075,23 +2404,29 @@ export default function Home() {
                   <h4 className="font-semibold mb-3">OBSERVATIONS & COMMENTS</h4>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="observations">Observations</Label>
-                      <Textarea
+                      <label htmlFor="observations" className="block text-sm font-medium text-gray-700">
+                        Observations
+                      </label>
+                      <textarea
                         id="observations"
                         placeholder="According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm."
                         value={newInspection.observations || ""}
                         onChange={(e) => setNewInspection({ ...newInspection, observations: e.target.value })}
                         rows={3}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="comments">Comments</Label>
-                      <Textarea
+                      <label htmlFor="comments" className="block text-sm font-medium text-gray-700">
+                        Comments
+                      </label>
+                      <textarea
                         id="comments"
                         placeholder="Additional comments"
                         value={newInspection.comments || ""}
                         onChange={(e) => setNewInspection({ ...newInspection, comments: e.target.value })}
                         rows={3}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       />
                     </div>
                   </div>
@@ -2102,7 +2437,9 @@ export default function Home() {
                   <h4 className="font-semibold mb-3">INSPECTOR CERTIFICATION</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="inspectorTitle">Inspector Title</Label>
+                      <label htmlFor="inspectorTitle" className="block text-sm font-medium text-gray-700">
+                        Inspector Title
+                      </label>
                       <Input
                         id="inspectorTitle"
                         type="text"
@@ -2112,7 +2449,9 @@ export default function Home() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="inspectionStatus">Status</Label>
+                      <label htmlFor="inspectionStatus" className="block text-sm font-medium text-gray-700">
+                        Status
+                      </label>
                       <select
                         id="inspectionStatus"
                         className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
@@ -2139,85 +2478,6 @@ export default function Home() {
                 </Button>
                 <Button variant="default" onClick={handleAddInspection}>
                   Create Inspection Report
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Firearm Dialog */}
-      {isEditDialogOpen && editingFirearm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Edit Firearm</h3>
-              <div className="mt-2">
-                <Input
-                  type="text"
-                  placeholder="Stock No"
-                  value={editingFirearm.stockNo}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, stockNo: e.target.value })}
-                  className="mb-2"
-                />
-                <Input
-                  type="text"
-                  placeholder="Make"
-                  value={editingFirearm.make}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, make: e.target.value })}
-                  className="mb-2"
-                />
-                <Input
-                  type="text"
-                  placeholder="Type"
-                  value={editingFirearm.type}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, type: e.target.value })}
-                  className="mb-2"
-                />
-                <Input
-                  type="text"
-                  placeholder="Caliber"
-                  value={editingFirearm.caliber}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, caliber: e.target.value })}
-                  className="mb-2"
-                />
-                <Input
-                  type="text"
-                  placeholder="Serial No"
-                  value={editingFirearm.serialNo}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, serialNo: e.target.value })}
-                  className="mb-2"
-                />
-              </div>
-              <div className="items-center px-4 py-3">
-                <Button variant="default" onClick={handleSaveFirearm} className="mr-2">
-                  Save
-                </Button>
-                <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Signature Capture Dialog */}
-      {isSignatureDialogOpen && currentFirearmForSignature && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Capture Signature</h3>
-              <div className="mt-2">
-                {/* Placeholder for signature capture component */}
-                <p>Signature capture component will be rendered here.</p>
-              </div>
-              <div className="items-center px-4 py-3">
-                <Button variant="default" onClick={() => handleSaveSignature("signatureData")} className="mr-2">
-                  Save Signature
-                </Button>
-                <Button variant="ghost" onClick={() => setIsSignatureDialogOpen(false)}>
-                  Cancel
                 </Button>
               </div>
             </div>
