@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { getCentralDataStore, updateCentralDataStore } from "../data-migration/route"
 
 // In-memory storage for firearms (in production, this would be a database)
 let firearmsStorage: any[] = []
@@ -51,13 +52,13 @@ const initializeFirearmsData = () => {
 
 export async function GET(request: NextRequest) {
   try {
-    initializeFirearmsData()
+    const centralData = getCentralDataStore()
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const search = searchParams.get("search")
 
-    let filteredFirearms = [...firearmsStorage]
+    let filteredFirearms = [...centralData.firearms]
 
     // Apply status filter
     if (status && status !== "all") {
@@ -72,7 +73,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ firearms: filteredFirearms })
+    return NextResponse.json({
+      firearms: filteredFirearms,
+      total: centralData.firearms.length,
+      lastUpdated: centralData.lastUpdated,
+    })
   } catch (error) {
     console.error("Error fetching firearms:", error)
     return NextResponse.json({ error: "Failed to fetch firearms" }, { status: 500 })
@@ -81,8 +86,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    initializeFirearmsData()
-
+    const centralData = getCentralDataStore()
     const firearmData = await request.json()
 
     // Validate required fields
@@ -97,9 +101,17 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     }
 
-    firearmsStorage.push(newFirearm)
+    // Add to central data store
+    centralData.firearms.push(newFirearm)
+    updateCentralDataStore(centralData)
 
-    return NextResponse.json({ firearm: newFirearm }, { status: 201 })
+    return NextResponse.json(
+      {
+        firearm: newFirearm,
+        total: centralData.firearms.length,
+      },
+      { status: 201 },
+    )
   } catch (error) {
     console.error("Error creating firearm:", error)
     return NextResponse.json({ error: "Failed to create firearm" }, { status: 500 })

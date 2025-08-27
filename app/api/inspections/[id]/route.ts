@@ -1,21 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-
-// Import the storage from the main route (in production, this would be a database)
-let inspectionsStorage: any[] = []
-
-// Helper to get storage reference
-const getInspectionsStorage = () => {
-  return inspectionsStorage
-}
-
-const setInspectionsStorage = (data: any[]) => {
-  inspectionsStorage = data
-}
+import { getCentralDataStore, updateCentralDataStore } from "../../data-migration/route"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const storage = getInspectionsStorage()
-    const inspection = storage.find((i) => i.id === params.id)
+    const centralData = getCentralDataStore()
+    const inspection = centralData.inspections.find((i) => i.id === params.id)
 
     if (!inspection) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
@@ -30,8 +19,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const storage = getInspectionsStorage()
-    const index = storage.findIndex((i) => i.id === params.id)
+    const centralData = getCentralDataStore()
+    const index = centralData.inspections.findIndex((i) => i.id === params.id)
 
     if (index === -1) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
@@ -39,13 +28,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const updateData = await request.json()
     const updatedInspection = {
-      ...storage[index],
+      ...centralData.inspections[index],
       ...updateData,
       updatedAt: new Date().toISOString(),
     }
 
-    storage[index] = updatedInspection
-    setInspectionsStorage(storage)
+    centralData.inspections[index] = updatedInspection
+    updateCentralDataStore(centralData)
 
     return NextResponse.json({ inspection: updatedInspection })
   } catch (error) {
@@ -56,17 +45,20 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const storage = getInspectionsStorage()
-    const index = storage.findIndex((i) => i.id === params.id)
+    const centralData = getCentralDataStore()
+    const index = centralData.inspections.findIndex((i) => i.id === params.id)
 
     if (index === -1) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    storage.splice(index, 1)
-    setInspectionsStorage(storage)
+    centralData.inspections.splice(index, 1)
+    updateCentralDataStore(centralData)
 
-    return NextResponse.json({ message: "Inspection deleted successfully" })
+    return NextResponse.json({
+      message: "Inspection deleted successfully",
+      total: centralData.inspections.length,
+    })
   } catch (error) {
     console.error("Error deleting inspection:", error)
     return NextResponse.json({ error: "Failed to delete inspection" }, { status: 500 })

@@ -195,31 +195,31 @@ export default function Home() {
       try {
         setIsLoading(true)
 
-        // Load data from server APIs
-        const [firearmsData, inspectionsData] = await Promise.all([
-          dataService.getFirearms(),
-          dataService.getInspections(),
-        ])
+        // Load fresh data from server (ensures cross-device synchronization)
+        const freshData = await dataService.refreshAllData()
 
-        setFirearms(firearmsData || [])
-        setInspections(inspectionsData || [])
+        setFirearms(freshData.firearms || [])
+        setInspections(freshData.inspections || [])
 
         console.log(
-          `🎉 Loaded ${firearmsData?.length || 0} firearms and ${inspectionsData?.length || 0} inspections from server`,
+          `🎉 Loaded fresh data: ${freshData.firearms?.length || 0} firearms and ${freshData.inspections?.length || 0} inspections`,
         )
 
-        // Sync data on load to ensure consistency
+        // Perform a sync to ensure any local changes are uploaded
         await handleSyncData(false) // Silent sync
       } catch (error) {
         console.error("Error loading data:", error)
         toast({
           title: "Error Loading Data",
-          description: "Failed to load data from server. Using local storage.",
+          description: "Failed to load fresh data from server. Using cached data.",
           variant: "destructive",
         })
-        // Initialize with empty arrays if loading fails
-        setFirearms([])
-        setInspections([])
+
+        // Fallback to cached data
+        const cachedFirearms = dataService.getFromStorage?.("gunworx_firearms") || []
+        const cachedInspections = dataService.getFromStorage?.("gunworx_inspections") || []
+        setFirearms(cachedFirearms)
+        setInspections(cachedInspections)
       } finally {
         setIsLoading(false)
       }
@@ -825,6 +825,31 @@ export default function Home() {
     })
   }
 
+  const handleRefreshData = async () => {
+    try {
+      setIsSyncing(true)
+
+      const freshData = await dataService.refreshAllData()
+
+      setFirearms(freshData.firearms || [])
+      setInspections(freshData.inspections || [])
+
+      toast({
+        title: "Data Refreshed",
+        description: `Loaded latest data: ${freshData.firearms.length} firearms, ${freshData.inspections.length} inspections`,
+      })
+    } catch (error) {
+      console.error("Error refreshing data:", error)
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh data from server.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   if (!isLoggedIn) {
     return <LoginForm onLogin={handleLogin} />
   }
@@ -855,9 +880,9 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <Button variant="outline" size="sm" onClick={() => handleSyncData()} disabled={isSyncing}>
+                <Button variant="outline" size="sm" onClick={() => handleRefreshData()} disabled={isSyncing}>
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
-                  {isSyncing ? "Syncing..." : "Sync Data"}
+                  {isSyncing ? "Refreshing..." : "Refresh Data"}
                 </Button>
                 <span className="text-sm text-gray-600">Welcome, {currentUser} (Inspector)</span>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -1063,9 +1088,9 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={() => handleSyncData()} disabled={isSyncing}>
+              <Button variant="outline" size="sm" onClick={() => handleRefreshData()} disabled={isSyncing}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
-                {isSyncing ? "Syncing..." : "Sync Data"}
+                {isSyncing ? "Refreshing..." : "Refresh Data"}
               </Button>
               {userRole === "admin" && (
                 <Button variant="outline" size="sm" onClick={handleBackupData}>
