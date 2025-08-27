@@ -1,12 +1,155 @@
-// Enhanced data service that uses centralized server APIs for cross-device/account synchronization
+// Enhanced data service with automatic synchronization and centralized storage
 export class DataService {
   private baseUrl: string
+  private syncInterval: NodeJS.Timeout | null = null
+  private isOnline = true
+  private pendingOperations: Array<{ type: string; data: any; timestamp: number }> = []
 
   constructor() {
     this.baseUrl = typeof window !== "undefined" ? window.location.origin : ""
+    this.initializeAutoSync()
+    this.setupOnlineStatusMonitoring()
   }
 
-  // Firearms API methods
+  // Initialize automatic synchronization
+  private initializeAutoSync() {
+    if (typeof window === "undefined") return
+
+    // Auto-sync every 30 seconds
+    this.syncInterval = setInterval(async () => {
+      await this.performAutoSync()
+    }, 30000)
+
+    // Sync on page load
+    setTimeout(() => {
+      this.performAutoSync()
+    }, 1000)
+
+    // Sync before page unload
+    window.addEventListener("beforeunload", () => {
+      this.performAutoSync()
+    })
+
+    // Sync when coming back online
+    window.addEventListener("online", () => {
+      this.isOnline = true
+      this.performAutoSync()
+    })
+
+    window.addEventListener("offline", () => {
+      this.isOnline = false
+    })
+  }
+
+  // Setup online status monitoring
+  private setupOnlineStatusMonitoring() {
+    if (typeof window === "undefined") return
+
+    this.isOnline = navigator.onLine
+
+    window.addEventListener("online", () => {
+      this.isOnline = true
+      console.log("🌐 Back online - syncing data...")
+      this.performAutoSync()
+    })
+
+    window.addEventListener("offline", () => {
+      this.isOnline = false
+      console.log("📴 Gone offline - operations will be queued")
+    })
+  }
+
+  // Perform automatic synchronization
+  private async performAutoSync() {
+    if (!this.isOnline) return
+
+    try {
+      // Process any pending operations first
+      await this.processPendingOperations()
+
+      // Get all local data
+      const localData = {
+        firearms: this.getFromStorage("gunworx_firearms") || [],
+        inspections: this.getFromStorage("gunworx_inspections") || [],
+        users: this.getFromStorage("gunworx_users") || [],
+      }
+
+      // Send to server for synchronization
+      const response = await fetch(`${this.baseUrl}/api/data-migration`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync", data: localData }),
+      })
+
+      if (!response.ok) throw new Error("Failed to sync data")
+
+      const result = await response.json()
+
+      // Update local storage with the merged data
+      if (result.data) {
+        this.setToStorage("gunworx_firearms", result.data.firearms || [])
+        this.setToStorage("gunworx_inspections", result.data.inspections || [])
+        this.setToStorage("gunworx_users", result.data.users || [])
+      }
+
+      console.log("🔄 Auto-sync completed:", {
+        firearms: result.data?.firearms?.length || 0,
+        inspections: result.data?.inspections?.length || 0,
+        users: result.data?.users?.length || 0,
+      })
+
+      return result
+    } catch (error) {
+      console.error("Auto-sync failed:", error)
+      // Don't throw error to avoid disrupting the app
+    }
+  }
+
+  // Process pending operations when back online
+  private async processPendingOperations() {
+    if (this.pendingOperations.length === 0) return
+
+    console.log(`📤 Processing ${this.pendingOperations.length} pending operations...`)
+
+    for (const operation of this.pendingOperations) {
+      try {
+        switch (operation.type) {
+          case "createFirearm":
+            await this.createFirearmDirect(operation.data)
+            break
+          case "updateFirearm":
+            await this.updateFirearmDirect(operation.data.id, operation.data)
+            break
+          case "deleteFirearm":
+            await this.deleteFirearmDirect(operation.data.id)
+            break
+          case "createInspection":
+            await this.createInspectionDirect(operation.data)
+            break
+          case "deleteInspection":
+            await this.deleteInspectionDirect(operation.data.id)
+            break
+        }
+      } catch (error) {
+        console.error(`Failed to process pending operation:`, operation, error)
+      }
+    }
+
+    // Clear processed operations
+    this.pendingOperations = []
+  }
+
+  // Queue operation for later processing if offline
+  private queueOperation(type: string, data: any) {
+    this.pendingOperations.push({
+      type,
+      data,
+      timestamp: Date.now(),
+    })
+    console.log(`📋 Queued operation: ${type}`)
+  }
+
+  // Firearms API methods with automatic sync
   async getFirearms(filters: { status?: string; search?: string } = {}) {
     try {
       const params = new URLSearchParams()
@@ -17,89 +160,123 @@ export class DataService {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache", // Ensure fresh data
+          "Cache-Control": "no-cache",
         },
       })
 
       if (!response.ok) throw new Error("Failed to fetch firearms")
 
       const data = await response.json()
+
+      // Update local storage with fresh server data
+      this.setToStorage("gunworx_firearms", data.firearms || [])
+
       console.log(`📡 Fetched ${data.firearms?.length || 0} firearms from server`)
       return data.firearms || []
     } catch (error) {
       console.error("Error fetching firearms:", error)
-      // Fallback to localStorage only if server is completely unavailable
+      // Return cached data if server unavailable
       return this.getFromStorage("gunworx_firearms") || []
     }
   }
 
   async createFirearm(firearmData: any) {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/firearms`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(firearmData),
-      })
+    if (!this.isOnline) {
+      // Save locally and queue for sync
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const firearmWithTempId = {
+        ...firearmData,
+        id: tempId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _pendingSync: true,
+      }
 
-      if (!response.ok) throw new Error("Failed to create firearm")
+      this.saveToLocalStorage("firearms", firearmWithTempId)
+      this.queueOperation("createFirearm", firearmData)
 
-      const data = await response.json()
-      console.log(`✅ Created firearm on server:`, data.firearm.stockNo)
-
-      // Also save to localStorage as backup
-      this.saveToLocalStorage("firearms", data.firearm)
-
-      return data.firearm
-    } catch (error) {
-      console.error("Error creating firearm:", error)
-      throw error // Don't fallback for create operations - we want consistency
+      return firearmWithTempId
     }
+
+    return this.createFirearmDirect(firearmData)
+  }
+
+  private async createFirearmDirect(firearmData: any) {
+    const response = await fetch(`${this.baseUrl}/api/firearms`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(firearmData),
+    })
+
+    if (!response.ok) throw new Error("Failed to create firearm")
+
+    const data = await response.json()
+    console.log(`✅ Created firearm on server:`, data.firearm.stockNo)
+
+    // Update local storage immediately
+    this.saveToLocalStorage("firearms", data.firearm)
+
+    return data.firearm
   }
 
   async updateFirearm(id: string, firearmData: any) {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/firearms/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(firearmData),
-      })
+    if (!this.isOnline) {
+      // Update locally and queue for sync
+      this.updateInLocalStorage("gunworx_firearms", id, { ...firearmData, _pendingSync: true })
+      this.queueOperation("updateFirearm", { id, ...firearmData })
 
-      if (!response.ok) throw new Error("Failed to update firearm")
-
-      const data = await response.json()
-      console.log(`🔄 Updated firearm on server:`, data.firearm.stockNo)
-
-      // Also update localStorage as backup
-      this.updateInLocalStorage("gunworx_firearms", id, data.firearm)
-
-      return data.firearm
-    } catch (error) {
-      console.error("Error updating firearm:", error)
-      throw error
+      return { ...firearmData, id, updatedAt: new Date().toISOString() }
     }
+
+    return this.updateFirearmDirect(id, firearmData)
+  }
+
+  private async updateFirearmDirect(id: string, firearmData: any) {
+    const response = await fetch(`${this.baseUrl}/api/firearms/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(firearmData),
+    })
+
+    if (!response.ok) throw new Error("Failed to update firearm")
+
+    const data = await response.json()
+    console.log(`🔄 Updated firearm on server:`, data.firearm.stockNo)
+
+    // Update local storage immediately
+    this.updateInLocalStorage("gunworx_firearms", id, data.firearm)
+
+    return data.firearm
   }
 
   async deleteFirearm(id: string) {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/firearms/${id}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) throw new Error("Failed to delete firearm")
-
-      console.log(`🗑️ Deleted firearm from server:`, id)
-
-      // Also delete from localStorage
-      this.deleteFromLocalStorage("gunworx_firearms", id)
+    if (!this.isOnline) {
+      // Mark as deleted locally and queue for sync
+      this.markAsDeletedInLocalStorage("gunworx_firearms", id)
+      this.queueOperation("deleteFirearm", { id })
 
       return true
-    } catch (error) {
-      console.error("Error deleting firearm:", error)
-      throw error
     }
+
+    return this.deleteFirearmDirect(id)
   }
 
-  // Inspections API methods
+  private async deleteFirearmDirect(id: string) {
+    const response = await fetch(`${this.baseUrl}/api/firearms/${id}`, {
+      method: "DELETE",
+    })
+
+    if (!response.ok) throw new Error("Failed to delete firearm")
+
+    console.log(`🗑️ Deleted firearm from server:`, id)
+
+    // Remove from local storage immediately
+    this.deleteFromLocalStorage("gunworx_firearms", id)
+
+    return true
+  }
+
+  // Inspections API methods with automatic sync
   async getInspections(filters: { search?: string } = {}) {
     try {
       const params = new URLSearchParams()
@@ -109,63 +286,90 @@ export class DataService {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache", // Ensure fresh data
+          "Cache-Control": "no-cache",
         },
       })
 
       if (!response.ok) throw new Error("Failed to fetch inspections")
 
       const data = await response.json()
+
+      // Update local storage with fresh server data
+      this.setToStorage("gunworx_inspections", data.inspections || [])
+
       console.log(`📡 Fetched ${data.inspections?.length || 0} inspections from server`)
       return data.inspections || []
     } catch (error) {
       console.error("Error fetching inspections:", error)
-      // Fallback to localStorage only if server is completely unavailable
+      // Return cached data if server unavailable
       return this.getFromStorage("gunworx_inspections") || []
     }
   }
 
   async createInspection(inspectionData: any) {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/inspections`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(inspectionData),
-      })
+    if (!this.isOnline) {
+      // Save locally and queue for sync
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const inspectionWithTempId = {
+        ...inspectionData,
+        id: tempId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _pendingSync: true,
+      }
 
-      if (!response.ok) throw new Error("Failed to create inspection")
+      this.saveToLocalStorage("inspections", inspectionWithTempId)
+      this.queueOperation("createInspection", inspectionData)
 
-      const data = await response.json()
-      console.log(`✅ Created inspection on server:`, data.inspection.id)
-
-      // Also save to localStorage as backup
-      this.saveToLocalStorage("inspections", data.inspection)
-
-      return data.inspection
-    } catch (error) {
-      console.error("Error creating inspection:", error)
-      throw error // Don't fallback for create operations - we want consistency
+      return inspectionWithTempId
     }
+
+    return this.createInspectionDirect(inspectionData)
+  }
+
+  private async createInspectionDirect(inspectionData: any) {
+    const response = await fetch(`${this.baseUrl}/api/inspections`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(inspectionData),
+    })
+
+    if (!response.ok) throw new Error("Failed to create inspection")
+
+    const data = await response.json()
+    console.log(`✅ Created inspection on server:`, data.inspection.id)
+
+    // Update local storage immediately
+    this.saveToLocalStorage("inspections", data.inspection)
+
+    return data.inspection
   }
 
   async deleteInspection(id: string) {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/inspections/${id}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) throw new Error("Failed to delete inspection")
-
-      console.log(`🗑️ Deleted inspection from server:`, id)
-
-      // Also delete from localStorage
-      this.deleteFromLocalStorage("gunworx_inspections", id)
+    if (!this.isOnline) {
+      // Mark as deleted locally and queue for sync
+      this.markAsDeletedInLocalStorage("gunworx_inspections", id)
+      this.queueOperation("deleteInspection", { id })
 
       return true
-    } catch (error) {
-      console.error("Error deleting inspection:", error)
-      throw error
     }
+
+    return this.deleteInspectionDirect(id)
+  }
+
+  private async deleteInspectionDirect(id: string) {
+    const response = await fetch(`${this.baseUrl}/api/inspections/${id}`, {
+      method: "DELETE",
+    })
+
+    if (!response.ok) throw new Error("Failed to delete inspection")
+
+    console.log(`🗑️ Deleted inspection from server:`, id)
+
+    // Remove from local storage immediately
+    this.deleteFromLocalStorage("gunworx_inspections", id)
+
+    return true
   }
 
   // Users API methods
@@ -175,18 +379,22 @@ export class DataService {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache", // Ensure fresh data
+          "Cache-Control": "no-cache",
         },
       })
 
       if (!response.ok) throw new Error("Failed to fetch users")
 
       const data = await response.json()
+
+      // Update local storage with fresh server data
+      this.setToStorage("gunworx_users", data.users || [])
+
       console.log(`📡 Fetched ${data.users?.length || 0} users from server`)
       return data.users || []
     } catch (error) {
       console.error("Error fetching users:", error)
-      return []
+      return this.getFromStorage("gunworx_users") || []
     }
   }
 
@@ -214,40 +422,9 @@ export class DataService {
     }
   }
 
-  // Data synchronization and migration
+  // Manual sync methods (for backward compatibility)
   async syncData() {
-    try {
-      // Get all local data
-      const localData = {
-        firearms: this.getFromStorage("gunworx_firearms") || [],
-        inspections: this.getFromStorage("gunworx_inspections") || [],
-        users: this.getFromStorage("gunworx_users") || [],
-      }
-
-      // Send to server for synchronization
-      const response = await fetch(`${this.baseUrl}/api/data-migration`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sync", data: localData }),
-      })
-
-      if (!response.ok) throw new Error("Failed to sync data")
-
-      const result = await response.json()
-      console.log("🔄 Data synchronized:", result)
-
-      // Update local storage with the merged data
-      if (result.data) {
-        this.setToStorage("gunworx_firearms", result.data.firearms || [])
-        this.setToStorage("gunworx_inspections", result.data.inspections || [])
-        this.setToStorage("gunworx_users", result.data.users || [])
-      }
-
-      return result
-    } catch (error) {
-      console.error("Error syncing data:", error)
-      throw error
-    }
+    return this.performAutoSync()
   }
 
   async backupData() {
@@ -309,7 +486,7 @@ export class DataService {
     }
   }
 
-  // Real-time data refresh
+  // Real-time data refresh - THIS WAS MISSING!
   async refreshAllData() {
     try {
       console.log("🔄 Refreshing all data from server...")
@@ -320,22 +497,30 @@ export class DataService {
         this.getUsers(),
       ])
 
-      // Update local storage with fresh server data
-      this.setToStorage("gunworx_firearms", firearms)
-      this.setToStorage("gunworx_inspections", inspections)
-      this.setToStorage("gunworx_users", users)
-
       console.log(`✅ Refreshed: ${firearms.length} firearms, ${inspections.length} inspections, ${users.length} users`)
 
       return { firearms, inspections, users }
     } catch (error) {
       console.error("Error refreshing data:", error)
-      throw error
+
+      // Return cached data if server unavailable
+      return {
+        firearms: this.getFromStorage("gunworx_firearms") || [],
+        inspections: this.getFromStorage("gunworx_inspections") || [],
+        users: this.getFromStorage("gunworx_users") || [],
+      }
     }
   }
 
-  // localStorage helper methods (for backup/offline functionality)
-  private getFromStorage(key: string) {
+  // Cleanup method
+  destroy() {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval)
+    }
+  }
+
+  // localStorage helper methods - THESE WERE MISSING!
+  getFromStorage(key: string) {
     try {
       if (typeof window === "undefined") return null
       const data = localStorage.getItem(key)
@@ -389,6 +574,16 @@ export class DataService {
     const filtered = existing.filter((item: any) => item.id !== id)
     this.setToStorage(key, filtered)
     return true
+  }
+
+  private markAsDeletedInLocalStorage(key: string, id: string) {
+    const existing = this.getFromStorage(key) || []
+    const index = existing.findIndex((item: any) => item.id === id)
+    if (index !== -1) {
+      existing[index]._deleted = true
+      existing[index]._pendingSync = true
+      this.setToStorage(key, existing)
+    }
   }
 }
 

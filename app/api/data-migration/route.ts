@@ -1,219 +1,1854 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Centralized data store - in production, this would be a database
+// Central data store that persists across requests
 let centralDataStore = {
-  firearms: [] as any[],
-  inspections: [] as any[],
-  users: [] as any[],
-  lastUpdated: new Date().toISOString(),
+  firearms: [
+    {
+      id: "firearm_1",
+      stockNo: "GW001",
+      dateReceived: "2024-01-15",
+      make: "Walther",
+      type: "Pistol",
+      caliber: "9mm",
+      serialNo: "WA123456",
+      fullName: "John Smith",
+      surname: "Smith",
+      registrationId: "8501015800083",
+      physicalAddress: "123 Main Street, Cape Town, 8001",
+      licenceNo: "L001234",
+      licenceDate: "2024-01-01",
+      remarks: "Standard service pistol",
+      status: "in-stock",
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+    },
+    {
+      id: "firearm_2",
+      stockNo: "GW002",
+      dateReceived: "2024-02-20",
+      make: "Glock",
+      type: "Pistol",
+      caliber: "9mm",
+      serialNo: "GL789012",
+      fullName: "Jane Doe",
+      surname: "Doe",
+      registrationId: "9203125900084",
+      physicalAddress: "456 Oak Avenue, Johannesburg, 2000",
+      licenceNo: "L005678",
+      licenceDate: "2024-02-01",
+      remarks: "Compact model",
+      status: "safe-keeping",
+      createdAt: "2024-02-20T14:30:00Z",
+      updatedAt: "2024-02-20T14:30:00Z",
+    },
+  ],
+  inspections: [
+    {
+      id: "inspection_1",
+      date: "2024-03-15",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: true,
+        selfLoadingRifle: false,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: ".308 WIN",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "690745661",
+        barrelMake: "RUGER",
+        frame: "690745661",
+        frameMake: "RUGER",
+        receiver: "690745661",
+        receiverMake: "RUGER",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: false,
+        automatic: false,
+        bolt: true,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "RUGER",
+      countryOfOrigin: "USA",
+      observations:
+        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+      comments: "Firearm is in excellent condition and meets all safety standards.",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "passed",
+      createdAt: "2024-03-15T09:00:00Z",
+      updatedAt: "2024-03-15T09:00:00Z",
+    },
+    // Adding all 32 Smith & Wesson inspections from the PDF
+    {
+      id: "inspection_2",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27496",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27496",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27496",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_3",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27497",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27497",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27497",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_4",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27499",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27499",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27499",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_5",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27500",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27500",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27500",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_6",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27501",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27501",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27501",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_7",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "N/A",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27498",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27498",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27498",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_8",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27502",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27502",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27502",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_9",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27503",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27503",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27503",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_10",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: ".308 WIN",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "KN87634",
+        barrelMake: "SMITH & WESSSON",
+        frame: "KN87634",
+        frameMake: "SMITH & WESSSON",
+        receiver: "KN87634",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_11",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: ".308 WIN",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "KN87637",
+        barrelMake: "SMITH & WESSSON",
+        frame: "KN87637",
+        frameMake: "SMITH & WESSSON",
+        receiver: "KN87637",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_12",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: ".308 WIN",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "KN91382",
+        barrelMake: "SMITH & WESSSON",
+        frame: "KN91382",
+        frameMake: "SMITH & WESSSON",
+        receiver: "KN91382",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_13",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: ".308 WIN",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "KN91387",
+        barrelMake: "SMITH & WESSSON",
+        frame: "KN91387",
+        frameMake: "SMITH & WESSSON",
+        receiver: "KN91387",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_14",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: ".308 WIN",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "KN91390",
+        barrelMake: "SMITH & WESSSON",
+        frame: "KN91390",
+        frameMake: "SMITH & WESSSON",
+        receiver: "KN91390",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_15",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: ".350 LEGEND",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "EEJ6562",
+        barrelMake: "SMITH & WESSSON",
+        frame: "EEJ6562",
+        frameMake: "SMITH & WESSSON",
+        receiver: "EEJ6562",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_16",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "TW84693",
+        barrelMake: "SMITH & WESSSON",
+        frame: "TW84693",
+        frameMake: "SMITH & WESSSON",
+        receiver: "TW84693",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_17",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "TW84695",
+        barrelMake: "SMITH & WESSSON",
+        frame: "TW84695",
+        frameMake: "SMITH & WESSSON",
+        receiver: "TW84695",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_18",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "TW84698",
+        barrelMake: "SMITH & WESSSON",
+        frame: "TW84698",
+        frameMake: "SMITH & WESSSON",
+        receiver: "TW84698",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_19",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "TW84698",
+        barrelMake: "SMITH & WESSSON",
+        frame: "TW84698",
+        frameMake: "SMITH & WESSSON",
+        receiver: "TW84698",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_20",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "TW84701",
+        barrelMake: "SMITH & WESSSON",
+        frame: "TW84701",
+        frameMake: "SMITH & WESSSON",
+        receiver: "TW84701",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_21",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB25078",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB25078",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB25078",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_22",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB25079",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB25079",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB25079",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_23",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27480",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27480",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27480",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_24",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27481",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27481",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27481",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_25",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27483",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27483",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27483",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_26",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27484",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27484",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27484",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_27",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27485",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27485",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27485",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_28",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27486",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27486",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27486",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_29",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27487",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27487",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27487",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_30",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27488",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27488",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27488",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_31",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27490",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27490",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27490",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_32",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27491",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27491",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27491",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+    {
+      id: "inspection_33",
+      date: "2025-06-03",
+      inspector: "WIKUS FOURIE",
+      inspectorId: "9106045129083",
+      companyName: "Delta",
+      dealerCode: "1964",
+      firearmType: {
+        pistol: false,
+        revolver: false,
+        rifle: false,
+        selfLoadingRifle: true,
+        shotgun: false,
+        combination: false,
+        other: false,
+        otherDetails: "",
+      },
+      caliber: "5.56X45MM",
+      cartridgeCode: "N/A",
+      serialNumbers: {
+        barrel: "UB27492",
+        barrelMake: "SMITH & WESSSON",
+        frame: "UB27492",
+        frameMake: "SMITH & WESSSON",
+        receiver: "UB27492",
+        receiverMake: "SMITH & WESSSON",
+      },
+      actionType: {
+        manual: false,
+        semiAuto: true,
+        automatic: false,
+        bolt: false,
+        breakneck: false,
+        pump: false,
+        cappingBreechLoader: false,
+        lever: false,
+        cylinder: false,
+        fallingBlock: false,
+        other: false,
+        otherDetails: "",
+      },
+      make: "SMITH & WESSON",
+      countryOfOrigin: "USA",
+      observations: "No observations recorded",
+      comments: "No comments recorded",
+      signature: "",
+      inspectorTitle: "Head Gunsmith",
+      status: "pending",
+      createdAt: "2025-06-03T10:00:00Z",
+      updatedAt: "2025-06-03T10:00:00Z",
+    },
+  ],
+  users: [
+    {
+      id: "user_1",
+      username: "admin",
+      password: "admin123",
+      role: "admin",
+      fullName: "System Administrator",
+      email: "admin@gunworx.com",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    },
+    {
+      id: "user_2",
+      username: "manager",
+      password: "manager123",
+      role: "manager",
+      fullName: "Operations Manager",
+      email: "manager@gunworx.com",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    },
+    {
+      id: "user_3",
+      username: "inspector",
+      password: "inspector123",
+      role: "inspector",
+      fullName: "Firearm Inspector",
+      email: "inspector@gunworx.com",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    },
+    {
+      id: "user_4",
+      username: "wikus",
+      password: "wikus123",
+      role: "inspector",
+      fullName: "Wikus Fourie",
+      email: "wikus@gunworx.com",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    },
+  ],
 }
 
-// Initialize with default data if empty
-const initializeCentralData = () => {
-  if (centralDataStore.firearms.length === 0) {
-    centralDataStore.firearms = [
-      {
-        id: "1",
-        stockNo: "CO3",
-        dateReceived: "2023-11-15",
-        make: "Walther",
-        type: "Pistol",
-        caliber: "7.65",
-        serialNo: "223083",
-        fullName: "GM",
-        surname: "Smuts",
-        registrationId: "1/23/1985",
-        physicalAddress: "",
-        licenceNo: "31/21",
-        licenceDate: "",
-        remarks: "Mac EPR Dealer Stock",
-        status: "dealer-stock",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "2",
-        stockNo: "A01",
-        dateReceived: "2025-05-07",
-        make: "Glock",
-        type: "Pistol",
-        caliber: "9mm",
-        serialNo: "SSN655",
-        fullName: "I",
-        surname: "Dunn",
-        registrationId: "9103035027088",
-        physicalAddress: "54 Lazaar Ave",
-        licenceNo: "",
-        licenceDate: "",
-        remarks: "Safekeeping",
-        status: "safe-keeping",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  if (centralDataStore.inspections.length === 0) {
-    centralDataStore.inspections = [
-      {
-        id: "1",
-        date: "2024-04-04",
-        inspector: "Wikus Fourie",
-        inspectorId: "910604 5129 083",
-        companyName: "Delta",
-        dealerCode: "1964",
-        firearmType: {
-          pistol: false,
-          revolver: false,
-          rifle: true,
-          selfLoadingRifle: false,
-          shotgun: false,
-          combination: false,
-          other: false,
-          otherDetails: "",
-        },
-        caliber: ".308 WIN",
-        cartridgeCode: "123",
-        serialNumbers: {
-          barrel: "690745661",
-          barrelMake: "RUGER",
-          frame: "690745661",
-          frameMake: "RUGER",
-          receiver: "690745661",
-          receiverMake: "RUGER",
-        },
-        actionType: {
-          manual: false,
-          semiAuto: false,
-          automatic: false,
-          bolt: true,
-          breakneck: false,
-          pump: false,
-          cappingBreechLoader: false,
-          lever: false,
-          cylinder: false,
-          fallingBlock: false,
-          other: false,
-          otherDetails: "",
-        },
-        make: "RUGER",
-        countryOfOrigin: "USA",
-        observations:
-          "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-        comments: "",
-        signature: "",
-        inspectorTitle: "Head Gunsmith",
-        status: "passed",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-
-  if (centralDataStore.users.length === 0) {
-    centralDataStore.users = [
-      {
-        id: "1",
-        username: "admin",
-        password: "admin123",
-        role: "admin",
-        isSystemAdmin: true,
-        lastLogin: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "2",
-        username: "manager",
-        password: "manager123",
-        role: "manager",
-        isSystemAdmin: false,
-        lastLogin: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "3",
-        username: "inspector",
-        password: "inspector123",
-        role: "inspector",
-        isSystemAdmin: false,
-        lastLogin: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-}
-
-// Export the central data store for other API routes to use
-export const getCentralDataStore = () => {
-  initializeCentralData()
+// Helper functions to access and update the central data store
+export function getCentralDataStore() {
   return centralDataStore
 }
 
-export const updateCentralDataStore = (newData: Partial<typeof centralDataStore>) => {
-  centralDataStore = {
-    ...centralDataStore,
-    ...newData,
-    lastUpdated: new Date().toISOString(),
+export function updateCentralDataStore(newData: any) {
+  centralDataStore = { ...centralDataStore, ...newData }
+}
+
+// Main API handler
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const action = searchParams.get("action")
+
+    switch (action) {
+      case "status":
+        return NextResponse.json({
+          status: "online",
+          timestamp: new Date().toISOString(),
+          counts: {
+            firearms: centralDataStore.firearms.length,
+            inspections: centralDataStore.inspections.length,
+            users: centralDataStore.users.length,
+          },
+        })
+
+      case "backup":
+        return NextResponse.json({
+          timestamp: new Date().toISOString(),
+          data: centralDataStore,
+        })
+
+      default:
+        return NextResponse.json({
+          message: "Data migration API is running",
+          timestamp: new Date().toISOString(),
+          data: centralDataStore,
+        })
+    }
+  } catch (error) {
+    console.error("Error in data migration GET:", error)
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 })
   }
 }
 
-// This endpoint handles data migration and synchronization
 export async function POST(request: NextRequest) {
   try {
-    initializeCentralData()
-
     const body = await request.json()
     const { action, data } = body
 
     switch (action) {
       case "sync":
-        // Merge local data with central data store
-        if (data.firearms && Array.isArray(data.firearms)) {
-          // Add any new firearms from local storage that don't exist centrally
-          data.firearms.forEach((localFirearm: any) => {
-            const exists = centralDataStore.firearms.find((f) => f.id === localFirearm.id)
-            if (!exists) {
-              centralDataStore.firearms.push({
-                ...localFirearm,
-                syncedAt: new Date().toISOString(),
-              })
-            }
-          })
+        // Merge incoming data with central store
+        if (data.firearms) {
+          // Merge firearms - keep server data as authoritative, add new client data
+          const existingFirearmIds = new Set(centralDataStore.firearms.map((f) => f.id))
+          const newFirearms = data.firearms.filter((f: any) => !existingFirearmIds.has(f.id))
+          centralDataStore.firearms = [...centralDataStore.firearms, ...newFirearms]
         }
 
-        if (data.inspections && Array.isArray(data.inspections)) {
-          // Add any new inspections from local storage that don't exist centrally
-          data.inspections.forEach((localInspection: any) => {
-            const exists = centralDataStore.inspections.find((i) => i.id === localInspection.id)
-            if (!exists) {
-              centralDataStore.inspections.push({
-                ...localInspection,
-                syncedAt: new Date().toISOString(),
-              })
-            }
-          })
+        if (data.inspections) {
+          // Merge inspections - keep server data as authoritative, add new client data
+          const existingInspectionIds = new Set(centralDataStore.inspections.map((i) => i.id))
+          const newInspections = data.inspections.filter((i: any) => !existingInspectionIds.has(i.id))
+          centralDataStore.inspections = [...centralDataStore.inspections, ...newInspections]
         }
 
-        if (data.users && Array.isArray(data.users)) {
-          // Add any new users from local storage that don't exist centrally
-          data.users.forEach((localUser: any) => {
-            const exists = centralDataStore.users.find((u) => u.id === localUser.id)
-            if (!exists) {
-              centralDataStore.users.push({
-                ...localUser,
-                syncedAt: new Date().toISOString(),
-              })
-            }
-          })
+        if (data.users) {
+          // Merge users - keep server data as authoritative, add new client data
+          const existingUserIds = new Set(centralDataStore.users.map((u) => u.id))
+          const newUsers = data.users.filter((u: any) => !existingUserIds.has(u.id))
+          centralDataStore.users = [...centralDataStore.users, ...newUsers]
         }
-
-        centralDataStore.lastUpdated = new Date().toISOString()
 
         return NextResponse.json({
-          success: true,
           message: "Data synchronized successfully",
           synced: {
             firearms: centralDataStore.firearms.length,
@@ -223,100 +1858,171 @@ export async function POST(request: NextRequest) {
           data: centralDataStore,
         })
 
-      case "backup":
-        return NextResponse.json({
-          backup: centralDataStore,
-          timestamp: new Date().toISOString(),
-          version: "1.0.0",
-        })
-
       case "restore":
-        if (data && typeof data === "object") {
-          // Validate the backup data structure
-          if (data.firearms && Array.isArray(data.firearms)) {
-            centralDataStore.firearms = data.firearms
+        // Replace entire data store with backup data
+        if (data) {
+          centralDataStore = {
+            firearms: data.firearms || [],
+            inspections: data.inspections || [],
+            users: data.users || [],
           }
-          if (data.inspections && Array.isArray(data.inspections)) {
-            centralDataStore.inspections = data.inspections
-          }
-          if (data.users && Array.isArray(data.users)) {
-            centralDataStore.users = data.users
-          }
-
-          centralDataStore.lastUpdated = new Date().toISOString()
-
-          return NextResponse.json({
-            success: true,
-            message: "Data restored successfully",
-            restored: {
-              firearms: centralDataStore.firearms.length,
-              inspections: centralDataStore.inspections.length,
-              users: centralDataStore.users.length,
-            },
-          })
-        } else {
-          return NextResponse.json({ error: "Invalid backup data format" }, { status: 400 })
         }
 
-      case "reset":
-        // Reset to default data (admin only operation)
-        centralDataStore = {
-          firearms: [],
-          inspections: [],
-          users: [],
-          lastUpdated: new Date().toISOString(),
-        }
-        initializeCentralData()
-
         return NextResponse.json({
-          success: true,
-          message: "Data reset to defaults",
-          data: centralDataStore,
-        })
-
-      default:
-        return NextResponse.json({ error: "Invalid action" }, { status: 400 })
-    }
-  } catch (error) {
-    console.error("Error in data migration POST:", error)
-    return NextResponse.json({ error: "Failed to process data migration" }, { status: 500 })
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    initializeCentralData()
-
-    const { searchParams } = new URL(request.url)
-    const action = searchParams.get("action")
-
-    switch (action) {
-      case "backup":
-        return NextResponse.json({
-          backup: centralDataStore,
-          timestamp: new Date().toISOString(),
-          version: "1.0.0",
-        })
-
-      case "status":
-        return NextResponse.json({
-          status: "healthy",
-          lastUpdated: centralDataStore.lastUpdated,
-          counts: {
+          message: "Data restored successfully",
+          restored: {
             firearms: centralDataStore.firearms.length,
             inspections: centralDataStore.inspections.length,
             users: centralDataStore.users.length,
           },
+          data: centralDataStore,
+        })
+
+      case "migrate":
+        // Handle data migration from external sources
+        if (data) {
+          // Add new data while preserving existing data
+          if (data.firearms) {
+            centralDataStore.firearms = [...centralDataStore.firearms, ...data.firearms]
+          }
+          if (data.inspections) {
+            centralDataStore.inspections = [...centralDataStore.inspections, ...data.inspections]
+          }
+          if (data.users) {
+            centralDataStore.users = [...centralDataStore.users, ...data.users]
+          }
+        }
+
+        return NextResponse.json({
+          message: "Data migration completed successfully",
+          migrated: {
+            firearms: centralDataStore.firearms.length,
+            inspections: centralDataStore.inspections.length,
+            users: centralDataStore.users.length,
+          },
+          data: centralDataStore,
         })
 
       default:
-        return NextResponse.json({
-          data: centralDataStore,
-          timestamp: new Date().toISOString(),
-        })
+        return NextResponse.json({ error: "Unknown action" }, { status: 400 })
     }
   } catch (error) {
-    console.error("Error in data migration GET:", error)
-    return NextResponse.json({ error: "Failed to retrieve data" }, { status: 500 })
+    console.error("Error in data migration POST:", error)
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 })
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { type, id, data } = body
+
+    switch (type) {
+      case "firearm":
+        const firearmIndex = centralDataStore.firearms.findIndex((f) => f.id === id)
+        if (firearmIndex !== -1) {
+          centralDataStore.firearms[firearmIndex] = {
+            ...centralDataStore.firearms[firearmIndex],
+            ...data,
+            updatedAt: new Date().toISOString(),
+          }
+          return NextResponse.json({
+            message: "Firearm updated successfully",
+            firearm: centralDataStore.firearms[firearmIndex],
+          })
+        }
+        return NextResponse.json({ error: "Firearm not found" }, { status: 404 })
+
+      case "inspection":
+        const inspectionIndex = centralDataStore.inspections.findIndex((i) => i.id === id)
+        if (inspectionIndex !== -1) {
+          centralDataStore.inspections[inspectionIndex] = {
+            ...centralDataStore.inspections[inspectionIndex],
+            ...data,
+            updatedAt: new Date().toISOString(),
+          }
+          return NextResponse.json({
+            message: "Inspection updated successfully",
+            inspection: centralDataStore.inspections[inspectionIndex],
+          })
+        }
+        return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
+
+      case "user":
+        const userIndex = centralDataStore.users.findIndex((u) => u.id === id)
+        if (userIndex !== -1) {
+          centralDataStore.users[userIndex] = {
+            ...centralDataStore.users[userIndex],
+            ...data,
+            updatedAt: new Date().toISOString(),
+          }
+          return NextResponse.json({
+            message: "User updated successfully",
+            user: centralDataStore.users[userIndex],
+          })
+        }
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
+
+      default:
+        return NextResponse.json({ error: "Unknown type" }, { status: 400 })
+    }
+  } catch (error) {
+    console.error("Error in data migration PUT:", error)
+    return NextResponse.json({ error: "Failed to update data" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get("type")
+    const id = searchParams.get("id")
+
+    if (!type || !id) {
+      return NextResponse.json({ error: "Type and ID are required" }, { status: 400 })
+    }
+
+    switch (type) {
+      case "firearm":
+        const firearmIndex = centralDataStore.firearms.findIndex((f) => f.id === id)
+        if (firearmIndex !== -1) {
+          centralDataStore.firearms.splice(firearmIndex, 1)
+          return NextResponse.json({
+            message: "Firearm deleted successfully",
+            total: centralDataStore.firearms.length,
+          })
+        }
+        return NextResponse.json({ error: "Firearm not found" }, { status: 404 })
+
+      case "inspection":
+        const inspectionIndex = centralDataStore.inspections.findIndex((i) => i.id === id)
+        if (inspectionIndex !== -1) {
+          centralDataStore.inspections.splice(inspectionIndex, 1)
+          return NextResponse.json({
+            message: "Inspection deleted successfully",
+            total: centralDataStore.inspections.length,
+          })
+        }
+        return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
+
+      case "user":
+        const userIndex = centralDataStore.users.findIndex((u) => u.id === id)
+        if (userIndex !== -1) {
+          centralDataStore.users.splice(userIndex, 1)
+          return NextResponse.json({
+            message: "User deleted successfully",
+            total: centralDataStore.users.length,
+          })
+        }
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
+
+      default:
+        return NextResponse.json({ error: "Unknown type" }, { status: 400 })
+    }
+  } catch (error) {
+    console.error("Error in data migration DELETE:", error)
+    return NextResponse.json({ error: "Failed to delete data" }, { status: 500 })
+  }
+}
+
+// Export functions for external use
