@@ -121,6 +121,10 @@ export default function Home() {
   const [isSubmittingInspection, setIsSubmittingInspection] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
 
+  // Edit inspection states
+  const [editingInspection, setEditingInspection] = useState<Inspection | null>(null)
+  const [isEditInspectionDialogOpen, setIsEditInspectionDialogOpen] = useState(false)
+
   // Initialize newFirearm with proper defaults
   const [newFirearm, setNewFirearm] = useState<Partial<Firearm>>({
     stockNo: "",
@@ -679,6 +683,67 @@ export default function Home() {
     }
   }
 
+  // Edit inspection handlers
+  const handleEditInspection = (inspection: Inspection) => {
+    setEditingInspection({ ...inspection })
+    setIsEditInspectionDialogOpen(true)
+  }
+
+  const handleSaveEditedInspection = async () => {
+    if (!editingInspection) return
+
+    try {
+      const response = await fetch(`/api/inspections/${editingInspection.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingInspection),
+      })
+
+      if (!response.ok) throw new Error("Failed to update inspection")
+
+      const data = await response.json()
+
+      setInspections((prev) => prev.map((i) => (i.id === editingInspection.id ? data.inspection : i)))
+      setIsEditInspectionDialogOpen(false)
+      setEditingInspection(null)
+
+      toast({
+        title: "Inspection Updated",
+        description: "Inspection report has been successfully updated.",
+      })
+    } catch (error) {
+      console.error("Error updating inspection:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update inspection. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const updateEditingInspectionField = (field: string, value: any, nestedField?: string) => {
+    if (!editingInspection) return
+
+    setEditingInspection((prev) => {
+      if (!prev) return prev
+
+      if (nestedField) {
+        return {
+          ...prev,
+          [field]: {
+            ...prev[field as keyof typeof prev],
+            [nestedField]: value,
+          },
+        }
+      } else {
+        return {
+          ...prev,
+          [field]: value,
+        }
+      }
+    })
+  }
+
   const handleExportFirearms = (type: "all" | "selected" | "filtered") => {
     let dataToExport: Firearm[] = []
 
@@ -1122,9 +1187,14 @@ export default function Home() {
                             <Badge variant={getStatusBadgeVariant(inspection.status)}>{inspection.status}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
-                              <Printer className="h-4 w-4" />
-                            </Button>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => handleEditInspection(inspection)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1636,6 +1706,9 @@ export default function Home() {
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
+                                <Button variant="outline" size="sm" onClick={() => handleEditInspection(inspection)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
                                 <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
                                   <Printer className="h-4 w-4" />
                                 </Button>
@@ -2459,6 +2532,530 @@ export default function Home() {
                 </Button>
                 <Button variant="default" onClick={handleAddInspection} disabled={isSubmittingInspection}>
                   {isSubmittingInspection ? "Creating..." : "Create Inspection Report"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Inspection Dialog */}
+      {isEditInspectionDialogOpen && editingInspection && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-5 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl leading-6 font-bold text-gray-900">EDIT FIREARM INSPECTION REPORT</h3>
+                  <p className="text-sm text-gray-600 mt-1">Update firearm inspection details</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setIsEditInspectionDialogOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Inspector Information */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">Inspector Information</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="edit-inspector" className="block text-sm font-medium text-gray-700">
+                        Inspector Name
+                      </label>
+                      <Input
+                        id="edit-inspector"
+                        type="text"
+                        placeholder="Inspector Name"
+                        value={editingInspection.inspector || ""}
+                        onChange={(e) => updateEditingInspectionField("inspector", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-inspectorId" className="block text-sm font-medium text-gray-700">
+                        Inspector ID Number
+                      </label>
+                      <Input
+                        id="edit-inspectorId"
+                        type="text"
+                        placeholder="ID Number"
+                        value={editingInspection.inspectorId || ""}
+                        onChange={(e) => updateEditingInspectionField("inspectorId", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-inspectionDate" className="block text-sm font-medium text-gray-700">
+                        Inspection Date
+                      </label>
+                      <Input
+                        id="edit-inspectionDate"
+                        type="date"
+                        value={editingInspection.date || ""}
+                        onChange={(e) => updateEditingInspectionField("date", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Company Information */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">Company Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-companyName" className="block text-sm font-medium text-gray-700">
+                        Company Name
+                      </label>
+                      <Input
+                        id="edit-companyName"
+                        type="text"
+                        placeholder="Company Name"
+                        value={editingInspection.companyName || ""}
+                        onChange={(e) => updateEditingInspectionField("companyName", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-dealerCode" className="block text-sm font-medium text-gray-700">
+                        Dealer Code
+                      </label>
+                      <Input
+                        id="edit-dealerCode"
+                        type="text"
+                        placeholder="Dealer Code"
+                        value={editingInspection.dealerCode || ""}
+                        onChange={(e) => updateEditingInspectionField("dealerCode", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Firearm Type */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">FIREARM TYPE</h4>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-pistol"
+                        checked={editingInspection.firearmType?.pistol || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "pistol")}
+                      />
+                      <label htmlFor="edit-pistol" className="text-sm">
+                        Pistol
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-revolver"
+                        checked={editingInspection.firearmType?.revolver || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "revolver")}
+                      />
+                      <label htmlFor="edit-revolver" className="text-sm">
+                        Revolver
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-rifle"
+                        checked={editingInspection.firearmType?.rifle || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "rifle")}
+                      />
+                      <label htmlFor="edit-rifle" className="text-sm">
+                        Rifle
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-selfLoadingRifle"
+                        checked={editingInspection.firearmType?.selfLoadingRifle || false}
+                        onCheckedChange={(checked) =>
+                          updateEditingInspectionField("firearmType", checked, "selfLoadingRifle")
+                        }
+                      />
+                      <label htmlFor="edit-selfLoadingRifle" className="text-sm">
+                        Self-Loading Rifle/Carbine
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-shotgun"
+                        checked={editingInspection.firearmType?.shotgun || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "shotgun")}
+                      />
+                      <label htmlFor="edit-shotgun" className="text-sm">
+                        Shotgun
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-combination"
+                        checked={editingInspection.firearmType?.combination || false}
+                        onCheckedChange={(checked) =>
+                          updateEditingInspectionField("firearmType", checked, "combination")
+                        }
+                      />
+                      <label htmlFor="edit-combination" className="text-sm">
+                        Combination
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-otherFirearmType"
+                        checked={editingInspection.firearmType?.other || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "other")}
+                      />
+                      <label htmlFor="edit-otherFirearmType" className="text-sm">
+                        Other
+                      </label>
+                    </div>
+                  </div>
+                  {editingInspection.firearmType?.other && (
+                    <div className="mt-3">
+                      <label htmlFor="edit-otherFirearmDetails" className="block text-sm font-medium text-gray-700">
+                        Other Details
+                      </label>
+                      <Input
+                        id="edit-otherFirearmDetails"
+                        type="text"
+                        placeholder="Provide details"
+                        value={editingInspection.firearmType?.otherDetails || ""}
+                        onChange={(e) => updateEditingInspectionField("firearmType", e.target.value, "otherDetails")}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Caliber/Cartridge */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">CALIBER/CARTRIDGE</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-caliber" className="block text-sm font-medium text-gray-700">
+                        Caliber/Cartridge
+                      </label>
+                      <Input
+                        id="edit-caliber"
+                        type="text"
+                        placeholder="e.g., .308 WIN"
+                        value={editingInspection.caliber || ""}
+                        onChange={(e) => updateEditingInspectionField("caliber", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-cartridgeCode" className="block text-sm font-medium text-gray-700">
+                        Code
+                      </label>
+                      <Input
+                        id="edit-cartridgeCode"
+                        type="text"
+                        placeholder="e.g., 123"
+                        value={editingInspection.cartridgeCode || ""}
+                        onChange={(e) => updateEditingInspectionField("cartridgeCode", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Serial Numbers */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">SERIAL NUMBERS</h4>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="font-medium text-sm">Component</label>
+                      <label className="font-medium text-sm">Serial Number</label>
+                      <label className="font-medium text-sm">Make</label>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">BARREL:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={editingInspection.serialNumbers?.barrel || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "barrel")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={editingInspection.serialNumbers?.barrelMake || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "barrelMake")}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">FRAME:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={editingInspection.serialNumbers?.frame || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "frame")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={editingInspection.serialNumbers?.frameMake || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "frameMake")}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">RECEIVER:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={editingInspection.serialNumbers?.receiver || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "receiver")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={editingInspection.serialNumbers?.receiverMake || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "receiverMake")}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Type */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">ACTION TYPE</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-manual"
+                        checked={editingInspection.actionType?.manual || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "manual")}
+                      />
+                      <label htmlFor="edit-manual" className="text-sm">
+                        Manual
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-semiAuto"
+                        checked={editingInspection.actionType?.semiAuto || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "semiAuto")}
+                      />
+                      <label htmlFor="edit-semiAuto" className="text-sm">
+                        Semi Auto
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-automatic"
+                        checked={editingInspection.actionType?.automatic || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "automatic")}
+                      />
+                      <label htmlFor="edit-automatic" className="text-sm">
+                        Automatic
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-bolt"
+                        checked={editingInspection.actionType?.bolt || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "bolt")}
+                      />
+                      <label htmlFor="edit-bolt" className="text-sm">
+                        Bolt
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-breakneck"
+                        checked={editingInspection.actionType?.breakneck || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "breakneck")}
+                      />
+                      <label htmlFor="edit-breakneck" className="text-sm">
+                        Breakneck
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-pump"
+                        checked={editingInspection.actionType?.pump || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "pump")}
+                      />
+                      <label htmlFor="edit-pump" className="text-sm">
+                        Pump
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-cappingBreechLoader"
+                        checked={editingInspection.actionType?.cappingBreechLoader || false}
+                        onCheckedChange={(checked) =>
+                          updateEditingInspectionField("actionType", checked, "cappingBreechLoader")
+                        }
+                      />
+                      <label htmlFor="edit-cappingBreechLoader" className="text-sm">
+                        Capping Breech Loader
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-lever"
+                        checked={editingInspection.actionType?.lever || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "lever")}
+                      />
+                      <label htmlFor="edit-lever" className="text-sm">
+                        Lever
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-cylinder"
+                        checked={editingInspection.actionType?.cylinder || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "cylinder")}
+                      />
+                      <label htmlFor="edit-cylinder" className="text-sm">
+                        Cylinder
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-fallingBlock"
+                        checked={editingInspection.actionType?.fallingBlock || false}
+                        onCheckedChange={(checked) =>
+                          updateEditingInspectionField("actionType", checked, "fallingBlock")
+                        }
+                      />
+                      <label htmlFor="edit-fallingBlock" className="text-sm">
+                        Falling Block
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-otherActionType"
+                        checked={editingInspection.actionType?.other || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "other")}
+                      />
+                      <label htmlFor="edit-otherActionType" className="text-sm">
+                        Other
+                      </label>
+                    </div>
+                  </div>
+                  {editingInspection.actionType?.other && (
+                    <div className="mt-3">
+                      <label htmlFor="edit-otherActionDetails" className="block text-sm font-medium text-gray-700">
+                        Other Details
+                      </label>
+                      <Input
+                        id="edit-otherActionDetails"
+                        type="text"
+                        placeholder="Provide details"
+                        value={editingInspection.actionType?.otherDetails || ""}
+                        onChange={(e) => updateEditingInspectionField("actionType", e.target.value, "otherDetails")}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Make and Country */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">MAKE & ORIGIN</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-make" className="block text-sm font-medium text-gray-700">
+                        MAKE
+                      </label>
+                      <Input
+                        id="edit-make"
+                        type="text"
+                        placeholder="e.g., RUGER"
+                        value={editingInspection.make || ""}
+                        onChange={(e) => updateEditingInspectionField("make", e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        (As engraved on the firearm i.e Beretta/Colt/Glock/Ruger, etc.)
+                      </p>
+                    </div>
+                    <div>
+                      <label htmlFor="edit-countryOfOrigin" className="block text-sm font-medium text-gray-700">
+                        COUNTRY OF ORIGIN
+                      </label>
+                      <Input
+                        id="edit-countryOfOrigin"
+                        type="text"
+                        placeholder="e.g., USA"
+                        value={editingInspection.countryOfOrigin || ""}
+                        onChange={(e) => updateEditingInspectionField("countryOfOrigin", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Observations and Comments */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">OBSERVATIONS & COMMENTS</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="edit-observations" className="block text-sm font-medium text-gray-700">
+                        Observations
+                      </label>
+                      <textarea
+                        id="edit-observations"
+                        placeholder="According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm."
+                        value={editingInspection.observations || ""}
+                        onChange={(e) => updateEditingInspectionField("observations", e.target.value)}
+                        rows={3}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-comments" className="block text-sm font-medium text-gray-700">
+                        Comments
+                      </label>
+                      <textarea
+                        id="edit-comments"
+                        placeholder="Additional comments"
+                        value={editingInspection.comments || ""}
+                        onChange={(e) => updateEditingInspectionField("comments", e.target.value)}
+                        rows={3}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inspector Details */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">INSPECTOR CERTIFICATION</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-inspectorTitle" className="block text-sm font-medium text-gray-700">
+                        Inspector Title
+                      </label>
+                      <Input
+                        id="edit-inspectorTitle"
+                        type="text"
+                        placeholder="e.g., Head Gunsmith"
+                        value={editingInspection.inspectorTitle || ""}
+                        onChange={(e) => updateEditingInspectionField("inspectorTitle", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-inspectionStatus" className="block text-sm font-medium text-gray-700">
+                        Status
+                      </label>
+                      <select
+                        id="edit-inspectionStatus"
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        value={editingInspection.status || "pending"}
+                        onChange={(e) =>
+                          updateEditingInspectionField("status", e.target.value as "passed" | "failed" | "pending")
+                        }
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="passed">Passed</option>
+                        <option value="failed">Failed</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                <Button variant="ghost" onClick={() => setIsEditInspectionDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button variant="default" onClick={handleSaveEditedInspection}>
+                  Save Changes
                 </Button>
               </div>
             </div>

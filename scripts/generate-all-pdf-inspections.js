@@ -63,21 +63,6 @@ function generateAllPDFInspections() {
     }
   }
 
-  // Page 1 - RUGER .308 WIN (PASSED)
-  inspections.push(
-    createInspection({
-      date: "2024-03-15",
-      inspector: "WIKUS FOURIE",
-      make: "RUGER",
-      caliber: ".308 WIN",
-      status: "PASSED",
-      serialNumber: "690745661",
-      observations:
-        "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
-      firearmType: "rifle",
-    }),
-  )
-
   // Pages 2-9 - SMITH & WESSON 5.56X45MM Series (UB27496-UB27503)
   const ub27Series = ["UB27496", "UB27497", "UB27498", "UB27499", "UB27500", "UB27501", "UB27502", "UB27503"]
   ub27Series.forEach((serial) => {
