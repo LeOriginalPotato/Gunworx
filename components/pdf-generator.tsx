@@ -71,8 +71,8 @@ export function generateInspectionPDF(inspection: Inspection) {
     headerImg.src = "/gunworx-header.png"
 
     headerImg.onload = () => {
-      // Center the 180x35 image
-      const imgWidth = 180
+      // Center the 100x35 image (increased height)
+      const imgWidth = 100
       const imgHeight = 35
       const xPosition = (pageWidth - imgWidth) / 2
 
@@ -92,7 +92,7 @@ export function generateInspectionPDF(inspection: Inspection) {
   }
 
   function generatePDFContent() {
-    yPosition = margin + 45 // Space for header
+    yPosition = margin + 45 // Increased from 30 to account for taller header
 
     // Title - centered
     doc.setFontSize(16)
@@ -309,43 +309,53 @@ export function generateInspectionPDF(inspection: Inspection) {
 export function generateMultipleInspectionsPDF(inspections: Inspection[]) {
   const doc = new jsPDF()
 
-  inspections.forEach((inspection, index) => {
-    if (index > 0) {
-      doc.addPage()
-    }
+  // Pre-load the header image
+  const headerImg = new Image()
+  headerImg.crossOrigin = "anonymous"
+  headerImg.src = "/gunworx-header.png"
 
-    // Generate each inspection on its own page
-    generateSingleInspectionPage(doc, inspection)
-  })
+  headerImg.onload = () => {
+    // Generate all pages with header
+    inspections.forEach((inspection, index) => {
+      if (index > 0) {
+        doc.addPage()
+      }
+      generateSingleInspectionPage(doc, inspection, headerImg)
+    })
 
-  doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
+    doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
+  }
+
+  headerImg.onerror = () => {
+    console.warn("Header image failed to load, generating PDF without headers")
+    // Generate all pages without header
+    inspections.forEach((inspection, index) => {
+      if (index > 0) {
+        doc.addPage()
+      }
+      generateSingleInspectionPage(doc, inspection, null)
+    })
+
+    doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
+  }
 }
 
-function generateSingleInspectionPage(doc: jsPDF, inspection: Inspection) {
+function generateSingleInspectionPage(doc: jsPDF, inspection: Inspection, headerImg: HTMLImageElement | null = null) {
   const margin = 20
   const pageWidth = doc.internal.pageSize.width
   const contentWidth = pageWidth - margin * 2
 
   let yPosition = margin
 
-  // Header with logo - centered
-  try {
-    const headerImg = new Image()
-    headerImg.crossOrigin = "anonymous"
-    headerImg.src = "/gunworx-header.png"
+  // Add header if image is available
+  if (headerImg) {
+    const imgWidth = 100
+    const imgHeight = 35
+    const xPosition = (pageWidth - imgWidth) / 2
 
-    headerImg.onload = () => {
-      const imgWidth = 180
-      const imgHeight = 35
-      const xPosition = (pageWidth - imgWidth) / 2
-
-      doc.addImage(headerImg, "PNG", xPosition, yPosition, imgWidth, imgHeight)
-    }
-  } catch (error) {
-    console.warn("Error loading header image:", error)
+    doc.addImage(headerImg, "PNG", xPosition, yPosition, imgWidth, imgHeight)
+    yPosition = margin + 45 // Account for header space
   }
-
-  yPosition = margin + 45
 
   // Title - centered
   doc.setFontSize(16)
