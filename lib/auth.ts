@@ -71,6 +71,15 @@ export const users = [
     isSystemAdmin: false,
     createdAt: "2024-01-01T00:00:00Z",
   },
+  {
+    id: "9",
+    username: "Dymian",
+    password: "Dymian@888",
+    name: "Dymian",
+    role: "admin",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
 ]
 
 export function validateCredentials(username: string, password: string) {

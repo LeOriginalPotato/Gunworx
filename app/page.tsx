@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -619,12 +621,12 @@ export default function Home() {
         caliber: newInspection.caliber || "",
         cartridgeCode: newInspection.cartridgeCode || "",
         serialNumbers: {
-          barrel: newInspection.serialNumbers?.barrel || "",
-          barrelMake: newInspection.serialNumbers?.barrelMake || "",
-          frame: newInspection.serialNumbers?.frame || "",
-          frameMake: newInspection.serialNumbers?.frameMake || "",
-          receiver: newInspection.serialNumbers?.receiver || "",
-          receiverMake: newInspection.serialNumbers?.receiverMake || "",
+          barrel: "",
+          barrelMake: "",
+          frame: "",
+          frameMake: "",
+          receiver: "",
+          receiverMake: "",
         },
         actionType: {
           manual: newInspection.actionType?.manual || false,
@@ -848,6 +850,71 @@ export default function Home() {
     } finally {
       setIsSyncing(false)
     }
+  }
+
+  const handleRestoreData = async (backupData: any) => {
+    try {
+      setIsSyncing(true)
+
+      const response = await fetch("/api/data-migration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore", data: backupData }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to restore data")
+      }
+
+      const result = await response.json()
+      console.log("Data restored:", result)
+
+      // Refresh data after restore
+      await handleRefreshData()
+
+      toast({
+        title: "Data Restored",
+        description: `Successfully restored ${result.restored.firearms} firearms, ${result.restored.inspections} inspections, and ${result.restored.users} users.`,
+      })
+    } catch (error) {
+      console.error("Error restoring data:", error)
+      toast({
+        title: "Restore Failed",
+        description: "Failed to restore data from backup.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const handleLoadBackupFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a backup file to load.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const backupData = JSON.parse(e.target?.result as string)
+        await handleRestoreData(backupData)
+      } catch (error) {
+        console.error("Error parsing backup file:", error)
+        toast({
+          title: "Invalid File",
+          description: "Failed to parse backup file. Please ensure it is a valid JSON file.",
+          variant: "destructive",
+        })
+      }
+    }
+
+    reader.readAsText(file)
   }
 
   if (!isLoggedIn) {
@@ -1461,6 +1528,19 @@ export default function Home() {
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete Selected ({selectedInspections.length})
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <label htmlFor="backup-file">
+                          <Download className="h-4 w-4 mr-2" />
+                          Restore Backup
+                          <input
+                            type="file"
+                            id="backup-file"
+                            accept=".json"
+                            onChange={handleLoadBackupFile}
+                            className="hidden"
+                          />
+                        </label>
                       </Button>
                     </div>
                   </CardContent>

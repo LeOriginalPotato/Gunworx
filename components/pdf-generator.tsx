@@ -72,7 +72,7 @@ export function generateInspectionPDF(inspection: Inspection) {
 
     headerImg.onload = () => {
       // Center the 180x35 image
-      const imgWidth = 180
+      const imgWidth = 150
       const imgHeight = 35
       const xPosition = (pageWidth - imgWidth) / 2
 
