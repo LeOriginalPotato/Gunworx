@@ -1,111 +1,44 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCentralDataStore, updateCentralDataStore } from "../data-migration/route"
+import { getCentralDataStore, addToDataStore } from "../data-migration/route"
 
 export async function GET(request: NextRequest) {
   try {
-    const centralData = getCentralDataStore()
-
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search")
+    const category = searchParams.get("category")
 
-    let filteredInspections = [...centralData.inspections]
+    const dataStore = getCentralDataStore()
+    let inspections = dataStore.inspections
 
-    // Apply search filter - enhanced to include serial numbers
+    // Apply search filter
     if (search) {
-      const searchTerm = search.toLowerCase()
-      filteredInspections = filteredInspections.filter((inspection) => {
-        // Search in basic fields
-        const basicFieldsMatch = [
-          inspection.inspector,
-          inspection.inspectorId,
-          inspection.companyName,
-          inspection.dealerCode,
-          inspection.caliber,
-          inspection.cartridgeCode,
-          inspection.make,
-          inspection.countryOfOrigin,
-          inspection.observations,
-          inspection.comments,
-          inspection.inspectorTitle,
-          inspection.status,
-          inspection.date,
-        ].some((value) => value && value.toString().toLowerCase().includes(searchTerm))
-
-        // Search in serial numbers
-        const serialNumbersMatch =
-          inspection.serialNumbers &&
-          [
-            inspection.serialNumbers.barrel,
-            inspection.serialNumbers.barrelMake,
-            inspection.serialNumbers.frame,
-            inspection.serialNumbers.frameMake,
-            inspection.serialNumbers.receiver,
-            inspection.serialNumbers.receiverMake,
-          ].some((value) => value && value.toString().toLowerCase().includes(searchTerm))
-
-        // Search in firearm type
-        const firearmTypeMatch =
-          inspection.firearmType &&
-          [inspection.firearmType.otherDetails].some(
-            (value) => value && value.toString().toLowerCase().includes(searchTerm),
-          )
-
-        // Search in action type
-        const actionTypeMatch =
-          inspection.actionType &&
-          [inspection.actionType.otherDetails].some(
-            (value) => value && value.toString().toLowerCase().includes(searchTerm),
-          )
-
-        // Search in firearm type boolean fields (convert to readable text)
-        const firearmTypeTextMatch =
-          inspection.firearmType &&
-          [
-            inspection.firearmType.pistol && "pistol",
-            inspection.firearmType.revolver && "revolver",
-            inspection.firearmType.rifle && "rifle",
-            inspection.firearmType.selfLoadingRifle && "self-loading rifle",
-            inspection.firearmType.shotgun && "shotgun",
-            inspection.firearmType.combination && "combination",
-            inspection.firearmType.other && "other",
-          ]
-            .filter(Boolean)
-            .some((value) => value && value.toLowerCase().includes(searchTerm))
-
-        // Search in action type boolean fields (convert to readable text)
-        const actionTypeTextMatch =
-          inspection.actionType &&
-          [
-            inspection.actionType.manual && "manual",
-            inspection.actionType.semiAuto && "semi auto",
-            inspection.actionType.automatic && "automatic",
-            inspection.actionType.bolt && "bolt",
-            inspection.actionType.breakneck && "breakneck",
-            inspection.actionType.pump && "pump",
-            inspection.actionType.cappingBreechLoader && "capping breech loader",
-            inspection.actionType.lever && "lever",
-            inspection.actionType.cylinder && "cylinder",
-            inspection.actionType.fallingBlock && "falling block",
-            inspection.actionType.other && "other",
-          ]
-            .filter(Boolean)
-            .some((value) => value && value.toLowerCase().includes(searchTerm))
-
+      const searchLower = search.toLowerCase()
+      inspections = inspections.filter((inspection: any) => {
         return (
-          basicFieldsMatch ||
-          serialNumbersMatch ||
-          firearmTypeMatch ||
-          actionTypeMatch ||
-          firearmTypeTextMatch ||
-          actionTypeTextMatch
+          inspection.id?.toLowerCase().includes(searchLower) ||
+          inspection.inspectorName?.toLowerCase().includes(searchLower) ||
+          inspection.firearmType?.manufacturer?.toLowerCase().includes(searchLower) ||
+          inspection.firearmType?.model?.toLowerCase().includes(searchLower) ||
+          inspection.serialNumbers?.primary?.toLowerCase().includes(searchLower) ||
+          inspection.serialNumbers?.secondary?.toLowerCase().includes(searchLower) ||
+          inspection.notes?.toLowerCase().includes(searchLower) ||
+          inspection.status?.toLowerCase().includes(searchLower)
         )
       })
     }
 
+    // Apply category filter
+    if (category && category !== "all") {
+      inspections = inspections.filter((inspection: any) => {
+        return inspection.category === category
+      })
+    }
+
     return NextResponse.json({
-      inspections: filteredInspections,
-      total: centralData.inspections.length,
-      lastUpdated: centralData.lastUpdated,
+      inspections: inspections.sort(
+        (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+      total: inspections.length,
     })
   } catch (error) {
     console.error("Error fetching inspections:", error)
@@ -115,83 +48,89 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const centralData = getCentralDataStore()
-    const inspectionData = await request.json()
+    const body = await request.json()
+    console.log("📝 Creating new inspection:", body)
 
     // Validate required fields
-    if (!inspectionData.date) {
-      return NextResponse.json({ error: "Inspection date is required" }, { status: 400 })
+    if (!body.inspectorName || !body.firearmType) {
+      return NextResponse.json(
+        { error: "Missing required fields: inspectorName and firearmType are required" },
+        { status: 400 },
+      )
     }
 
-    const newInspection = {
-      ...inspectionData,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      // Ensure all required fields have defaults
-      inspector: inspectionData.inspector || "Unknown Inspector",
-      inspectorId: inspectionData.inspectorId || "",
-      companyName: inspectionData.companyName || "",
-      dealerCode: inspectionData.dealerCode || "",
-      caliber: inspectionData.caliber || "",
-      cartridgeCode: inspectionData.cartridgeCode || "",
-      make: inspectionData.make || "",
-      countryOfOrigin: inspectionData.countryOfOrigin || "",
-      observations: inspectionData.observations || "",
-      comments: inspectionData.comments || "",
-      signature: inspectionData.signature || "",
-      inspectorTitle: inspectionData.inspectorTitle || "",
-      status: inspectionData.status || "pending",
-      // Ensure nested objects have proper structure
+    // Create inspection object with proper structure
+    const inspectionData = {
+      id: `inspection_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      inspectorName: body.inspectorName,
+      date: body.date || new Date().toISOString().split("T")[0],
       firearmType: {
-        pistol: false,
-        revolver: false,
-        rifle: false,
-        selfLoadingRifle: false,
-        shotgun: false,
-        combination: false,
-        other: false,
-        otherDetails: "",
-        ...inspectionData.firearmType,
+        manufacturer: body.firearmType?.manufacturer || "",
+        model: body.firearmType?.model || "",
+        caliber: body.firearmType?.caliber || "",
+        type: body.firearmType?.type || "rifle",
       },
       serialNumbers: {
-        barrel: "",
-        barrelMake: "",
-        frame: "",
-        frameMake: "",
-        receiver: "",
-        receiverMake: "",
-        ...inspectionData.serialNumbers,
+        primary: body.serialNumbers?.primary || "",
+        secondary: body.serialNumbers?.secondary || "",
+        frame: body.serialNumbers?.frame || "",
+        barrel: body.serialNumbers?.barrel || "",
       },
       actionType: {
-        manual: false,
-        semiAuto: false,
-        automatic: false,
-        bolt: false,
-        breakneck: false,
-        pump: false,
-        cappingBreechLoader: false,
-        lever: false,
-        cylinder: false,
-        fallingBlock: false,
-        other: false,
-        otherDetails: "",
-        ...inspectionData.actionType,
+        action: body.actionType?.action || "",
+        trigger: body.actionType?.trigger || "",
+        safety: body.actionType?.safety || "",
       },
+      condition: {
+        overall: body.condition?.overall || "good",
+        barrel: body.condition?.barrel || "good",
+        action: body.condition?.action || "good",
+        stock: body.condition?.stock || "good",
+        finish: body.condition?.finish || "good",
+      },
+      measurements: {
+        length: body.measurements?.length || "",
+        weight: body.measurements?.weight || "",
+        barrelLength: body.measurements?.barrelLength || "",
+      },
+      compliance: {
+        legal: Boolean(body.compliance?.legal ?? true),
+        registered: Boolean(body.compliance?.registered ?? true),
+        permitted: Boolean(body.compliance?.permitted ?? true),
+      },
+      notes: body.notes || "",
+      status: body.status || "completed",
+      category: body.category || "routine",
+      priority: body.priority || "normal",
+      location: body.location || "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
 
-    centralData.inspections.push(newInspection)
-    updateCentralDataStore(centralData)
+    console.log("📋 Structured inspection data:", inspectionData)
 
+    // Add to data store
+    const newInspection = addToDataStore("inspections", inspectionData)
+
+    if (!newInspection) {
+      throw new Error("Failed to add inspection to data store")
+    }
+
+    console.log("✅ Inspection created successfully:", newInspection.id)
+
+    return NextResponse.json({
+      success: true,
+      inspection: newInspection,
+      message: "Inspection created successfully",
+    })
+  } catch (error) {
+    console.error("❌ Error creating inspection:", error)
     return NextResponse.json(
       {
-        inspection: newInspection,
-        total: centralData.inspections.length,
+        error: "Failed to create inspection",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 201 },
+      { status: 500 },
     )
-  } catch (error) {
-    console.error("Error creating inspection:", error)
-    return NextResponse.json({ error: "Failed to create inspection" }, { status: 500 })
   }
 }

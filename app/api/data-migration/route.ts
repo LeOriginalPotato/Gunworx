@@ -1,52 +1,70 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Central data store that persists across requests
+// Central data store - this will persist across requests in the same deployment
 let centralDataStore = {
   firearms: [] as any[],
   inspections: [] as any[],
-  users: [
+  users: [] as any[],
+  lastUpdated: new Date().toISOString(),
+  version: "1.0.0",
+}
+
+// Initialize with default admin user if empty
+if (centralDataStore.users.length === 0) {
+  centralDataStore.users = [
     {
       id: "admin_001",
       username: "admin",
-      password: "admin123",
+      password: "admin123", // In production, this should be hashed
       role: "admin",
       fullName: "System Administrator",
       email: "admin@gunworx.com",
       createdAt: new Date().toISOString(),
-    },
-    {
-      id: "manager_001",
-      username: "manager",
-      password: "manager123",
-      role: "manager",
-      fullName: "Operations Manager",
-      email: "manager@gunworx.com",
-      createdAt: new Date().toISOString(),
+      lastLogin: null,
+      isActive: true,
     },
     {
       id: "inspector_001",
       username: "inspector",
       password: "inspector123",
       role: "inspector",
-      fullName: "Lead Inspector",
+      fullName: "John Inspector",
       email: "inspector@gunworx.com",
       createdAt: new Date().toISOString(),
+      lastLogin: null,
+      isActive: true,
     },
     {
-      id: "dymian_001",
-      username: "dymian",
-      password: "dymian123",
-      role: "admin",
-      fullName: "Dymian Administrator",
-      email: "dymian@gunworx.com",
+      id: "user_001",
+      username: "user",
+      password: "user123",
+      role: "user",
+      fullName: "Regular User",
+      email: "user@gunworx.com",
       createdAt: new Date().toISOString(),
+      lastLogin: null,
+      isActive: true,
     },
-  ],
+  ]
 }
 
-// Export function to get central data store
+// Export functions to get and update the central data store
 export function getCentralDataStore() {
   return centralDataStore
+}
+
+export function updateCentralDataStore(newData: any) {
+  centralDataStore = {
+    ...centralDataStore,
+    ...newData,
+    lastUpdated: new Date().toISOString(),
+  }
+  console.log("📊 Central data store updated:", {
+    firearms: centralDataStore.firearms.length,
+    inspections: centralDataStore.inspections.length,
+    users: centralDataStore.users.length,
+    lastUpdated: centralDataStore.lastUpdated,
+  })
 }
 
 // Export function to update data in central store
@@ -101,11 +119,11 @@ export function addToDataStore(type: string, data: any) {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const action = searchParams.get("action")
-  const type = searchParams.get("type")
-
   try {
+    const { searchParams } = new URL(request.url)
+    const action = searchParams.get("action")
+    const type = searchParams.get("type")
+
     if (action === "backup") {
       return NextResponse.json({
         timestamp: new Date().toISOString(),
@@ -141,6 +159,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { action, data, type } = body
+
+    console.log("📥 Data migration POST request:", { action, type, dataKeys: Object.keys(data || {}) })
 
     if (action === "sync") {
       // Merge incoming data with existing data
@@ -183,6 +203,8 @@ export async function POST(request: NextRequest) {
           firearms: data.data.firearms || [],
           inspections: data.data.inspections || [],
           users: data.data.users || centralDataStore.users, // Keep existing users if not in backup
+          lastUpdated: new Date().toISOString(),
+          version: data.data.version || "1.0.0",
         }
       }
 
@@ -199,6 +221,7 @@ export async function POST(request: NextRequest) {
     if (action === "clear_inspections") {
       const clearedCount = centralDataStore.inspections.length
       centralDataStore.inspections = []
+      centralDataStore.lastUpdated = new Date().toISOString()
 
       return NextResponse.json({
         success: true,
@@ -255,6 +278,7 @@ export async function DELETE(request: NextRequest) {
     if (action === "clear" && type === "inspections") {
       const clearedCount = centralDataStore.inspections.length
       centralDataStore.inspections = []
+      centralDataStore.lastUpdated = new Date().toISOString()
 
       return NextResponse.json({
         success: true,

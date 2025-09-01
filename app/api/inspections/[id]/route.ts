@@ -3,8 +3,8 @@ import { getCentralDataStore, updateInDataStore, deleteFromDataStore } from "../
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const centralData = getCentralDataStore()
-    const inspection = centralData.inspections.find((i) => i.id === params.id)
+    const dataStore = getCentralDataStore()
+    const inspection = dataStore.inspections.find((i: any) => i.id === params.id)
 
     if (!inspection) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
@@ -19,79 +19,60 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const inspectionData = await request.json()
+    const body = await request.json()
+    console.log("📝 Updating inspection:", params.id, body)
 
-    // Ensure the inspection has proper structure
-    const updatedInspection = {
-      ...inspectionData,
-      id: params.id,
+    // Update the inspection
+    const updatedInspection = updateInDataStore("inspections", params.id, {
+      ...body,
       updatedAt: new Date().toISOString(),
-      // Ensure nested objects have proper structure
-      firearmType: {
-        pistol: false,
-        revolver: false,
-        rifle: false,
-        selfLoadingRifle: false,
-        shotgun: false,
-        combination: false,
-        other: false,
-        otherDetails: "",
-        ...inspectionData.firearmType,
-      },
-      serialNumbers: {
-        barrel: "",
-        barrelMake: "",
-        frame: "",
-        frameMake: "",
-        receiver: "",
-        receiverMake: "",
-        ...inspectionData.serialNumbers,
-      },
-      actionType: {
-        manual: false,
-        semiAuto: false,
-        automatic: false,
-        bolt: false,
-        breakneck: false,
-        pump: false,
-        cappingBreechLoader: false,
-        lever: false,
-        cylinder: false,
-        fallingBlock: false,
-        other: false,
-        otherDetails: "",
-        ...inspectionData.actionType,
-      },
-    }
+    })
 
-    const result = updateInDataStore("inspections", params.id, updatedInspection)
-
-    if (!result) {
+    if (!updatedInspection) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    console.log(`🔄 Updated inspection: ${params.id}`)
+    console.log("✅ Inspection updated successfully:", updatedInspection.id)
 
-    return NextResponse.json({ inspection: result })
+    return NextResponse.json({
+      success: true,
+      inspection: updatedInspection,
+      message: "Inspection updated successfully",
+    })
   } catch (error) {
-    console.error("Error updating inspection:", error)
-    return NextResponse.json({ error: "Failed to update inspection" }, { status: 500 })
+    console.error("❌ Error updating inspection:", error)
+    return NextResponse.json(
+      {
+        error: "Failed to update inspection",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const result = deleteFromDataStore("inspections", params.id)
+    const deletedInspection = deleteFromDataStore("inspections", params.id)
 
-    if (!result) {
+    if (!deletedInspection) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    console.log(`🗑️ Deleted inspection: ${params.id}`)
+    console.log("🗑️ Inspection deleted successfully:", params.id)
 
-    return NextResponse.json({ message: "Inspection deleted successfully" })
+    return NextResponse.json({
+      success: true,
+      message: "Inspection deleted successfully",
+    })
   } catch (error) {
-    console.error("Error deleting inspection:", error)
-    return NextResponse.json({ error: "Failed to delete inspection" }, { status: 500 })
+    console.error("❌ Error deleting inspection:", error)
+    return NextResponse.json(
+      {
+        error: "Failed to delete inspection",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }
