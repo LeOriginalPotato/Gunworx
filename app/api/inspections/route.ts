@@ -3,25 +3,54 @@ import { getCentralDataStore, updateCentralDataStore } from "../data-migration/r
 
 export async function GET(request: NextRequest) {
   try {
-    const centralData = getCentralDataStore()
-
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search")
 
-    let filteredInspections = [...centralData.inspections]
+    const dataStore = getCentralDataStore()
+    let inspections = dataStore.inspections || []
 
-    // Apply search filter
+    // Apply search filter if provided
     if (search) {
-      const searchTerm = search.toLowerCase()
-      filteredInspections = filteredInspections.filter((i) =>
-        Object.values(i).some((value) => value && value.toString().toLowerCase().includes(searchTerm)),
-      )
+      const searchLower = search.toLowerCase()
+      inspections = inspections.filter((inspection: any) => {
+        // Search in basic fields
+        const basicFieldsMatch = [
+          inspection.inspector,
+          inspection.inspectorId,
+          inspection.companyName,
+          inspection.dealerCode,
+          inspection.caliber,
+          inspection.cartridgeCode,
+          inspection.make,
+          inspection.countryOfOrigin,
+          inspection.observations,
+          inspection.comments,
+          inspection.inspectorTitle,
+          inspection.status,
+          inspection.date,
+        ].some((value) => value && value.toString().toLowerCase().includes(searchLower))
+
+        // Search in serial numbers
+        const serialNumbersMatch =
+          inspection.serialNumbers &&
+          [
+            inspection.serialNumbers.barrel,
+            inspection.serialNumbers.barrelMake,
+            inspection.serialNumbers.frame,
+            inspection.serialNumbers.frameMake,
+            inspection.serialNumbers.receiver,
+            inspection.serialNumbers.receiverMake,
+          ].some((value) => value && value.toString().toLowerCase().includes(searchLower))
+
+        return basicFieldsMatch || serialNumbersMatch
+      })
     }
 
+    console.log(`📡 Returning ${inspections.length} inspections (search: "${search || "none"}")`)
+
     return NextResponse.json({
-      inspections: filteredInspections,
-      total: centralData.inspections.length,
-      lastUpdated: centralData.lastUpdated,
+      inspections,
+      total: inspections.length,
     })
   } catch (error) {
     console.error("Error fetching inspections:", error)
@@ -31,81 +60,82 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const centralData = getCentralDataStore()
-    const inspectionData = await request.json()
+    const body = await request.json()
 
-    // Validate required fields
-    if (!inspectionData.date) {
-      return NextResponse.json({ error: "Inspection date is required" }, { status: 400 })
-    }
+    console.log("🔄 Creating new inspection:", body)
 
+    // Generate a unique ID for the new inspection
+    const newId = `inspection_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+    // Create the complete inspection object with proper structure
     const newInspection = {
-      ...inspectionData,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      // Ensure all required fields have defaults
-      inspector: inspectionData.inspector || "Unknown Inspector",
-      inspectorId: inspectionData.inspectorId || "",
-      companyName: inspectionData.companyName || "",
-      dealerCode: inspectionData.dealerCode || "",
-      caliber: inspectionData.caliber || "",
-      cartridgeCode: inspectionData.cartridgeCode || "",
-      make: inspectionData.make || "",
-      countryOfOrigin: inspectionData.countryOfOrigin || "",
-      observations: inspectionData.observations || "",
-      comments: inspectionData.comments || "",
-      signature: inspectionData.signature || "",
-      inspectorTitle: inspectionData.inspectorTitle || "",
-      status: inspectionData.status || "pending",
-      // Ensure nested objects have proper structure
+      id: newId,
+      date: body.date || new Date().toISOString().split("T")[0],
+      inspector: body.inspector || "",
+      inspectorId: body.inspectorId || "",
+      companyName: body.companyName || "",
+      dealerCode: body.dealerCode || "",
       firearmType: {
-        pistol: false,
-        revolver: false,
-        rifle: false,
-        selfLoadingRifle: false,
-        shotgun: false,
-        combination: false,
-        other: false,
-        otherDetails: "",
-        ...inspectionData.firearmType,
+        pistol: body.firearmType?.pistol || false,
+        revolver: body.firearmType?.revolver || false,
+        rifle: body.firearmType?.rifle || false,
+        selfLoadingRifle: body.firearmType?.selfLoadingRifle || false,
+        shotgun: body.firearmType?.shotgun || false,
+        combination: body.firearmType?.combination || false,
+        other: body.firearmType?.other || false,
+        otherDetails: body.firearmType?.otherDetails || "",
       },
+      caliber: body.caliber || "",
+      cartridgeCode: body.cartridgeCode || "",
       serialNumbers: {
-        barrel: "",
-        barrelMake: "",
-        frame: "",
-        frameMake: "",
-        receiver: "",
-        receiverMake: "",
-        ...inspectionData.serialNumbers,
+        barrel: body.serialNumbers?.barrel || "",
+        barrelMake: body.serialNumbers?.barrelMake || "",
+        frame: body.serialNumbers?.frame || "",
+        frameMake: body.serialNumbers?.frameMake || "",
+        receiver: body.serialNumbers?.receiver || "",
+        receiverMake: body.serialNumbers?.receiverMake || "",
       },
       actionType: {
-        manual: false,
-        semiAuto: false,
-        automatic: false,
-        bolt: false,
-        breakneck: false,
-        pump: false,
-        cappingBreechLoader: false,
-        lever: false,
-        cylinder: false,
-        fallingBlock: false,
-        other: false,
-        otherDetails: "",
-        ...inspectionData.actionType,
+        manual: body.actionType?.manual || false,
+        semiAuto: body.actionType?.semiAuto || false,
+        automatic: body.actionType?.automatic || false,
+        bolt: body.actionType?.bolt || false,
+        breakneck: body.actionType?.breakneck || false,
+        pump: body.actionType?.pump || false,
+        cappingBreechLoader: body.actionType?.cappingBreechLoader || false,
+        lever: body.actionType?.lever || false,
+        cylinder: body.actionType?.cylinder || false,
+        fallingBlock: body.actionType?.fallingBlock || false,
+        other: body.actionType?.other || false,
+        otherDetails: body.actionType?.otherDetails || "",
       },
+      make: body.make || "",
+      countryOfOrigin: body.countryOfOrigin || "",
+      observations: body.observations || "",
+      comments: body.comments || "",
+      signature: body.signature || "",
+      inspectorTitle: body.inspectorTitle || "",
+      status: body.status || "pending",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
 
-    centralData.inspections.push(newInspection)
-    updateCentralDataStore(centralData)
+    // Get current data store and add the new inspection
+    const currentDataStore = getCentralDataStore()
+    const updatedInspections = [...(currentDataStore.inspections || []), newInspection]
 
-    return NextResponse.json(
-      {
-        inspection: newInspection,
-        total: centralData.inspections.length,
-      },
-      { status: 201 },
-    )
+    // Update the central data store
+    updateCentralDataStore({
+      ...currentDataStore,
+      inspections: updatedInspections,
+    })
+
+    console.log(`✅ Created inspection with ID: ${newId}`)
+
+    return NextResponse.json({
+      message: "Inspection created successfully",
+      inspection: newInspection,
+    })
   } catch (error) {
     console.error("Error creating inspection:", error)
     return NextResponse.json({ error: "Failed to create inspection" }, { status: 500 })

@@ -1353,6 +1353,124 @@ export function updateCentralDataStore(newData: any) {
   centralDataStore = { ...centralDataStore, ...newData }
 }
 
+// Helper functions to update and delete from the central data store
+export function updateInDataStore(type: string, id: string, updateData: any) {
+  switch (type) {
+    case "firearms":
+    case "firearm":
+      const firearmIndex = centralDataStore.firearms.findIndex((f) => f.id === id)
+      if (firearmIndex !== -1) {
+        centralDataStore.firearms[firearmIndex] = {
+          ...centralDataStore.firearms[firearmIndex],
+          ...updateData,
+          updatedAt: new Date().toISOString(),
+        }
+        console.log(`🔄 Updated firearm: ${id}`)
+        return centralDataStore.firearms[firearmIndex]
+      }
+      return null
+
+    case "inspections":
+    case "inspection":
+      const inspectionIndex = centralDataStore.inspections.findIndex((i) => i.id === id)
+      if (inspectionIndex !== -1) {
+        // Handle nested object updates properly
+        const existingInspection = centralDataStore.inspections[inspectionIndex]
+        const updatedInspection = {
+          ...existingInspection,
+          ...updateData,
+          updatedAt: new Date().toISOString(),
+        }
+
+        // Handle nested objects like serialNumbers, firearmType, actionType
+        if (updateData.serialNumbers) {
+          updatedInspection.serialNumbers = {
+            ...existingInspection.serialNumbers,
+            ...updateData.serialNumbers,
+          }
+        }
+
+        if (updateData.firearmType) {
+          updatedInspection.firearmType = {
+            ...existingInspection.firearmType,
+            ...updateData.firearmType,
+          }
+        }
+
+        if (updateData.actionType) {
+          updatedInspection.actionType = {
+            ...existingInspection.actionType,
+            ...updateData.actionType,
+          }
+        }
+
+        centralDataStore.inspections[inspectionIndex] = updatedInspection
+        console.log(`🔄 Updated inspection: ${id}`)
+        return updatedInspection
+      }
+      return null
+
+    case "users":
+    case "user":
+      const userIndex = centralDataStore.users.findIndex((u) => u.id === id)
+      if (userIndex !== -1) {
+        centralDataStore.users[userIndex] = {
+          ...centralDataStore.users[userIndex],
+          ...updateData,
+          updatedAt: new Date().toISOString(),
+        }
+        console.log(`🔄 Updated user: ${id}`)
+        return centralDataStore.users[userIndex]
+      }
+      return null
+
+    default:
+      console.error(`Unknown type for update: ${type}`)
+      return null
+  }
+}
+
+export function deleteFromDataStore(type: string, id: string) {
+  switch (type) {
+    case "firearms":
+    case "firearm":
+      const firearmIndex = centralDataStore.firearms.findIndex((f) => f.id === id)
+      if (firearmIndex !== -1) {
+        const deleted = centralDataStore.firearms[firearmIndex]
+        centralDataStore.firearms.splice(firearmIndex, 1)
+        console.log(`🗑️ Deleted firearm: ${id}`)
+        return deleted
+      }
+      return null
+
+    case "inspections":
+    case "inspection":
+      const inspectionIndex = centralDataStore.inspections.findIndex((i) => i.id === id)
+      if (inspectionIndex !== -1) {
+        const deleted = centralDataStore.inspections[inspectionIndex]
+        centralDataStore.inspections.splice(inspectionIndex, 1)
+        console.log(`🗑️ Deleted inspection: ${id}`)
+        return deleted
+      }
+      return null
+
+    case "users":
+    case "user":
+      const userIndex = centralDataStore.users.findIndex((u) => u.id === id)
+      if (userIndex !== -1) {
+        const deleted = centralDataStore.users[userIndex]
+        centralDataStore.users.splice(userIndex, 1)
+        console.log(`🗑️ Deleted user: ${id}`)
+        return deleted
+      }
+      return null
+
+    default:
+      console.error(`Unknown type for delete: ${type}`)
+      return null
+  }
+}
+
 // Main API handler
 export async function GET(request: NextRequest) {
   try {

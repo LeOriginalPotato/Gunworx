@@ -38,6 +38,7 @@ export class DataService {
 
     window.addEventListener("offline", () => {
       this.isOnline = false
+      console.log("📴 Gone offline - operations will be queued")
     })
   }
 
@@ -125,6 +126,9 @@ export class DataService {
             break
           case "createInspection":
             await this.createInspectionDirect(operation.data)
+            break
+          case "updateInspection":
+            await this.updateInspectionDirect(operation.data.id, operation.data)
             break
           case "deleteInspection":
             await this.deleteInspectionDirect(operation.data.id)
@@ -276,7 +280,7 @@ export class DataService {
     return true
   }
 
-  // Inspections API methods with automatic sync
+  // Inspections API methods with enhanced search including serial numbers
   async getInspections(filters: { search?: string } = {}) {
     try {
       const params = new URLSearchParams()
@@ -298,15 +302,68 @@ export class DataService {
       this.setToStorage("gunworx_inspections", data.inspections || [])
 
       console.log(`📡 Fetched ${data.inspections?.length || 0} inspections from server`)
+
+      // If search term provided, log what fields were searched
+      if (filters.search) {
+        console.log(`🔍 Searched inspections for: "${filters.search}" - found ${data.inspections?.length || 0} results`)
+        console.log(
+          "🔍 Search includes: inspector, company, make, serial numbers (barrel, frame, receiver), caliber, and all other fields",
+        )
+      }
+
       return data.inspections || []
     } catch (error) {
       console.error("Error fetching inspections:", error)
       // Return cached data if server unavailable
-      return this.getFromStorage("gunworx_inspections") || []
+      const cachedInspections = this.getFromStorage("gunworx_inspections") || []
+
+      // If we have a search term and cached data, perform client-side search
+      if (filters.search && cachedInspections.length > 0) {
+        const searchTerm = filters.search.toLowerCase()
+        const filteredInspections = cachedInspections.filter((inspection: any) => {
+          // Search in basic fields
+          const basicFieldsMatch = [
+            inspection.inspector,
+            inspection.inspectorId,
+            inspection.companyName,
+            inspection.dealerCode,
+            inspection.caliber,
+            inspection.cartridgeCode,
+            inspection.make,
+            inspection.countryOfOrigin,
+            inspection.observations,
+            inspection.comments,
+            inspection.inspectorTitle,
+            inspection.status,
+            inspection.date,
+          ].some((value) => value && value.toString().toLowerCase().includes(searchTerm))
+
+          // Search in serial numbers
+          const serialNumbersMatch =
+            inspection.serialNumbers &&
+            [
+              inspection.serialNumbers.barrel,
+              inspection.serialNumbers.barrelMake,
+              inspection.serialNumbers.frame,
+              inspection.serialNumbers.frameMake,
+              inspection.serialNumbers.receiver,
+              inspection.serialNumbers.receiverMake,
+            ].some((value) => value && value.toString().toLowerCase().includes(searchTerm))
+
+          return basicFieldsMatch || serialNumbersMatch
+        })
+
+        console.log(`🔍 Client-side search for "${filters.search}" found ${filteredInspections.length} results`)
+        return filteredInspections
+      }
+
+      return cachedInspections
     }
   }
 
   async createInspection(inspectionData: any) {
+    console.log(`🔄 DataService: Creating inspection`, inspectionData)
+
     if (!this.isOnline) {
       // Save locally and queue for sync
       const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -328,19 +385,72 @@ export class DataService {
   }
 
   private async createInspectionDirect(inspectionData: any) {
+    console.log(`🔄 DataService: Sending create request to server`)
+
     const response = await fetch(`${this.baseUrl}/api/inspections`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(inspectionData),
     })
 
-    if (!response.ok) throw new Error("Failed to create inspection")
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Failed to create inspection: ${response.status} ${errorText}`)
+      throw new Error("Failed to create inspection")
+    }
 
     const data = await response.json()
     console.log(`✅ Created inspection on server:`, data.inspection.id)
 
     // Update local storage immediately
     this.saveToLocalStorage("inspections", data.inspection)
+
+    return data.inspection
+  }
+
+  async updateInspection(id: string, inspectionData: any) {
+    console.log(`🔄 DataService: Updating inspection ${id}`, inspectionData)
+
+    // Always try to update on server first, even if offline (for immediate feedback)
+    try {
+      const updatedInspection = await this.updateInspectionDirect(id, inspectionData)
+      console.log(`✅ DataService: Successfully updated inspection ${id}`)
+      return updatedInspection
+    } catch (error) {
+      console.error(`❌ DataService: Failed to update inspection ${id}:`, error)
+
+      if (!this.isOnline) {
+        // Update locally and queue for sync if offline
+        this.updateInLocalStorage("gunworx_inspections", id, { ...inspectionData, _pendingSync: true })
+        this.queueOperation("updateInspection", { id, ...inspectionData })
+
+        return { ...inspectionData, id, updatedAt: new Date().toISOString() }
+      }
+
+      throw error
+    }
+  }
+
+  private async updateInspectionDirect(id: string, inspectionData: any) {
+    console.log(`🔄 DataService: Sending update to server for inspection ${id}`)
+
+    const response = await fetch(`${this.baseUrl}/api/inspections/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(inspectionData),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Failed to update inspection: ${response.status} ${errorText}`)
+      throw new Error(`Failed to update inspection: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log(`✅ Updated inspection on server:`, data.inspection.id)
+
+    // Update local storage immediately with the server response
+    this.updateInLocalStorage("gunworx_inspections", id, data.inspection)
 
     return data.inspection
   }
@@ -486,7 +596,7 @@ export class DataService {
     }
   }
 
-  // Real-time data refresh - THIS WAS MISSING!
+  // Real-time data refresh
   async refreshAllData() {
     try {
       console.log("🔄 Refreshing all data from server...")
@@ -519,7 +629,7 @@ export class DataService {
     }
   }
 
-  // localStorage helper methods - THESE WERE MISSING!
+  // localStorage helper methods
   getFromStorage(key: string) {
     try {
       if (typeof window === "undefined") return null
