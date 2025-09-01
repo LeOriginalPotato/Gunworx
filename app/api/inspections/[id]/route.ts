@@ -3,15 +3,17 @@ import { getCentralDataStore, updateInDataStore, deleteFromDataStore } from "../
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
     const dataStore = getCentralDataStore()
-    const inspection = dataStore.inspections.find((i: any) => i.id === id)
+    const inspection = dataStore.inspections.find((i: any) => i.id === params.id)
 
     if (!inspection) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ inspection })
+    return NextResponse.json({
+      success: true,
+      inspection,
+    })
   } catch (error) {
     console.error("Error fetching inspection:", error)
     return NextResponse.json({ error: "Failed to fetch inspection" }, { status: 500 })
@@ -20,33 +22,77 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
-    const updates = await request.json()
+    const inspectionData = await request.json()
 
-    console.log("🔄 Updating inspection:", id, updates)
+    console.log("🔄 API: Updating inspection:", params.id, inspectionData)
 
-    const updatedInspection = updateInDataStore("inspections", id, {
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    })
+    // Ensure all nested objects have proper structure
+    const processedInspection = {
+      date: inspectionData.date,
+      inspector: inspectionData.inspector || "Unknown Inspector",
+      inspectorId: inspectionData.inspectorId || "",
+      companyName: inspectionData.companyName || "",
+      dealerCode: inspectionData.dealerCode || "",
+      firearmType: {
+        pistol: Boolean(inspectionData.firearmType?.pistol),
+        revolver: Boolean(inspectionData.firearmType?.revolver),
+        rifle: Boolean(inspectionData.firearmType?.rifle),
+        selfLoadingRifle: Boolean(inspectionData.firearmType?.selfLoadingRifle),
+        shotgun: Boolean(inspectionData.firearmType?.shotgun),
+        combination: Boolean(inspectionData.firearmType?.combination),
+        other: Boolean(inspectionData.firearmType?.other),
+        otherDetails: inspectionData.firearmType?.otherDetails || "",
+      },
+      caliber: inspectionData.caliber || "",
+      cartridgeCode: inspectionData.cartridgeCode || "",
+      serialNumbers: {
+        barrel: inspectionData.serialNumbers?.barrel || "",
+        barrelMake: inspectionData.serialNumbers?.barrelMake || "",
+        frame: inspectionData.serialNumbers?.frame || "",
+        frameMake: inspectionData.serialNumbers?.frameMake || "",
+        receiver: inspectionData.serialNumbers?.receiver || "",
+        receiverMake: inspectionData.serialNumbers?.receiverMake || "",
+      },
+      actionType: {
+        manual: Boolean(inspectionData.actionType?.manual),
+        semiAuto: Boolean(inspectionData.actionType?.semiAuto),
+        automatic: Boolean(inspectionData.actionType?.automatic),
+        bolt: Boolean(inspectionData.actionType?.bolt),
+        breakneck: Boolean(inspectionData.actionType?.breakneck),
+        pump: Boolean(inspectionData.actionType?.pump),
+        cappingBreechLoader: Boolean(inspectionData.actionType?.cappingBreechLoader),
+        lever: Boolean(inspectionData.actionType?.lever),
+        cylinder: Boolean(inspectionData.actionType?.cylinder),
+        fallingBlock: Boolean(inspectionData.actionType?.fallingBlock),
+        other: Boolean(inspectionData.actionType?.other),
+        otherDetails: inspectionData.actionType?.otherDetails || "",
+      },
+      make: inspectionData.make || "",
+      countryOfOrigin: inspectionData.countryOfOrigin || "",
+      observations: inspectionData.observations || "",
+      comments: inspectionData.comments || "",
+      signature: inspectionData.signature || "",
+      inspectorTitle: inspectionData.inspectorTitle || "",
+      status: inspectionData.status || "pending",
+    }
+
+    const updatedInspection = updateInDataStore("inspections", params.id, processedInspection)
 
     if (!updatedInspection) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    console.log("✅ Inspection updated successfully:", updatedInspection.id)
+    console.log("✅ API: Successfully updated inspection:", updatedInspection.id)
 
     return NextResponse.json({
+      success: true,
       inspection: updatedInspection,
       message: "Inspection updated successfully",
     })
   } catch (error) {
-    console.error("❌ Error updating inspection:", error)
+    console.error("❌ API: Error updating inspection:", error)
     return NextResponse.json(
-      {
-        error: "Failed to update inspection",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: `Failed to update inspection: ${error instanceof Error ? error.message : "Unknown error"}` },
       { status: 500 },
     )
   }
@@ -54,30 +100,20 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params
+    const success = deleteFromDataStore("inspections", params.id)
 
-    console.log("🗑️ Deleting inspection:", id)
-
-    const deleted = deleteFromDataStore("inspections", id)
-
-    if (!deleted) {
+    if (!success) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    console.log("✅ Inspection deleted successfully:", id)
+    console.log("🗑️ API: Successfully deleted inspection:", params.id)
 
     return NextResponse.json({
       success: true,
       message: "Inspection deleted successfully",
     })
   } catch (error) {
-    console.error("❌ Error deleting inspection:", error)
-    return NextResponse.json(
-      {
-        error: "Failed to delete inspection",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
-    )
+    console.error("❌ API: Error deleting inspection:", error)
+    return NextResponse.json({ error: "Failed to delete inspection" }, { status: 500 })
   }
 }

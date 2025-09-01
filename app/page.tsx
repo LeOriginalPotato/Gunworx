@@ -143,13 +143,13 @@ export default function Home() {
     status: "in-stock",
   })
 
-  // Initialize newInspection with proper nested object structure
+  // Initialize newInspection with proper nested object structure and pre-filled data
   const getDefaultInspection = (): Partial<Inspection> => ({
-    date: new Date().toISOString().split("T")[0],
-    inspector: "",
-    inspectorId: "",
-    companyName: "",
-    dealerCode: "",
+    date: "2025-06-03",
+    inspector: "Wikus Fourie",
+    inspectorId: "9106045129083",
+    companyName: "NICHOLAS YALE (PTY) LTD",
+    dealerCode: "Pi10184610",
     firearmType: {
       pistol: false,
       revolver: false,
@@ -186,7 +186,8 @@ export default function Home() {
     },
     make: "",
     countryOfOrigin: "",
-    observations: "",
+    observations:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
     comments: "",
     signature: "",
     inspectorTitle: "",

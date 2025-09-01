@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const dataStore = getCentralDataStore()
     let inspections = dataStore.inspections
 
-    // Apply search filter - enhanced to include serial numbers
+    // Apply search filter if provided
     if (search) {
       const searchTerm = search.toLowerCase()
       inspections = inspections.filter((inspection: any) => {
@@ -42,69 +42,16 @@ export async function GET(request: NextRequest) {
             inspection.serialNumbers.receiverMake,
           ].some((value) => value && value.toString().toLowerCase().includes(searchTerm))
 
-        // Search in firearm type
-        const firearmTypeMatch =
-          inspection.firearmType &&
-          [inspection.firearmType.otherDetails].some(
-            (value) => value && value.toString().toLowerCase().includes(searchTerm),
-          )
-
-        // Search in action type
-        const actionTypeMatch =
-          inspection.actionType &&
-          [inspection.actionType.otherDetails].some(
-            (value) => value && value.toString().toLowerCase().includes(searchTerm),
-          )
-
-        // Search in firearm type boolean fields (convert to readable text)
-        const firearmTypeTextMatch =
-          inspection.firearmType &&
-          [
-            inspection.firearmType.pistol && "pistol",
-            inspection.firearmType.revolver && "revolver",
-            inspection.firearmType.rifle && "rifle",
-            inspection.firearmType.selfLoadingRifle && "self-loading rifle",
-            inspection.firearmType.shotgun && "shotgun",
-            inspection.firearmType.combination && "combination",
-            inspection.firearmType.other && "other",
-          ]
-            .filter(Boolean)
-            .some((value) => value && value.toLowerCase().includes(searchTerm))
-
-        // Search in action type boolean fields (convert to readable text)
-        const actionTypeTextMatch =
-          inspection.actionType &&
-          [
-            inspection.actionType.manual && "manual",
-            inspection.actionType.semiAuto && "semi auto",
-            inspection.actionType.automatic && "automatic",
-            inspection.actionType.bolt && "bolt",
-            inspection.actionType.breakneck && "breakneck",
-            inspection.actionType.pump && "pump",
-            inspection.actionType.cappingBreechLoader && "capping breech loader",
-            inspection.actionType.lever && "lever",
-            inspection.actionType.cylinder && "cylinder",
-            inspection.actionType.fallingBlock && "falling block",
-            inspection.actionType.other && "other",
-          ]
-            .filter(Boolean)
-            .some((value) => value && value.toLowerCase().includes(searchTerm))
-
-        return (
-          basicFieldsMatch ||
-          serialNumbersMatch ||
-          firearmTypeMatch ||
-          actionTypeMatch ||
-          firearmTypeTextMatch ||
-          actionTypeTextMatch
-        )
+        return basicFieldsMatch || serialNumbersMatch
       })
     }
 
+    console.log(`📡 API: Returning ${inspections.length} inspections`)
+
     return NextResponse.json({
-      inspections: inspections,
-      total: dataStore.inspections.length,
-      lastUpdated: dataStore.lastUpdated,
+      success: true,
+      inspections,
+      count: inspections.length,
     })
   } catch (error) {
     console.error("Error fetching inspections:", error)
@@ -116,24 +63,20 @@ export async function POST(request: NextRequest) {
   try {
     const inspectionData = await request.json()
 
-    console.log("📝 Received inspection data:", inspectionData)
+    console.log("🔄 API: Creating inspection with data:", inspectionData)
 
-    // Validate required fields - match the frontend structure
+    // Validate required fields
     if (!inspectionData.date) {
-      console.error("Validation failed: Missing inspection date")
-      return NextResponse.json({ error: "Inspection date is required" }, { status: 400 })
+      return NextResponse.json({ error: "Missing required field: date is required" }, { status: 400 })
     }
 
-    // Create inspection object with the structure expected by the frontend
-    const newInspection = {
-      id: `inspection_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    // Ensure all nested objects have proper structure
+    const processedInspection = {
       date: inspectionData.date,
       inspector: inspectionData.inspector || "Unknown Inspector",
       inspectorId: inspectionData.inspectorId || "",
       companyName: inspectionData.companyName || "",
       dealerCode: inspectionData.dealerCode || "",
-
-      // Ensure firearmType has proper structure
       firearmType: {
         pistol: Boolean(inspectionData.firearmType?.pistol),
         revolver: Boolean(inspectionData.firearmType?.revolver),
@@ -144,11 +87,8 @@ export async function POST(request: NextRequest) {
         other: Boolean(inspectionData.firearmType?.other),
         otherDetails: inspectionData.firearmType?.otherDetails || "",
       },
-
       caliber: inspectionData.caliber || "",
       cartridgeCode: inspectionData.cartridgeCode || "",
-
-      // Ensure serialNumbers has proper structure
       serialNumbers: {
         barrel: inspectionData.serialNumbers?.barrel || "",
         barrelMake: inspectionData.serialNumbers?.barrelMake || "",
@@ -157,8 +97,6 @@ export async function POST(request: NextRequest) {
         receiver: inspectionData.serialNumbers?.receiver || "",
         receiverMake: inspectionData.serialNumbers?.receiverMake || "",
       },
-
-      // Ensure actionType has proper structure
       actionType: {
         manual: Boolean(inspectionData.actionType?.manual),
         semiAuto: Boolean(inspectionData.actionType?.semiAuto),
@@ -173,7 +111,6 @@ export async function POST(request: NextRequest) {
         other: Boolean(inspectionData.actionType?.other),
         otherDetails: inspectionData.actionType?.otherDetails || "",
       },
-
       make: inspectionData.make || "",
       countryOfOrigin: inspectionData.countryOfOrigin || "",
       observations: inspectionData.observations || "",
@@ -181,38 +118,24 @@ export async function POST(request: NextRequest) {
       signature: inspectionData.signature || "",
       inspectorTitle: inspectionData.inspectorTitle || "",
       status: inspectionData.status || "pending",
-
-      // Add timestamps
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     }
 
-    console.log("📋 Structured inspection data:", newInspection)
+    console.log("🔄 API: Processed inspection data:", processedInspection)
 
     // Add to data store
-    const addedInspection = addToDataStore("inspections", newInspection)
+    const newInspection = addToDataStore("inspections", processedInspection)
 
-    if (!addedInspection) {
-      throw new Error("Failed to add inspection to data store")
-    }
+    console.log("✅ API: Successfully created inspection:", newInspection.id)
 
-    console.log("✅ Inspection created successfully:", addedInspection.id)
-
-    return NextResponse.json(
-      {
-        inspection: addedInspection,
-        total: getCentralDataStore().inspections.length,
-        message: "Inspection created successfully",
-      },
-      { status: 201 },
-    )
+    return NextResponse.json({
+      success: true,
+      inspection: newInspection,
+      message: "Inspection created successfully",
+    })
   } catch (error) {
-    console.error("❌ Error creating inspection:", error)
+    console.error("❌ API: Error creating inspection:", error)
     return NextResponse.json(
-      {
-        error: "Failed to create inspection",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: `Failed to create inspection: ${error instanceof Error ? error.message : "Unknown error"}` },
       { status: 500 },
     )
   }
