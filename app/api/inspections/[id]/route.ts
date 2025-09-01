@@ -3,8 +3,9 @@ import { getCentralDataStore, updateInDataStore, deleteFromDataStore } from "../
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const { id } = params
     const dataStore = getCentralDataStore()
-    const inspection = dataStore.inspections.find((i: any) => i.id === params.id)
+    const inspection = dataStore.inspections.find((i: any) => i.id === id)
 
     if (!inspection) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
@@ -19,12 +20,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const body = await request.json()
-    console.log("📝 Updating inspection:", params.id, body)
+    const { id } = params
+    const updates = await request.json()
 
-    // Update the inspection
-    const updatedInspection = updateInDataStore("inspections", params.id, {
-      ...body,
+    console.log("🔄 Updating inspection:", id, updates)
+
+    const updatedInspection = updateInDataStore("inspections", id, {
+      ...updates,
       updatedAt: new Date().toISOString(),
     })
 
@@ -35,7 +37,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     console.log("✅ Inspection updated successfully:", updatedInspection.id)
 
     return NextResponse.json({
-      success: true,
       inspection: updatedInspection,
       message: "Inspection updated successfully",
     })
@@ -53,13 +54,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const deletedInspection = deleteFromDataStore("inspections", params.id)
+    const { id } = params
 
-    if (!deletedInspection) {
+    console.log("🗑️ Deleting inspection:", id)
+
+    const deleted = deleteFromDataStore("inspections", id)
+
+    if (!deleted) {
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    console.log("🗑️ Inspection deleted successfully:", params.id)
+    console.log("✅ Inspection deleted successfully:", id)
 
     return NextResponse.json({
       success: true,
