@@ -127,9 +127,6 @@ export class DataService {
           case "createInspection":
             await this.createInspectionDirect(operation.data)
             break
-          case "updateInspection":
-            await this.updateInspectionDirect(operation.data.id, operation.data)
-            break
           case "deleteInspection":
             await this.deleteInspectionDirect(operation.data.id)
             break
@@ -362,8 +359,6 @@ export class DataService {
   }
 
   async createInspection(inspectionData: any) {
-    console.log(`🔄 DataService: Creating inspection`, inspectionData)
-
     if (!this.isOnline) {
       // Save locally and queue for sync
       const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -385,72 +380,19 @@ export class DataService {
   }
 
   private async createInspectionDirect(inspectionData: any) {
-    console.log(`🔄 DataService: Sending create request to server`)
-
     const response = await fetch(`${this.baseUrl}/api/inspections`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(inspectionData),
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`Failed to create inspection: ${response.status} ${errorText}`)
-      throw new Error("Failed to create inspection")
-    }
+    if (!response.ok) throw new Error("Failed to create inspection")
 
     const data = await response.json()
     console.log(`✅ Created inspection on server:`, data.inspection.id)
 
     // Update local storage immediately
     this.saveToLocalStorage("inspections", data.inspection)
-
-    return data.inspection
-  }
-
-  async updateInspection(id: string, inspectionData: any) {
-    console.log(`🔄 DataService: Updating inspection ${id}`, inspectionData)
-
-    // Always try to update on server first, even if offline (for immediate feedback)
-    try {
-      const updatedInspection = await this.updateInspectionDirect(id, inspectionData)
-      console.log(`✅ DataService: Successfully updated inspection ${id}`)
-      return updatedInspection
-    } catch (error) {
-      console.error(`❌ DataService: Failed to update inspection ${id}:`, error)
-
-      if (!this.isOnline) {
-        // Update locally and queue for sync if offline
-        this.updateInLocalStorage("gunworx_inspections", id, { ...inspectionData, _pendingSync: true })
-        this.queueOperation("updateInspection", { id, ...inspectionData })
-
-        return { ...inspectionData, id, updatedAt: new Date().toISOString() }
-      }
-
-      throw error
-    }
-  }
-
-  private async updateInspectionDirect(id: string, inspectionData: any) {
-    console.log(`🔄 DataService: Sending update to server for inspection ${id}`)
-
-    const response = await fetch(`${this.baseUrl}/api/inspections/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(inspectionData),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`Failed to update inspection: ${response.status} ${errorText}`)
-      throw new Error(`Failed to update inspection: ${response.status}`)
-    }
-
-    const data = await response.json()
-    console.log(`✅ Updated inspection on server:`, data.inspection.id)
-
-    // Update local storage immediately with the server response
-    this.updateInLocalStorage("gunworx_inspections", id, data.inspection)
 
     return data.inspection
   }
@@ -596,7 +538,7 @@ export class DataService {
     }
   }
 
-  // Real-time data refresh
+  // Real-time data refresh - THIS WAS MISSING!
   async refreshAllData() {
     try {
       console.log("🔄 Refreshing all data from server...")
@@ -629,7 +571,7 @@ export class DataService {
     }
   }
 
-  // localStorage helper methods
+  // localStorage helper methods - THESE WERE MISSING!
   getFromStorage(key: string) {
     try {
       if (typeof window === "undefined") return null
