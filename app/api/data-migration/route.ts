@@ -1,17 +1,137 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Central data store - this will be our in-memory database
-let centralDataStore = {
+// File-based persistence for serverless environments
+const DATA_FILE_KEY = "gunworx_persistent_data"
+
+// Central data store with default users
+const defaultDataStore = {
   firearms: [] as any[],
   inspections: [] as any[],
-  users: [] as any[],
+  users: [
+    {
+      id: "1",
+      username: "admin",
+      password: "admin123",
+      role: "admin",
+      fullName: "System Administrator",
+      email: "admin@gunworx.com",
+      createdAt: new Date().toISOString(),
+      isActive: true,
+    },
+    {
+      id: "2",
+      username: "inspector",
+      password: "inspect123",
+      role: "inspector",
+      fullName: "John Inspector",
+      email: "inspector@gunworx.com",
+      createdAt: new Date().toISOString(),
+      isActive: true,
+    },
+    {
+      id: "3",
+      username: "user",
+      password: "user123",
+      role: "user",
+      fullName: "Regular User",
+      email: "user@gunworx.com",
+      createdAt: new Date().toISOString(),
+      isActive: true,
+    },
+  ],
   lastUpdated: new Date().toISOString(),
 }
+
+// In-memory cache
+let centralDataStore = { ...defaultDataStore }
 
 // Helper function to generate unique IDs
 function generateId(): string {
   return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
+
+// Persistent storage functions using Vercel KV or fallback to memory
+async function loadDataFromStorage() {
+  try {
+    // Try to load from Vercel KV if available
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      const response = await fetch(`${process.env.KV_REST_API_URL}/get/${DATA_FILE_KEY}`, {
+        headers: {
+          Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.result) {
+          const parsedData = JSON.parse(data.result)
+          centralDataStore = { ...defaultDataStore, ...parsedData }
+          console.log("📥 Data loaded from Vercel KV:", {
+            firearms: centralDataStore.firearms.length,
+            inspections: centralDataStore.inspections.length,
+            users: centralDataStore.users.length,
+          })
+          return
+        }
+      }
+    }
+
+    // Fallback: try to load from environment variable or use default
+    if (process.env.GUNWORX_DATA) {
+      const parsedData = JSON.parse(process.env.GUNWORX_DATA)
+      centralDataStore = { ...defaultDataStore, ...parsedData }
+      console.log("📥 Data loaded from environment variable")
+    } else {
+      console.log("📥 Using default data store")
+    }
+  } catch (error) {
+    console.error("❌ Error loading data from storage:", error)
+    console.log("📥 Using default data store as fallback")
+    centralDataStore = { ...defaultDataStore }
+  }
+}
+
+async function saveDataToStorage() {
+  try {
+    const dataToSave = JSON.stringify(centralDataStore)
+
+    // Try to save to Vercel KV if available
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      const response = await fetch(`${process.env.KV_REST_API_URL}/set/${DATA_FILE_KEY}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ value: dataToSave }),
+      })
+
+      if (response.ok) {
+        console.log("💾 Data saved to Vercel KV successfully")
+        return
+      } else {
+        console.warn("⚠️ Failed to save to Vercel KV, status:", response.status)
+      }
+    }
+
+    // Fallback: log data for manual persistence (in production, you might want to use a database)
+    console.log("💾 Data persistence fallback - store this data:", {
+      timestamp: new Date().toISOString(),
+      counts: {
+        firearms: centralDataStore.firearms.length,
+        inspections: centralDataStore.inspections.length,
+        users: centralDataStore.users.length,
+      },
+      // In a real production environment, you would save this to a database
+      // For now, we'll keep it in memory and log for debugging
+    })
+  } catch (error) {
+    console.error("❌ Error saving data to storage:", error)
+  }
+}
+
+// Initialize data on module load
+loadDataFromStorage()
 
 // Get the central data store
 export function getCentralDataStore() {
@@ -24,6 +144,10 @@ export function updateCentralDataStore(newData: any) {
     ...newData,
     lastUpdated: new Date().toISOString(),
   }
+
+  // Persist changes immediately
+  saveDataToStorage()
+
   console.log("📊 Central data store updated:", {
     firearms: centralDataStore.firearms.length,
     inspections: centralDataStore.inspections.length,
@@ -50,6 +174,10 @@ export function addToDataStore(type: string, item: any) {
   }
 
   centralDataStore.lastUpdated = new Date().toISOString()
+
+  // Persist changes immediately
+  saveDataToStorage()
+
   console.log(`✅ Added ${type} item with ID: ${id}`)
   return newItem
 }
@@ -79,20 +207,33 @@ export function updateInDataStore(type: string, id: string, updates: any) {
   }
 
   centralDataStore.lastUpdated = new Date().toISOString()
+
+  // Persist changes immediately
+  saveDataToStorage()
+
   console.log(`🔄 Updated ${type} item with ID: ${id}`)
   return collection[index]
 }
 
 // Delete item from data store
 export function deleteFromDataStore(type: string, id: string) {
+  console.log(`🗑️ Server: Attempting to delete ${type} with ID: ${id}`)
+
   let collection: any[] = []
+  let collectionName = ""
 
   if (type === "firearms") {
     collection = centralDataStore.firearms
+    collectionName = "firearms"
   } else if (type === "inspections") {
     collection = centralDataStore.inspections
+    collectionName = "inspections"
   } else if (type === "users") {
     collection = centralDataStore.users
+    collectionName = "users"
+  } else {
+    console.error(`❌ Invalid data type: ${type}`)
+    return false
   }
 
   const initialLength = collection.length
@@ -106,7 +247,7 @@ export function deleteFromDataStore(type: string, id: string) {
   // Remove the item from the collection
   collection.splice(index, 1)
 
-  // Update the central data store
+  // Update the central data store reference
   if (type === "firearms") {
     centralDataStore.firearms = collection
   } else if (type === "inspections") {
@@ -117,7 +258,14 @@ export function deleteFromDataStore(type: string, id: string) {
 
   centralDataStore.lastUpdated = new Date().toISOString()
 
-  console.log(`🗑️ Deleted ${type} item with ID: ${id}. Collection size: ${initialLength} -> ${collection.length}`)
+  // Persist changes immediately to ensure deletion is permanent
+  saveDataToStorage()
+
+  console.log(
+    `✅ Server: Successfully deleted ${type} with ID: ${id}. Collection size: ${initialLength} -> ${collection.length}`,
+  )
+  console.log(`📊 Current ${collectionName} count: ${collection.length}`)
+
   return true
 }
 
@@ -150,6 +298,9 @@ function mergeData(serverData: any[], clientData: any[], type: string) {
 
 export async function GET(request: NextRequest) {
   try {
+    // Ensure data is loaded from persistent storage
+    await loadDataFromStorage()
+
     const { searchParams } = new URL(request.url)
     const action = searchParams.get("action")
 
@@ -186,6 +337,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Ensure data is loaded from persistent storage
+    await loadDataFromStorage()
+
     const body = await request.json()
     const { action, data } = body
 
@@ -222,6 +376,23 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    if (action === "clear_inspections") {
+      const clearedCount = centralDataStore.inspections.length
+      centralDataStore.inspections = []
+      centralDataStore.lastUpdated = new Date().toISOString()
+
+      // Persist the clearing immediately
+      await saveDataToStorage()
+
+      console.log(`🧹 Cleared ${clearedCount} inspections from the system`)
+
+      return NextResponse.json({
+        success: true,
+        cleared: clearedCount,
+        message: `Cleared ${clearedCount} inspections permanently`,
+      })
+    }
+
     if (action === "bulk_update_status") {
       const { status, inspectionIds } = data
       let updatedCount = 0
@@ -239,6 +410,9 @@ export async function POST(request: NextRequest) {
           updatedCount++
         })
       }
+
+      // Persist changes
+      await saveDataToStorage()
 
       return NextResponse.json({
         success: true,
