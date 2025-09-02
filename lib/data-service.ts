@@ -1,4 +1,3 @@
-// Enhanced data service with automatic synchronization and centralized storage
 export class DataService {
   private baseUrl: string
   private syncInterval: NodeJS.Timeout | null = null
@@ -416,18 +415,26 @@ export class DataService {
   }
 
   private async deleteInspectionDirect(id: string) {
-    const response = await fetch(`${this.baseUrl}/api/inspections/${id}`, {
-      method: "DELETE",
-    })
+    try {
+      const response = await fetch(`${this.baseUrl}/api/inspections/${id}`, {
+        method: "DELETE",
+      })
 
-    if (!response.ok) throw new Error("Failed to delete inspection")
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        throw new Error(errorData.error || "Failed to delete inspection")
+      }
 
-    console.log(`🗑️ Deleted inspection from server:`, id)
+      console.log(`🗑️ Deleted inspection from server:`, id)
 
-    // Remove from local storage immediately
-    this.deleteFromLocalStorage("gunworx_inspections", id)
+      // Remove from local storage immediately
+      this.deleteFromLocalStorage("gunworx_inspections", id)
 
-    return true
+      return true
+    } catch (error) {
+      console.error("Error deleting inspection from server:", error)
+      throw error // Re-throw to be caught by the calling function
+    }
   }
 
   // Bulk update inspection statuses
