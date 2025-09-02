@@ -1,13 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCentralDataStore, addToDataStore } from "../data-migration/route"
+import { getCentralDataStore, addToDataStore, updateInDataStore } from "../data-migration/route"
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search")
 
+    console.log(`📡 API: Fetching inspections${search ? ` with search: "${search}"` : ""}`)
+
     const dataStore = getCentralDataStore()
-    let inspections = dataStore.inspections
+    let inspections = dataStore.inspections || []
 
     // Apply search filter if provided
     if (search) {
@@ -44,6 +46,8 @@ export async function GET(request: NextRequest) {
 
         return basicFieldsMatch || serialNumbersMatch
       })
+
+      console.log(`🔍 API: Search for "${search}" returned ${inspections.length} results`)
     }
 
     console.log(`📡 API: Returning ${inspections.length} inspections`)
@@ -54,7 +58,7 @@ export async function GET(request: NextRequest) {
       count: inspections.length,
     })
   } catch (error) {
-    console.error("Error fetching inspections:", error)
+    console.error("❌ API: Error fetching inspections:", error)
     return NextResponse.json({ error: "Failed to fetch inspections" }, { status: 500 })
   }
 }
@@ -63,12 +67,7 @@ export async function POST(request: NextRequest) {
   try {
     const inspectionData = await request.json()
 
-    console.log("🔄 API: Creating inspection with data:", inspectionData)
-
-    // Validate required fields
-    if (!inspectionData.date) {
-      return NextResponse.json({ error: "Missing required field: date is required" }, { status: 400 })
-    }
+    console.log("🚀 API: Creating new inspection:", inspectionData)
 
     // Ensure all nested objects have proper structure
     const processedInspection = {
@@ -120,12 +119,9 @@ export async function POST(request: NextRequest) {
       status: inspectionData.status || "pending",
     }
 
-    console.log("🔄 API: Processed inspection data:", processedInspection)
-
-    // Add to data store
     const newInspection = addToDataStore("inspections", processedInspection)
 
-    console.log("✅ API: Successfully created inspection:", newInspection.id)
+    console.log(`✅ API: Successfully created inspection with ID: ${newInspection.id}`)
 
     return NextResponse.json({
       success: true,
@@ -148,33 +144,34 @@ export async function PATCH(request: NextRequest) {
 
     if (action === "bulk_update_status") {
       const { status, inspectionIds } = data
+      let updatedCount = 0
 
       console.log(
         `🔄 API: Bulk updating inspection status to "${status}" for ${inspectionIds?.length || "all"} inspections`,
       )
 
-      const response = await fetch(`${request.nextUrl.origin}/api/data-migration`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "bulk_update_inspection_status",
-          data: { status, inspectionIds },
-        }),
-      })
+      const dataStore = getCentralDataStore()
 
-      if (!response.ok) {
-        throw new Error("Failed to update inspection statuses")
+      if (inspectionIds && inspectionIds.length > 0) {
+        // Update specific inspections
+        inspectionIds.forEach((id: string) => {
+          const updated = updateInDataStore("inspections", id, { status })
+          if (updated) updatedCount++
+        })
+      } else {
+        // Update all inspections
+        dataStore.inspections.forEach((inspection: any) => {
+          updateInDataStore("inspections", inspection.id, { status })
+          updatedCount++
+        })
       }
 
-      const result = await response.json()
-
-      console.log(`✅ API: Successfully updated ${result.updated} inspections to "${status}"`)
+      console.log(`✅ API: Successfully updated ${updatedCount} inspections to "${status}"`)
 
       return NextResponse.json({
         success: true,
-        updated: result.updated,
-        status,
-        message: `Successfully updated ${result.updated} inspection${result.updated !== 1 ? "s" : ""} to "${status}"`,
+        updated: updatedCount,
+        message: `Updated ${updatedCount} inspections to status: ${status}`,
       })
     }
 

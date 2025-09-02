@@ -100,9 +100,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    console.log(`🗑️ API: Attempting to delete inspection ${params.id}`)
+
     const success = deleteFromDataStore("inspections", params.id)
 
     if (!success) {
+      console.log(`❌ API: Inspection ${params.id} not found for deletion`)
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 

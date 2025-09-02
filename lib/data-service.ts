@@ -1,3 +1,4 @@
+// Enhanced data service with automatic synchronization and centralized storage
 export class DataService {
   private baseUrl: string
   private syncInterval: NodeJS.Timeout | null = null
@@ -282,11 +283,14 @@ export class DataService {
       const params = new URLSearchParams()
       if (filters.search) params.append("search", filters.search)
 
+      console.log(`📡 Client: Fetching inspections from server...`)
+
       const response = await fetch(`${this.baseUrl}/api/inspections?${params}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache",
+          Pragma: "no-cache",
         },
       })
 
@@ -297,14 +301,11 @@ export class DataService {
       // Update local storage with fresh server data
       this.setToStorage("gunworx_inspections", data.inspections || [])
 
-      console.log(`📡 Fetched ${data.inspections?.length || 0} inspections from server`)
+      console.log(`📡 Client: Fetched ${data.inspections?.length || 0} inspections from server`)
 
       // If search term provided, log what fields were searched
       if (filters.search) {
         console.log(`🔍 Searched inspections for: "${filters.search}" - found ${data.inspections?.length || 0} results`)
-        console.log(
-          "🔍 Search includes: inspector, company, make, serial numbers (barrel, frame, receiver), caliber, and all other fields",
-        )
       }
 
       return data.inspections || []
@@ -416,23 +417,30 @@ export class DataService {
 
   private async deleteInspectionDirect(id: string) {
     try {
+      console.log(`🗑️ Client: Attempting to delete inspection ${id} from server`)
+
       const response = await fetch(`${this.baseUrl}/api/inspections/${id}`, {
         method: "DELETE",
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        console.error(`❌ Client: Server deletion failed for inspection ${id}:`, errorData)
         throw new Error(errorData.error || "Failed to delete inspection")
       }
 
-      console.log(`🗑️ Deleted inspection from server:`, id)
+      const result = await response.json()
+      console.log(`✅ Client: Server confirmed deletion of inspection ${id}:`, result)
 
-      // Remove from local storage immediately
+      // Remove from local storage immediately after successful server deletion
       this.deleteFromLocalStorage("gunworx_inspections", id)
+
+      // Force a refresh of inspections data to ensure consistency
+      await this.getInspections()
 
       return true
     } catch (error) {
-      console.error("Error deleting inspection from server:", error)
+      console.error(`❌ Client: Error deleting inspection ${id} from server:`, error)
       throw error // Re-throw to be caught by the calling function
     }
   }
