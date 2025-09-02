@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 
 // In-memory data store (in production, this would be a database)
 let centralDataStore = {
-  firearms: [] as any[],
-  inspections: [] as any[],
+  firearms: [],
+  inspections: [],
   users: [
     {
       id: "1",
@@ -20,8 +20,8 @@ let centralDataStore = {
       username: "inspector",
       password: "inspect123",
       role: "inspector",
-      fullName: "Wikus Fourie",
-      email: "wikus@gunworx.com",
+      fullName: "John Inspector",
+      email: "inspector@gunworx.com",
       createdAt: new Date().toISOString(),
       isActive: true,
     },
@@ -36,6 +36,7 @@ let centralDataStore = {
       isActive: true,
     },
   ],
+  lastUpdated: new Date().toISOString(),
 }
 
 export function getCentralDataStore() {
@@ -43,77 +44,71 @@ export function getCentralDataStore() {
 }
 
 export function updateCentralDataStore(newData: any) {
-  if (newData.firearms) centralDataStore.firearms = newData.firearms
-  if (newData.inspections) centralDataStore.inspections = newData.inspections
-  if (newData.users) centralDataStore.users = newData.users
+  centralDataStore = {
+    ...centralDataStore,
+    ...newData,
+    lastUpdated: new Date().toISOString(),
+  }
   return centralDataStore
 }
 
 export function addToDataStore(type: string, item: any) {
-  const id = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const id = item.id || `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   const newItem = {
     ...item,
     id,
-    createdAt: new Date().toISOString(),
+    createdAt: item.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
 
-  switch (type) {
-    case "firearms":
-      centralDataStore.firearms.push(newItem)
-      break
-    case "inspections":
-      centralDataStore.inspections.push(newItem)
-      break
-    case "users":
-      centralDataStore.users.push(newItem)
-      break
+  if (type === "firearms") {
+    centralDataStore.firearms.push(newItem)
+  } else if (type === "inspections") {
+    centralDataStore.inspections.push(newItem)
+  } else if (type === "users") {
+    centralDataStore.users.push(newItem)
   }
 
+  centralDataStore.lastUpdated = new Date().toISOString()
   return newItem
 }
 
 export function updateInDataStore(type: string, id: string, updates: any) {
-  let collection: any[] = []
-
-  switch (type) {
-    case "firearms":
-      collection = centralDataStore.firearms
-      break
-    case "inspections":
-      collection = centralDataStore.inspections
-      break
-    case "users":
-      collection = centralDataStore.users
-      break
-    default:
-      return null
+  let collection
+  if (type === "firearms") {
+    collection = centralDataStore.firearms
+  } else if (type === "inspections") {
+    collection = centralDataStore.inspections
+  } else if (type === "users") {
+    collection = centralDataStore.users
+  } else {
+    return null
   }
 
-  const index = collection.findIndex((item) => item.id === id)
+  const index = collection.findIndex((item: any) => item.id === id)
   if (index !== -1) {
     collection[index] = {
       ...collection[index],
       ...updates,
+      id, // Preserve the original ID
       updatedAt: new Date().toISOString(),
     }
+    centralDataStore.lastUpdated = new Date().toISOString()
     return collection[index]
   }
   return null
 }
 
 export function deleteFromDataStore(type: string, id: string) {
-  switch (type) {
-    case "firearms":
-      centralDataStore.firearms = centralDataStore.firearms.filter((item) => item.id !== id)
-      break
-    case "inspections":
-      centralDataStore.inspections = centralDataStore.inspections.filter((item) => item.id !== id)
-      break
-    case "users":
-      centralDataStore.users = centralDataStore.users.filter((item) => item.id !== id)
-      break
+  if (type === "firearms") {
+    centralDataStore.firearms = centralDataStore.firearms.filter((item: any) => item.id !== id)
+  } else if (type === "inspections") {
+    centralDataStore.inspections = centralDataStore.inspections.filter((item: any) => item.id !== id)
+  } else if (type === "users") {
+    centralDataStore.users = centralDataStore.users.filter((item: any) => item.id !== id)
   }
+
+  centralDataStore.lastUpdated = new Date().toISOString()
   return true
 }
 
@@ -126,7 +121,7 @@ export async function GET(request: NextRequest) {
       case "status":
         return NextResponse.json({
           status: "online",
-          timestamp: new Date().toISOString(),
+          lastUpdated: centralDataStore.lastUpdated,
           counts: {
             firearms: centralDataStore.firearms.length,
             inspections: centralDataStore.inspections.length,
@@ -136,16 +131,17 @@ export async function GET(request: NextRequest) {
 
       case "backup":
         return NextResponse.json({
-          timestamp: new Date().toISOString(),
           data: centralDataStore,
+          timestamp: new Date().toISOString(),
+          version: "1.0",
         })
 
       default:
         return NextResponse.json(centralDataStore)
     }
   } catch (error) {
-    console.error("Error in data-migration GET:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error in data migration GET:", error)
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 })
   }
 }
 
@@ -158,50 +154,32 @@ export async function POST(request: NextRequest) {
       case "sync":
         // Merge incoming data with existing data
         if (data.firearms) {
-          data.firearms.forEach((firearm: any) => {
-            const existingIndex = centralDataStore.firearms.findIndex((f) => f.id === firearm.id)
-            if (existingIndex >= 0) {
-              centralDataStore.firearms[existingIndex] = firearm
-            } else {
-              centralDataStore.firearms.push(firearm)
-            }
-          })
+          centralDataStore.firearms = [...centralDataStore.firearms, ...data.firearms]
         }
-
         if (data.inspections) {
-          data.inspections.forEach((inspection: any) => {
-            const existingIndex = centralDataStore.inspections.findIndex((i) => i.id === inspection.id)
-            if (existingIndex >= 0) {
-              centralDataStore.inspections[existingIndex] = inspection
-            } else {
-              centralDataStore.inspections.push(inspection)
-            }
-          })
+          centralDataStore.inspections = [...centralDataStore.inspections, ...data.inspections]
         }
-
         if (data.users) {
-          data.users.forEach((user: any) => {
-            const existingIndex = centralDataStore.users.findIndex((u) => u.id === user.id)
-            if (existingIndex >= 0) {
-              centralDataStore.users[existingIndex] = user
-            } else {
-              centralDataStore.users.push(user)
-            }
-          })
+          centralDataStore.users = [...centralDataStore.users, ...data.users]
         }
+        centralDataStore.lastUpdated = new Date().toISOString()
 
         return NextResponse.json({
           success: true,
+          data: centralDataStore,
           synced: {
             firearms: data.firearms?.length || 0,
             inspections: data.inspections?.length || 0,
             users: data.users?.length || 0,
           },
-          data: centralDataStore,
         })
 
       case "restore":
-        centralDataStore = data
+        centralDataStore = {
+          ...data,
+          lastUpdated: new Date().toISOString(),
+        }
+
         return NextResponse.json({
           success: true,
           restored: {
@@ -214,16 +192,53 @@ export async function POST(request: NextRequest) {
       case "clear_inspections":
         const clearedCount = centralDataStore.inspections.length
         centralDataStore.inspections = []
+        centralDataStore.lastUpdated = new Date().toISOString()
+
         return NextResponse.json({
           success: true,
           cleared: clearedCount,
+        })
+
+      case "bulk_update_inspection_status":
+        const { status, inspectionIds } = data
+        let updatedCount = 0
+
+        if (inspectionIds && inspectionIds.length > 0) {
+          // Update specific inspections
+          centralDataStore.inspections = centralDataStore.inspections.map((inspection: any) => {
+            if (inspectionIds.includes(inspection.id)) {
+              updatedCount++
+              return {
+                ...inspection,
+                status,
+                updatedAt: new Date().toISOString(),
+              }
+            }
+            return inspection
+          })
+        } else {
+          // Update all inspections
+          updatedCount = centralDataStore.inspections.length
+          centralDataStore.inspections = centralDataStore.inspections.map((inspection: any) => ({
+            ...inspection,
+            status,
+            updatedAt: new Date().toISOString(),
+          }))
+        }
+
+        centralDataStore.lastUpdated = new Date().toISOString()
+
+        return NextResponse.json({
+          success: true,
+          updated: updatedCount,
+          status,
         })
 
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 })
     }
   } catch (error) {
-    console.error("Error in data-migration POST:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error in data migration POST:", error)
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 })
   }
 }

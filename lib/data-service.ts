@@ -430,6 +430,38 @@ export class DataService {
     return true
   }
 
+  // Bulk update inspection statuses
+  async bulkUpdateInspectionStatus(status: string, inspectionIds?: string[]) {
+    try {
+      console.log(`🔄 Bulk updating inspection status to "${status}" for ${inspectionIds?.length || "all"} inspections`)
+
+      const response = await fetch(`${this.baseUrl}/api/inspections`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "bulk_update_status",
+          data: { status, inspectionIds },
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        throw new Error(errorData.error || "Failed to bulk update inspection statuses")
+      }
+
+      const result = await response.json()
+      console.log(`✅ Successfully updated ${result.updated} inspections to "${status}"`)
+
+      // Refresh local data after bulk update
+      await this.getInspections()
+
+      return result
+    } catch (error) {
+      console.error("Error in bulk update:", error)
+      throw error
+    }
+  }
+
   // Users API methods
   async getUsers() {
     try {

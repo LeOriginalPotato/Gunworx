@@ -140,3 +140,50 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { action, data } = body
+
+    if (action === "bulk_update_status") {
+      const { status, inspectionIds } = data
+
+      console.log(
+        `🔄 API: Bulk updating inspection status to "${status}" for ${inspectionIds?.length || "all"} inspections`,
+      )
+
+      const response = await fetch(`${request.nextUrl.origin}/api/data-migration`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "bulk_update_inspection_status",
+          data: { status, inspectionIds },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update inspection statuses")
+      }
+
+      const result = await response.json()
+
+      console.log(`✅ API: Successfully updated ${result.updated} inspections to "${status}"`)
+
+      return NextResponse.json({
+        success: true,
+        updated: result.updated,
+        status,
+        message: `Successfully updated ${result.updated} inspection${result.updated !== 1 ? "s" : ""} to "${status}"`,
+      })
+    }
+
+    return NextResponse.json({ error: "Unknown action" }, { status: 400 })
+  } catch (error) {
+    console.error("❌ API: Error in bulk update:", error)
+    return NextResponse.json(
+      { error: `Failed to bulk update: ${error instanceof Error ? error.message : "Unknown error"}` },
+      { status: 500 },
+    )
+  }
+}

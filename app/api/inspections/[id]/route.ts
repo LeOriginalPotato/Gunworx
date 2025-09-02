@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const inspectionData = await request.json()
 
-    console.log("🔄 API: Updating inspection:", params.id, inspectionData)
+    console.log(`🔄 API: Updating inspection ${params.id}:`, inspectionData)
 
     // Ensure all nested objects have proper structure
     const processedInspection = {
@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    console.log("✅ API: Successfully updated inspection:", updatedInspection.id)
+    console.log(`✅ API: Successfully updated inspection ${params.id}`)
 
     return NextResponse.json({
       success: true,
@@ -90,7 +90,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       message: "Inspection updated successfully",
     })
   } catch (error) {
-    console.error("❌ API: Error updating inspection:", error)
+    console.error(`❌ API: Error updating inspection ${params.id}:`, error)
     return NextResponse.json(
       { error: `Failed to update inspection: ${error instanceof Error ? error.message : "Unknown error"}` },
       { status: 500 },
@@ -106,14 +106,17 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Inspection not found" }, { status: 404 })
     }
 
-    console.log("🗑️ API: Successfully deleted inspection:", params.id)
+    console.log(`✅ API: Successfully deleted inspection ${params.id}`)
 
     return NextResponse.json({
       success: true,
       message: "Inspection deleted successfully",
     })
   } catch (error) {
-    console.error("❌ API: Error deleting inspection:", error)
-    return NextResponse.json({ error: "Failed to delete inspection" }, { status: 500 })
+    console.error(`❌ API: Error deleting inspection ${params.id}:`, error)
+    return NextResponse.json(
+      { error: `Failed to delete inspection: ${error instanceof Error ? error.message : "Unknown error"}` },
+      { status: 500 },
+    )
   }
 }
