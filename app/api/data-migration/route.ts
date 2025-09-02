@@ -229,8 +229,8 @@ export function deleteFromDataStore(type: string, id: string) {
     collection = centralDataStore.inspections
     collectionName = "inspections"
   } else if (type === "users") {
-    collection = centralDataStore.users
     collectionName = "users"
+    collection = centralDataStore.users
   } else {
     console.error(`❌ Invalid data type: ${type}`)
     return false
@@ -367,7 +367,14 @@ export async function POST(request: NextRequest) {
 
     if (action === "restore") {
       // Restore from backup
-      updateCentralDataStore(data)
+      const backupData = data
+
+      // Filter out inspections with companyName "Delta"
+      if (backupData && backupData.inspections) {
+        backupData.inspections = backupData.inspections.filter((inspection: any) => inspection.companyName !== "Delta")
+      }
+
+      updateCentralDataStore(backupData)
 
       return NextResponse.json({
         success: true,
