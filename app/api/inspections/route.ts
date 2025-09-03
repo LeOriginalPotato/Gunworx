@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCentralDataStore, addToDataStore } from "../data-migration/route"
+import { getCentralDataStore, addToDataStore, updateInDataStore } from "../data-migration/route"
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,18 +47,18 @@ export async function GET(request: NextRequest) {
         return basicFieldsMatch || serialNumbersMatch
       })
 
-      console.log(`🔍 Server: Search for "${search}" returned ${inspections.length} results`)
+      console.log(`🔍 API: Search for "${search}" returned ${inspections.length} results`)
     }
 
-    console.log(`📡 Server: Returning ${inspections.length} inspections`)
+    console.log(`📡 API: Returning ${inspections.length} inspections`)
 
     return NextResponse.json({
       success: true,
       inspections,
-      total: inspections.length,
+      count: inspections.length,
     })
   } catch (error) {
-    console.error("Error fetching inspections:", error)
+    console.error("❌ API: Error fetching inspections:", error)
     return NextResponse.json({ error: "Failed to fetch inspections" }, { status: 500 })
   }
 }
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   try {
     const inspectionData = await request.json()
 
-    console.log("🚀 Server: Creating new inspection:", inspectionData)
+    console.log("🚀 API: Creating new inspection:", inspectionData)
 
     // Ensure all nested objects have proper structure
     const processedInspection = {
@@ -115,14 +115,13 @@ export async function POST(request: NextRequest) {
       observations: inspectionData.observations || "",
       comments: inspectionData.comments || "",
       signature: inspectionData.signature || "",
-      stamp: inspectionData.stamp || "", // Add stamp support
       inspectorTitle: inspectionData.inspectorTitle || "",
       status: inspectionData.status || "pending",
     }
 
     const newInspection = addToDataStore("inspections", processedInspection)
 
-    console.log(`✅ Server: Successfully created inspection with ID: ${newInspection.id}`)
+    console.log(`✅ API: Successfully created inspection with ID: ${newInspection.id}`)
 
     return NextResponse.json({
       success: true,
@@ -130,7 +129,7 @@ export async function POST(request: NextRequest) {
       message: "Inspection created successfully",
     })
   } catch (error) {
-    console.error("❌ Server: Error creating inspection:", error)
+    console.error("❌ API: Error creating inspection:", error)
     return NextResponse.json(
       { error: `Failed to create inspection: ${error instanceof Error ? error.message : "Unknown error"}` },
       { status: 500 },
@@ -145,47 +144,43 @@ export async function PATCH(request: NextRequest) {
 
     if (action === "bulk_update_status") {
       const { status, inspectionIds } = data
-      const dataStore = getCentralDataStore()
       let updatedCount = 0
+
+      console.log(
+        `🔄 API: Bulk updating inspection status to "${status}" for ${inspectionIds?.length || "all"} inspections`,
+      )
+
+      const dataStore = getCentralDataStore()
 
       if (inspectionIds && inspectionIds.length > 0) {
         // Update specific inspections
-        dataStore.inspections = dataStore.inspections.map((inspection: any) => {
-          if (inspectionIds.includes(inspection.id)) {
-            updatedCount++
-            return {
-              ...inspection,
-              status,
-              updatedAt: new Date().toISOString(),
-            }
-          }
-          return inspection
+        inspectionIds.forEach((id: string) => {
+          const updated = updateInDataStore("inspections", id, { status })
+          if (updated) updatedCount++
         })
       } else {
         // Update all inspections
-        updatedCount = dataStore.inspections.length
-        dataStore.inspections = dataStore.inspections.map((inspection: any) => ({
-          ...inspection,
-          status,
-          updatedAt: new Date().toISOString(),
-        }))
+        dataStore.inspections.forEach((inspection: any) => {
+          updateInDataStore("inspections", inspection.id, { status })
+          updatedCount++
+        })
       }
 
-      dataStore.lastUpdated = new Date().toISOString()
-
-      console.log(`✅ Server: Bulk updated ${updatedCount} inspections to status: ${status}`)
+      console.log(`✅ API: Successfully updated ${updatedCount} inspections to "${status}"`)
 
       return NextResponse.json({
         success: true,
         updated: updatedCount,
-        status,
-        message: `Updated ${updatedCount} inspections to ${status}`,
+        message: `Updated ${updatedCount} inspections to status: ${status}`,
       })
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 })
   } catch (error) {
-    console.error("Error in bulk update:", error)
-    return NextResponse.json({ error: "Failed to process bulk update" }, { status: 500 })
+    console.error("❌ API: Error in bulk update:", error)
+    return NextResponse.json(
+      { error: `Failed to bulk update: ${error instanceof Error ? error.message : "Unknown error"}` },
+      { status: 500 },
+    )
   }
 }

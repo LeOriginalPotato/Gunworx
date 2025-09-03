@@ -1,3 +1,5 @@
+"use client"
+
 import jsPDF from "jspdf"
 
 interface Inspection {
@@ -45,443 +47,538 @@ interface Inspection {
   countryOfOrigin: string
   observations: string
   comments: string
-  signature?: string
+  signature: string
   stamp?: string
   inspectorTitle: string
   status: "passed" | "failed" | "pending"
 }
 
-// Helper function to load image and convert to base64
-async function loadImageAsBase64(imagePath: string): Promise<string | null> {
+export function generateInspectionPDF(inspection: Inspection) {
+  const doc = new jsPDF()
+
+  // Set up page margins
+  const margin = 20
+  const pageWidth = doc.internal.pageSize.width
+  const pageHeight = doc.internal.pageSize.height
+  const contentWidth = pageWidth - margin * 2
+
+  let yPosition = margin
+
+  // Header with logo - centered and original size
   try {
-    const response = await fetch(imagePath)
-    if (!response.ok) {
-      console.warn(`Failed to load image: ${imagePath}`)
-      return null
+    // Add header image centered at top
+    const headerImg = new Image()
+    headerImg.crossOrigin = "anonymous"
+    headerImg.src = "/gunworx-header.png"
+
+    headerImg.onload = () => {
+      // Center the 100x35 image (increased height)
+      const imgWidth = 100
+      const imgHeight = 35
+      const xPosition = (pageWidth - imgWidth) / 2
+
+      doc.addImage(headerImg, "PNG", xPosition, yPosition, imgWidth, imgHeight)
+
+      // Continue with rest of document
+      generatePDFContent()
     }
-    const blob = await response.blob()
-    return new Promise((resolve) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = () => resolve(null)
-      reader.readAsDataURL(blob)
-    })
+
+    headerImg.onerror = () => {
+      console.warn("Header image failed to load, continuing without it")
+      generatePDFContent()
+    }
   } catch (error) {
-    console.warn(`Error loading image ${imagePath}:`, error)
-    return null
+    console.warn("Error loading header image:", error)
+    generatePDFContent()
   }
-}
 
-// Helper function to get selected firearm types
-function getSelectedFirearmTypes(firearmType: Inspection["firearmType"]): string[] {
-  const types = []
-  if (firearmType.pistol) types.push("Pistol")
-  if (firearmType.revolver) types.push("Revolver")
-  if (firearmType.rifle) types.push("Rifle")
-  if (firearmType.selfLoadingRifle) types.push("Self-Loading Rifle/Carbine")
-  if (firearmType.shotgun) types.push("Shotgun")
-  if (firearmType.combination) types.push("Combination")
-  if (firearmType.other) types.push(`Other: ${firearmType.otherDetails}`)
-  return types
-}
+  function generatePDFContent() {
+    yPosition = margin + 45 // Increased from 30 to account for taller header
 
-// Helper function to get selected action types
-function getSelectedActionTypes(actionType: Inspection["actionType"]): string[] {
-  const types = []
-  if (actionType.manual) types.push("Manual")
-  if (actionType.semiAuto) types.push("Semi Auto")
-  if (actionType.automatic) types.push("Automatic")
-  if (actionType.bolt) types.push("Bolt")
-  if (actionType.breakneck) types.push("Breakneck")
-  if (actionType.pump) types.push("Pump")
-  if (actionType.cappingBreechLoader) types.push("Capping Breech Loader")
-  if (actionType.lever) types.push("Lever")
-  if (actionType.cylinder) types.push("Cylinder")
-  if (actionType.fallingBlock) types.push("Falling Block")
-  if (actionType.other) types.push(`Other: ${actionType.otherDetails}`)
-  return types
-}
-
-export async function generateInspectionPDF(inspection: Inspection) {
-  try {
-    console.log("🖨️ Generating PDF for inspection:", inspection.id)
-
-    const pdf = new jsPDF()
-    let yPosition = 20
-
-    // Load signature and stamp images
-    const signatureImage = inspection.signature ? await loadImageAsBase64(inspection.signature) : null
-    const stampImage = inspection.stamp ? await loadImageAsBase64(inspection.stamp) : null
-
-    // Header
-    pdf.setFontSize(16)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("FIREARM INSPECTION REPORT", 105, yPosition, { align: "center" })
+    // Title - centered
+    doc.setFontSize(16)
+    doc.setFont("helvetica", "bold")
+    const title = "FIREARM INSPECTION REPORT"
+    const titleWidth = doc.getTextWidth(title)
+    doc.text(title, (pageWidth - titleWidth) / 2, yPosition)
     yPosition += 15
 
-    // Inspector Information
-    pdf.setFontSize(12)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("INSPECTOR INFORMATION", 20, yPosition)
+    // Inspector Information Section
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.text("INSPECTOR INFORMATION", margin, yPosition)
     yPosition += 8
 
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(10)
-    pdf.text(`Inspector: ${inspection.inspector}`, 20, yPosition)
-    pdf.text(`ID Number: ${inspection.inspectorId}`, 120, yPosition)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+
+    // Two column layout for inspector info
+    const col1X = margin
+    const col2X = margin + contentWidth / 2
+
+    doc.text(`Inspector: ${inspection.inspector}`, col1X, yPosition)
+    doc.text(`ID Number: ${inspection.inspectorId}`, col2X, yPosition)
     yPosition += 6
-    pdf.text(`Date: ${inspection.date}`, 20, yPosition)
+
+    doc.text(`Company: ${inspection.companyName}`, col1X, yPosition)
+    doc.text(`Dealer Code: ${inspection.dealerCode}`, col2X, yPosition)
+    yPosition += 6
+
+    doc.text(`Date: ${inspection.date}`, col1X, yPosition)
+    doc.text(`Title: ${inspection.inspectorTitle}`, col2X, yPosition)
+    yPosition += 12
+
+    // Firearm Type Section
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.text("FIREARM TYPE", margin, yPosition)
+    yPosition += 8
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+
+    const firearmTypes = []
+    if (inspection.firearmType.pistol) firearmTypes.push("Pistol")
+    if (inspection.firearmType.revolver) firearmTypes.push("Revolver")
+    if (inspection.firearmType.rifle) firearmTypes.push("Rifle")
+    if (inspection.firearmType.selfLoadingRifle) firearmTypes.push("Self-Loading Rifle/Carbine")
+    if (inspection.firearmType.shotgun) firearmTypes.push("Shotgun")
+    if (inspection.firearmType.combination) firearmTypes.push("Combination")
+    if (inspection.firearmType.other) firearmTypes.push(`Other: ${inspection.firearmType.otherDetails}`)
+
+    doc.text(`Selected Types: ${firearmTypes.join(", ") || "None"}`, margin, yPosition)
     yPosition += 10
 
-    // Company Information
-    pdf.setFontSize(12)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("COMPANY INFORMATION", 20, yPosition)
+    // Caliber/Cartridge Section
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.text("CALIBER/CARTRIDGE", margin, yPosition)
     yPosition += 8
 
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(10)
-    pdf.text(`Company: ${inspection.companyName}`, 20, yPosition)
-    pdf.text(`Dealer Code: ${inspection.dealerCode}`, 120, yPosition)
-    yPosition += 10
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+    doc.text(`Caliber: ${inspection.caliber}`, col1X, yPosition)
+    doc.text(`Code: ${inspection.cartridgeCode}`, col2X, yPosition)
+    yPosition += 12
 
-    // Firearm Type
-    pdf.setFontSize(12)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("FIREARM TYPE", 20, yPosition)
+    // Serial Numbers Section
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.text("SERIAL NUMBERS", margin, yPosition)
     yPosition += 8
 
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(10)
-    const selectedFirearmTypes = getSelectedFirearmTypes(inspection.firearmType)
-    if (selectedFirearmTypes.length > 0) {
-      pdf.text(`Selected Types: ${selectedFirearmTypes.join(", ")}`, 20, yPosition)
-      yPosition += 6
-    }
-    yPosition += 5
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
 
-    // Caliber/Cartridge
-    pdf.setFontSize(12)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("CALIBER/CARTRIDGE", 20, yPosition)
-    yPosition += 8
-
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(10)
-    pdf.text(`Caliber: ${inspection.caliber}`, 20, yPosition)
-    pdf.text(`Code: ${inspection.cartridgeCode}`, 120, yPosition)
-    yPosition += 10
-
-    // Serial Numbers
-    pdf.setFontSize(12)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("SERIAL NUMBERS", 20, yPosition)
-    yPosition += 8
-
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(10)
     if (inspection.serialNumbers.barrel) {
-      pdf.text(`Barrel: ${inspection.serialNumbers.barrel} (${inspection.serialNumbers.barrelMake})`, 20, yPosition)
+      doc.text(`Barrel: ${inspection.serialNumbers.barrel} (${inspection.serialNumbers.barrelMake})`, margin, yPosition)
       yPosition += 6
     }
     if (inspection.serialNumbers.frame) {
-      pdf.text(`Frame: ${inspection.serialNumbers.frame} (${inspection.serialNumbers.frameMake})`, 20, yPosition)
+      doc.text(`Frame: ${inspection.serialNumbers.frame} (${inspection.serialNumbers.frameMake})`, margin, yPosition)
       yPosition += 6
     }
     if (inspection.serialNumbers.receiver) {
-      pdf.text(
+      doc.text(
         `Receiver: ${inspection.serialNumbers.receiver} (${inspection.serialNumbers.receiverMake})`,
-        20,
+        margin,
         yPosition,
       )
       yPosition += 6
     }
-    yPosition += 5
+    yPosition += 6
 
-    // Action Type
-    pdf.setFontSize(12)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("ACTION TYPE", 20, yPosition)
+    // Action Type Section
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.text("ACTION TYPE", margin, yPosition)
     yPosition += 8
 
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(10)
-    const selectedActionTypes = getSelectedActionTypes(inspection.actionType)
-    if (selectedActionTypes.length > 0) {
-      pdf.text(`Selected Types: ${selectedActionTypes.join(", ")}`, 20, yPosition)
-      yPosition += 6
-    }
-    yPosition += 5
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
 
-    // Make and Country
-    pdf.setFontSize(12)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("MAKE & ORIGIN", 20, yPosition)
+    const actionTypes = []
+    if (inspection.actionType.manual) actionTypes.push("Manual")
+    if (inspection.actionType.semiAuto) actionTypes.push("Semi Auto")
+    if (inspection.actionType.automatic) actionTypes.push("Automatic")
+    if (inspection.actionType.bolt) actionTypes.push("Bolt")
+    if (inspection.actionType.breakneck) actionTypes.push("Breakneck")
+    if (inspection.actionType.pump) actionTypes.push("Pump")
+    if (inspection.actionType.cappingBreechLoader) actionTypes.push("Capping Breech Loader")
+    if (inspection.actionType.lever) actionTypes.push("Lever")
+    if (inspection.actionType.cylinder) actionTypes.push("Cylinder")
+    if (inspection.actionType.fallingBlock) actionTypes.push("Falling Block")
+    if (inspection.actionType.other) actionTypes.push(`Other: ${inspection.actionType.otherDetails}`)
+
+    doc.text(`Selected Actions: ${actionTypes.join(", ") || "None"}`, margin, yPosition)
+    yPosition += 12
+
+    // Make and Country Section
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.text("MAKE & ORIGIN", margin, yPosition)
     yPosition += 8
 
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(10)
-    pdf.text(`Make: ${inspection.make}`, 20, yPosition)
-    pdf.text(`Country: ${inspection.countryOfOrigin}`, 120, yPosition)
-    yPosition += 10
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+    doc.text(`Make: ${inspection.make}`, col1X, yPosition)
+    doc.text(`Country of Origin: ${inspection.countryOfOrigin}`, col2X, yPosition)
+    yPosition += 12
 
-    // Observations
+    // Observations Section
     if (inspection.observations) {
-      pdf.setFontSize(12)
-      pdf.setFont("helvetica", "bold")
-      pdf.text("OBSERVATIONS", 20, yPosition)
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(12)
+      doc.text("OBSERVATIONS", margin, yPosition)
       yPosition += 8
 
-      pdf.setFont("helvetica", "normal")
-      pdf.setFontSize(10)
-      const observationLines = pdf.splitTextToSize(inspection.observations, 170)
-      pdf.text(observationLines, 20, yPosition)
-      yPosition += observationLines.length * 6 + 5
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(10)
+
+      // Split long text into multiple lines
+      const observationLines = doc.splitTextToSize(inspection.observations, contentWidth)
+      doc.text(observationLines, margin, yPosition)
+      yPosition += observationLines.length * 6 + 6
     }
 
-    // Comments
+    // Comments Section
     if (inspection.comments) {
-      pdf.setFontSize(12)
-      pdf.setFont("helvetica", "bold")
-      pdf.text("COMMENTS", 20, yPosition)
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(12)
+      doc.text("COMMENTS", margin, yPosition)
       yPosition += 8
 
-      pdf.setFont("helvetica", "normal")
-      pdf.setFontSize(10)
-      const commentLines = pdf.splitTextToSize(inspection.comments, 170)
-      pdf.text(commentLines, 20, yPosition)
-      yPosition += commentLines.length * 6 + 5
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(10)
+
+      const commentLines = doc.splitTextToSize(inspection.comments, contentWidth)
+      doc.text(commentLines, margin, yPosition)
+      yPosition += commentLines.length * 6 + 6
     }
 
-    // Status
-    pdf.setFontSize(12)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("STATUS", 20, yPosition)
+    // Status Section
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.text("INSPECTION STATUS", margin, yPosition)
     yPosition += 8
 
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(10)
-    pdf.text(`Inspection Status: ${inspection.status.toUpperCase()}`, 20, yPosition)
-    yPosition += 10
-
-    // Inspector Title
-    if (inspection.inspectorTitle) {
-      pdf.text(`Inspector Title: ${inspection.inspectorTitle}`, 20, yPosition)
-      yPosition += 10
-    }
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+    doc.text(`Status: ${inspection.status.toUpperCase()}`, margin, yPosition)
+    yPosition += 12
 
     // Signature and Stamp Section
-    if (signatureImage || stampImage) {
-      // Check if we need a new page
-      if (yPosition > 220) {
-        pdf.addPage()
-        yPosition = 20
+    if (inspection.signature || inspection.stamp) {
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(12)
+      doc.text("INSPECTOR SIGNATURE & STAMP", margin, yPosition)
+      yPosition += 8
+
+      // Load both signature and stamp images
+      const imagesToLoad = []
+
+      if (inspection.signature) {
+        imagesToLoad.push({
+          type: "signature",
+          src: inspection.signature,
+          label: "Signature",
+        })
       }
 
-      pdf.setFontSize(12)
-      pdf.setFont("helvetica", "bold")
-      pdf.text("CERTIFICATION", 20, yPosition)
-      yPosition += 15
-
-      // Display signature and stamp side by side
-      if (signatureImage && stampImage) {
-        // Both signature and stamp
-        pdf.setFontSize(10)
-        pdf.setFont("helvetica", "normal")
-        pdf.text("Inspector Signature:", 20, yPosition)
-        pdf.text("Official Stamp:", 120, yPosition)
-        yPosition += 5
-
-        try {
-          pdf.addImage(signatureImage, "PNG", 20, yPosition, 80, 30)
-          pdf.addImage(stampImage, "PNG", 120, yPosition, 60, 30)
-          yPosition += 35
-        } catch (error) {
-          console.error("Error adding images to PDF:", error)
-          pdf.text("Signature and stamp could not be displayed", 20, yPosition)
-          yPosition += 10
-        }
-      } else if (signatureImage) {
-        // Only signature
-        pdf.setFontSize(10)
-        pdf.setFont("helvetica", "normal")
-        pdf.text("Inspector Signature:", 20, yPosition)
-        yPosition += 5
-
-        try {
-          pdf.addImage(signatureImage, "PNG", 20, yPosition, 100, 40)
-          yPosition += 45
-        } catch (error) {
-          console.error("Error adding signature to PDF:", error)
-          pdf.text("Signature could not be displayed", 20, yPosition)
-          yPosition += 10
-        }
-      } else if (stampImage) {
-        // Only stamp
-        pdf.setFontSize(10)
-        pdf.setFont("helvetica", "normal")
-        pdf.text("Official Stamp:", 20, yPosition)
-        yPosition += 5
-
-        try {
-          pdf.addImage(stampImage, "PNG", 20, yPosition, 80, 40)
-          yPosition += 45
-        } catch (error) {
-          console.error("Error adding stamp to PDF:", error)
-          pdf.text("Stamp could not be displayed", 20, yPosition)
-          yPosition += 10
-        }
+      if (inspection.stamp) {
+        imagesToLoad.push({
+          type: "stamp",
+          src: inspection.stamp,
+          label: "Official Stamp",
+        })
       }
+
+      let imagesLoaded = 0
+      const totalImages = imagesToLoad.length
+      const loadedImages = {}
+
+      if (totalImages === 0) {
+        // No images to load, save PDF
+        doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
+        return
+      }
+
+      imagesToLoad.forEach((imageInfo) => {
+        const img = new Image()
+        img.crossOrigin = "anonymous"
+        img.src = imageInfo.src
+
+        img.onload = () => {
+          loadedImages[imageInfo.type] = img
+          imagesLoaded++
+
+          if (imagesLoaded === totalImages) {
+            // All images loaded, add them to PDF
+            let currentY = yPosition
+
+            // Add signature if available
+            if (loadedImages.signature) {
+              doc.setFont("helvetica", "normal")
+              doc.setFontSize(10)
+              doc.text("Inspector Signature:", margin, currentY)
+              currentY += 6
+
+              doc.addImage(loadedImages.signature, "PNG", margin, currentY, 100, 30)
+              currentY += 35
+            }
+
+            // Add stamp if available (positioned to the right of signature or below)
+            if (loadedImages.stamp) {
+              const stampX = loadedImages.signature ? margin + 110 : margin
+              const stampY = loadedImages.signature ? yPosition + 6 : currentY
+
+              doc.setFont("helvetica", "normal")
+              doc.setFontSize(10)
+              doc.text("Official Stamp:", stampX, stampY)
+
+              doc.addImage(loadedImages.stamp, "PNG", stampX, stampY + 6, 80, 80)
+
+              if (!loadedImages.signature) {
+                currentY += 90
+              }
+            }
+
+            // Add inspector details
+            currentY += 10
+            doc.setFont("helvetica", "normal")
+            doc.setFontSize(10)
+            doc.text(`${inspection.inspector}`, margin, currentY)
+            doc.text(`${inspection.inspectorTitle}`, margin, currentY + 6)
+
+            // Save the PDF
+            doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
+          }
+        }
+
+        img.onerror = () => {
+          console.warn(`Failed to load ${imageInfo.type} image`)
+          imagesLoaded++
+
+          if (imagesLoaded === totalImages) {
+            // Save PDF even if some images failed to load
+            doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
+          }
+        }
+      })
+    } else {
+      // No signature or stamp, save PDF
+      doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
     }
-
-    // Footer
-    pdf.setFontSize(8)
-    pdf.setFont("helvetica", "italic")
-    pdf.text(`Generated on ${new Date().toLocaleString()}`, 20, 280)
-    pdf.text(`Inspection ID: ${inspection.id}`, 150, 280)
-
-    // Save the PDF
-    pdf.save(`inspection_${inspection.id}_${inspection.date}.pdf`)
-    console.log("✅ PDF generated successfully")
-  } catch (error) {
-    console.error("❌ Error generating PDF:", error)
-    throw error
   }
 }
 
-export async function generateMultipleInspectionsPDF(inspections: Inspection[]) {
-  try {
-    console.log(`🖨️ Generating PDF for ${inspections.length} inspections`)
+export function generateMultipleInspectionsPDF(inspections: Inspection[]) {
+  const doc = new jsPDF()
 
-    const pdf = new jsPDF()
-    let yPosition = 20
+  // Pre-load the header image
+  const headerImg = new Image()
+  headerImg.crossOrigin = "anonymous"
+  headerImg.src = "/gunworx-header.png"
 
-    // Header
-    pdf.setFontSize(16)
-    pdf.setFont("helvetica", "bold")
-    pdf.text("FIREARM INSPECTION REPORTS", 105, yPosition, { align: "center" })
-    yPosition += 10
+  headerImg.onload = () => {
+    // Generate all pages with header
+    let pageIndex = 0
 
-    pdf.setFontSize(10)
-    pdf.setFont("helvetica", "normal")
-    pdf.text(`Total Inspections: ${inspections.length}`, 105, yPosition, { align: "center" })
-    pdf.text(`Generated: ${new Date().toLocaleString()}`, 105, yPosition + 5, { align: "center" })
-    yPosition += 20
-
-    for (let i = 0; i < inspections.length; i++) {
-      const inspection = inspections[i]
-
-      // Check if we need a new page
-      if (yPosition > 220) {
-        pdf.addPage()
-        yPosition = 20
+    function generateNextPage() {
+      if (pageIndex >= inspections.length) {
+        // All pages generated, save PDF
+        doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
+        return
       }
 
-      // Load signature and stamp images for this inspection
-      const signatureImage = inspection.signature ? await loadImageAsBase64(inspection.signature) : null
-      const stampImage = inspection.stamp ? await loadImageAsBase64(inspection.stamp) : null
-
-      // Inspection header
-      pdf.setFontSize(12)
-      pdf.setFont("helvetica", "bold")
-      pdf.text(`INSPECTION ${i + 1} - ${inspection.date}`, 20, yPosition)
-      yPosition += 8
-
-      // Basic info in compact format
-      pdf.setFontSize(9)
-      pdf.setFont("helvetica", "normal")
-      pdf.text(`Inspector: ${inspection.inspector}`, 20, yPosition)
-      pdf.text(`Company: ${inspection.companyName}`, 110, yPosition)
-      yPosition += 5
-
-      pdf.text(`Make: ${inspection.make}`, 20, yPosition)
-      pdf.text(`Caliber: ${inspection.caliber}`, 110, yPosition)
-      yPosition += 5
-
-      pdf.text(`Status: ${inspection.status.toUpperCase()}`, 20, yPosition)
-      yPosition += 8
-
-      // Serial numbers (compact)
-      const serialInfo = []
-      if (inspection.serialNumbers.barrel) serialInfo.push(`Barrel: ${inspection.serialNumbers.barrel}`)
-      if (inspection.serialNumbers.frame) serialInfo.push(`Frame: ${inspection.serialNumbers.frame}`)
-      if (inspection.serialNumbers.receiver) serialInfo.push(`Receiver: ${inspection.serialNumbers.receiver}`)
-
-      if (serialInfo.length > 0) {
-        pdf.text(`Serial Numbers: ${serialInfo.join(", ")}`, 20, yPosition)
-        yPosition += 5
+      if (pageIndex > 0) {
+        doc.addPage()
       }
 
-      // Firearm and action types (compact)
-      const firearmTypes = getSelectedFirearmTypes(inspection.firearmType)
-      if (firearmTypes.length > 0) {
-        pdf.text(`Type: ${firearmTypes.join(", ")}`, 20, yPosition)
-        yPosition += 5
+      const inspection = inspections[pageIndex]
+      generateSingleInspectionPage(doc, inspection, headerImg, () => {
+        pageIndex++
+        generateNextPage()
+      })
+    }
+
+    generateNextPage()
+  }
+
+  headerImg.onerror = () => {
+    console.warn("Header image failed to load, generating PDF without headers")
+    // Generate all pages without header
+    let pageIndex = 0
+
+    function generateNextPage() {
+      if (pageIndex >= inspections.length) {
+        // All pages generated, save PDF
+        doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
+        return
       }
 
-      // Compact signature and stamp display
-      if (signatureImage || stampImage) {
-        yPosition += 3
+      if (pageIndex > 0) {
+        doc.addPage()
+      }
 
-        if (signatureImage && stampImage) {
-          // Both signature and stamp (compact)
-          pdf.setFontSize(8)
-          pdf.text("Signature:", 20, yPosition)
-          pdf.text("Stamp:", 90, yPosition)
-          yPosition += 3
+      const inspection = inspections[pageIndex]
+      generateSingleInspectionPage(doc, inspection, null, () => {
+        pageIndex++
+        generateNextPage()
+      })
+    }
 
-          try {
-            pdf.addImage(signatureImage, "PNG", 20, yPosition, 60, 15)
-            pdf.addImage(stampImage, "PNG", 90, yPosition, 40, 15)
-            yPosition += 18
-          } catch (error) {
-            console.error("Error adding images to PDF:", error)
-            pdf.text("Images could not be displayed", 20, yPosition)
-            yPosition += 5
+    generateNextPage()
+  }
+}
+
+function generateSingleInspectionPage(
+  doc: jsPDF,
+  inspection: Inspection,
+  headerImg: HTMLImageElement | null = null,
+  onComplete?: () => void,
+) {
+  const margin = 20
+  const pageWidth = doc.internal.pageSize.width
+  const contentWidth = pageWidth - margin * 2
+
+  let yPosition = margin
+
+  // Add header if image is available
+  if (headerImg) {
+    const imgWidth = 100
+    const imgHeight = 35
+    const xPosition = (pageWidth - imgWidth) / 2
+
+    doc.addImage(headerImg, "PNG", xPosition, yPosition, imgWidth, imgHeight)
+    yPosition = margin + 45 // Account for header space
+  }
+
+  // Title - centered
+  doc.setFontSize(16)
+  doc.setFont("helvetica", "bold")
+  const title = "FIREARM INSPECTION REPORT"
+  const titleWidth = doc.getTextWidth(title)
+  doc.text(title, (pageWidth - titleWidth) / 2, yPosition)
+  yPosition += 15
+
+  // Compact layout for multiple inspections
+  doc.setFontSize(10)
+  doc.setFont("helvetica", "normal")
+
+  // Basic info in two columns
+  const col1X = margin
+  const col2X = margin + contentWidth / 2
+
+  doc.text(`Inspector: ${inspection.inspector}`, col1X, yPosition)
+  doc.text(`Date: ${inspection.date}`, col2X, yPosition)
+  yPosition += 6
+
+  doc.text(`Company: ${inspection.companyName}`, col1X, yPosition)
+  doc.text(`Make: ${inspection.make}`, col2X, yPosition)
+  yPosition += 6
+
+  doc.text(`Caliber: ${inspection.caliber}`, col1X, yPosition)
+  doc.text(`Status: ${inspection.status.toUpperCase()}`, col2X, yPosition)
+  yPosition += 10
+
+  // Serial numbers (compact)
+  if (inspection.serialNumbers.receiver) {
+    doc.text(`Serial: ${inspection.serialNumbers.receiver}`, margin, yPosition)
+    yPosition += 6
+  }
+
+  // Observations (truncated if too long)
+  if (inspection.observations) {
+    doc.setFont("helvetica", "bold")
+    doc.text("Observations:", margin, yPosition)
+    yPosition += 6
+
+    doc.setFont("helvetica", "normal")
+    const obsLines = doc.splitTextToSize(inspection.observations, contentWidth)
+    const maxLines = 3 // Limit to 3 lines for compact view
+    const displayLines = obsLines.slice(0, maxLines)
+    if (obsLines.length > maxLines) {
+      displayLines[maxLines - 1] += "..."
+    }
+
+    doc.text(displayLines, margin, yPosition)
+    yPosition += displayLines.length * 6 + 6
+  }
+
+  // Compact signature and stamp section
+  if (inspection.signature || inspection.stamp) {
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(10)
+    doc.text("Signature & Stamp:", margin, yPosition)
+    yPosition += 6
+
+    // Load both signature and stamp images for compact display
+    const imagesToLoad = []
+
+    if (inspection.signature) {
+      imagesToLoad.push({
+        type: "signature",
+        src: inspection.signature,
+      })
+    }
+
+    if (inspection.stamp) {
+      imagesToLoad.push({
+        type: "stamp",
+        src: inspection.stamp,
+      })
+    }
+
+    let imagesLoaded = 0
+    const totalImages = imagesToLoad.length
+    const loadedImages = {}
+
+    if (totalImages === 0) {
+      // No images to load, continue
+      if (onComplete) onComplete()
+      return
+    }
+
+    imagesToLoad.forEach((imageInfo) => {
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      img.src = imageInfo.src
+
+      img.onload = () => {
+        loadedImages[imageInfo.type] = img
+        imagesLoaded++
+
+        if (imagesLoaded === totalImages) {
+          // All images loaded, add them to PDF (compact size)
+          let currentX = margin
+
+          // Add signature if available (compact)
+          if (loadedImages.signature) {
+            doc.addImage(loadedImages.signature, "PNG", currentX, yPosition, 60, 20)
+            currentX += 70
           }
-        } else if (signatureImage) {
-          // Only signature (compact)
-          pdf.setFontSize(8)
-          pdf.text("Signature:", 20, yPosition)
-          yPosition += 3
 
-          try {
-            pdf.addImage(signatureImage, "PNG", 20, yPosition, 70, 18)
-            yPosition += 21
-          } catch (error) {
-            console.error("Error adding signature to PDF:", error)
-            pdf.text("Signature could not be displayed", 20, yPosition)
-            yPosition += 5
+          // Add stamp if available (compact)
+          if (loadedImages.stamp) {
+            doc.addImage(loadedImages.stamp, "PNG", currentX, yPosition, 40, 40)
           }
-        } else if (stampImage) {
-          // Only stamp (compact)
-          pdf.setFontSize(8)
-          pdf.text("Stamp:", 20, yPosition)
-          yPosition += 3
 
-          try {
-            pdf.addImage(stampImage, "PNG", 20, yPosition, 50, 18)
-            yPosition += 21
-          } catch (error) {
-            console.error("Error adding stamp to PDF:", error)
-            pdf.text("Stamp could not be displayed", 20, yPosition)
-            yPosition += 5
-          }
+          if (onComplete) onComplete()
         }
       }
 
-      // Separator line
-      pdf.setDrawColor(200, 200, 200)
-      pdf.line(20, yPosition + 2, 190, yPosition + 2)
-      yPosition += 8
-    }
+      img.onerror = () => {
+        console.warn(`Failed to load ${imageInfo.type} image for page`)
+        imagesLoaded++
 
-    // Save the PDF
-    const timestamp = new Date().toISOString().split("T")[0]
-    pdf.save(`inspections_batch_${timestamp}.pdf`)
-    console.log("✅ Multiple inspections PDF generated successfully")
-  } catch (error) {
-    console.error("❌ Error generating multiple inspections PDF:", error)
-    throw error
+        if (imagesLoaded === totalImages) {
+          if (onComplete) onComplete()
+        }
+      }
+    })
+  } else {
+    // No signature or stamp, continue
+    if (onComplete) onComplete()
   }
 }
