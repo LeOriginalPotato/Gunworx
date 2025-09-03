@@ -125,9 +125,6 @@ export default function Home() {
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null)
   const [isEditInspectionDialogOpen, setIsEditInspectionDialogOpen] = useState(false)
 
-  const [isBulkStatusDialogOpen, setIsBulkStatusDialogOpen] = useState(false)
-  const [bulkStatusValue, setBulkStatusValue] = useState<"passed" | "failed" | "pending">("passed")
-
   // Initialize newFirearm with proper defaults
   const [newFirearm, setNewFirearm] = useState<Partial<Firearm>>({
     stockNo: "",
@@ -1080,44 +1077,6 @@ export default function Home() {
     }
   }
 
-  const handleBulkUpdateStatus = async () => {
-    try {
-      setIsSyncing(true)
-
-      const result = await dataService.bulkUpdateInspectionStatus(
-        bulkStatusValue,
-        selectedInspections.length > 0 ? selectedInspections : undefined,
-      )
-
-      // Update local state
-      setInspections((prev) =>
-        prev.map((inspection) => {
-          if (selectedInspections.length === 0 || selectedInspections.includes(inspection.id)) {
-            return { ...inspection, status: bulkStatusValue }
-          }
-          return inspection
-        }),
-      )
-
-      setSelectedInspections([])
-      setIsBulkStatusDialogOpen(false)
-
-      toast({
-        title: "Status Updated",
-        description: `Successfully updated ${result.updated} inspection${result.updated !== 1 ? "s" : ""} to "${bulkStatusValue}".`,
-      })
-    } catch (error) {
-      console.error("Error updating inspection statuses:", error)
-      toast({
-        title: "Update Failed",
-        description: "Failed to update inspection statuses. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSyncing(false)
-    }
-  }
-
   if (!isLoggedIn) {
     return <LoginForm onLogin={handleLogin} />
   }
@@ -1750,15 +1709,6 @@ export default function Home() {
                             className="hidden"
                           />
                         </label>
-                      </Button>
-                      <Button
-                        onClick={() => setIsBulkStatusDialogOpen(true)}
-                        variant="outline"
-                        size="sm"
-                        disabled={isSyncing}
-                      >
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                        Update Status ({selectedInspections.length > 0 ? selectedInspections.length : "All"})
                       </Button>
                     </div>
                   </CardContent>
@@ -3204,50 +3154,6 @@ export default function Home() {
                 </Button>
                 <Button variant="default" onClick={handleSaveEditedInspection} disabled={isSyncing}>
                   {isSyncing ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Status Update Dialog */}
-      {isBulkStatusDialogOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Update Inspection Status</h3>
-                <Button variant="ghost" size="sm" onClick={() => setIsBulkStatusDialogOpen(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {selectedInspections.length > 0
-                      ? `Update status for ${selectedInspections.length} selected inspection${selectedInspections.length !== 1 ? "s" : ""}`
-                      : `Update status for all ${inspections.length} inspections`}
-                  </p>
-                  <Label htmlFor="bulkStatus">New Status</Label>
-                  <select
-                    id="bulkStatus"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={bulkStatusValue}
-                    onChange={(e) => setBulkStatusValue(e.target.value as "passed" | "failed" | "pending")}
-                  >
-                    <option value="passed">Passed</option>
-                    <option value="failed">Failed</option>
-                    <option value="pending">Pending</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="ghost" onClick={() => setIsBulkStatusDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleBulkUpdateStatus} disabled={isSyncing}>
-                  {isSyncing ? "Updating..." : "Update Status"}
                 </Button>
               </div>
             </div>

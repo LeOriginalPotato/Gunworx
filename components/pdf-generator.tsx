@@ -48,7 +48,6 @@ interface Inspection {
   observations: string
   comments: string
   signature: string
-  stamp?: string
   inspectorTitle: string
   status: "passed" | "failed" | "pending"
 }
@@ -267,106 +266,41 @@ export function generateInspectionPDF(inspection: Inspection) {
     doc.text(`Status: ${inspection.status.toUpperCase()}`, margin, yPosition)
     yPosition += 12
 
-    // Signature and Stamp Section
-    if (inspection.signature || inspection.stamp) {
+    // Signature Section (if available)
+    if (inspection.signature) {
       doc.setFont("helvetica", "bold")
       doc.setFontSize(12)
-      doc.text("INSPECTOR SIGNATURE & STAMP", margin, yPosition)
+      doc.text("INSPECTOR SIGNATURE", margin, yPosition)
       yPosition += 8
 
-      // Load both signature and stamp images
-      const imagesToLoad = []
+      try {
+        const signatureImg = new Image()
+        signatureImg.crossOrigin = "anonymous"
+        signatureImg.src = inspection.signature
 
-      if (inspection.signature) {
-        imagesToLoad.push({
-          type: "signature",
-          src: inspection.signature,
-          label: "Signature",
-        })
-      }
+        signatureImg.onload = () => {
+          doc.addImage(signatureImg, "PNG", margin, yPosition, 100, 30)
+          yPosition += 35
 
-      if (inspection.stamp) {
-        imagesToLoad.push({
-          type: "stamp",
-          src: inspection.stamp,
-          label: "Official Stamp",
-        })
-      }
+          doc.setFont("helvetica", "normal")
+          doc.setFontSize(10)
+          doc.text(`${inspection.inspector}`, margin, yPosition)
+          doc.text(`${inspection.inspectorTitle}`, margin, yPosition + 6)
 
-      let imagesLoaded = 0
-      const totalImages = imagesToLoad.length
-      const loadedImages = {}
+          // Save the PDF
+          doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
+        }
 
-      if (totalImages === 0) {
-        // No images to load, save PDF
+        signatureImg.onerror = () => {
+          // Save without signature
+          doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
+        }
+      } catch (error) {
+        console.warn("Error loading signature:", error)
         doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
-        return
       }
-
-      imagesToLoad.forEach((imageInfo) => {
-        const img = new Image()
-        img.crossOrigin = "anonymous"
-        img.src = imageInfo.src
-
-        img.onload = () => {
-          loadedImages[imageInfo.type] = img
-          imagesLoaded++
-
-          if (imagesLoaded === totalImages) {
-            // All images loaded, add them to PDF
-            let currentY = yPosition
-
-            // Add signature if available
-            if (loadedImages.signature) {
-              doc.setFont("helvetica", "normal")
-              doc.setFontSize(10)
-              doc.text("Inspector Signature:", margin, currentY)
-              currentY += 6
-
-              doc.addImage(loadedImages.signature, "PNG", margin, currentY, 100, 30)
-              currentY += 35
-            }
-
-            // Add stamp if available (positioned to the right of signature or below)
-            if (loadedImages.stamp) {
-              const stampX = loadedImages.signature ? margin + 110 : margin
-              const stampY = loadedImages.signature ? yPosition + 6 : currentY
-
-              doc.setFont("helvetica", "normal")
-              doc.setFontSize(10)
-              doc.text("Official Stamp:", stampX, stampY)
-
-              doc.addImage(loadedImages.stamp, "PNG", stampX, stampY + 6, 80, 80)
-
-              if (!loadedImages.signature) {
-                currentY += 90
-              }
-            }
-
-            // Add inspector details
-            currentY += 10
-            doc.setFont("helvetica", "normal")
-            doc.setFontSize(10)
-            doc.text(`${inspection.inspector}`, margin, currentY)
-            doc.text(`${inspection.inspectorTitle}`, margin, currentY + 6)
-
-            // Save the PDF
-            doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
-          }
-        }
-
-        img.onerror = () => {
-          console.warn(`Failed to load ${imageInfo.type} image`)
-          imagesLoaded++
-
-          if (imagesLoaded === totalImages) {
-            // Save PDF even if some images failed to load
-            doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
-          }
-        }
-      })
     } else {
-      // No signature or stamp, save PDF
+      // Save without signature
       doc.save(`inspection_report_${inspection.id}_${inspection.date}.pdf`)
     }
   }
@@ -382,62 +316,31 @@ export function generateMultipleInspectionsPDF(inspections: Inspection[]) {
 
   headerImg.onload = () => {
     // Generate all pages with header
-    let pageIndex = 0
-
-    function generateNextPage() {
-      if (pageIndex >= inspections.length) {
-        // All pages generated, save PDF
-        doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
-        return
-      }
-
-      if (pageIndex > 0) {
+    inspections.forEach((inspection, index) => {
+      if (index > 0) {
         doc.addPage()
       }
+      generateSingleInspectionPage(doc, inspection, headerImg)
+    })
 
-      const inspection = inspections[pageIndex]
-      generateSingleInspectionPage(doc, inspection, headerImg, () => {
-        pageIndex++
-        generateNextPage()
-      })
-    }
-
-    generateNextPage()
+    doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
   }
 
   headerImg.onerror = () => {
     console.warn("Header image failed to load, generating PDF without headers")
     // Generate all pages without header
-    let pageIndex = 0
-
-    function generateNextPage() {
-      if (pageIndex >= inspections.length) {
-        // All pages generated, save PDF
-        doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
-        return
-      }
-
-      if (pageIndex > 0) {
+    inspections.forEach((inspection, index) => {
+      if (index > 0) {
         doc.addPage()
       }
+      generateSingleInspectionPage(doc, inspection, null)
+    })
 
-      const inspection = inspections[pageIndex]
-      generateSingleInspectionPage(doc, inspection, null, () => {
-        pageIndex++
-        generateNextPage()
-      })
-    }
-
-    generateNextPage()
+    doc.save(`multiple_inspections_${new Date().toISOString().split("T")[0]}.pdf`)
   }
 }
 
-function generateSingleInspectionPage(
-  doc: jsPDF,
-  inspection: Inspection,
-  headerImg: HTMLImageElement | null = null,
-  onComplete?: () => void,
-) {
+function generateSingleInspectionPage(doc: jsPDF, inspection: Inspection, headerImg: HTMLImageElement | null = null) {
   const margin = 20
   const pageWidth = doc.internal.pageSize.width
   const contentWidth = pageWidth - margin * 2
@@ -503,82 +406,6 @@ function generateSingleInspectionPage(
     }
 
     doc.text(displayLines, margin, yPosition)
-    yPosition += displayLines.length * 6 + 6
-  }
-
-  // Compact signature and stamp section
-  if (inspection.signature || inspection.stamp) {
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(10)
-    doc.text("Signature & Stamp:", margin, yPosition)
-    yPosition += 6
-
-    // Load both signature and stamp images for compact display
-    const imagesToLoad = []
-
-    if (inspection.signature) {
-      imagesToLoad.push({
-        type: "signature",
-        src: inspection.signature,
-      })
-    }
-
-    if (inspection.stamp) {
-      imagesToLoad.push({
-        type: "stamp",
-        src: inspection.stamp,
-      })
-    }
-
-    let imagesLoaded = 0
-    const totalImages = imagesToLoad.length
-    const loadedImages = {}
-
-    if (totalImages === 0) {
-      // No images to load, continue
-      if (onComplete) onComplete()
-      return
-    }
-
-    imagesToLoad.forEach((imageInfo) => {
-      const img = new Image()
-      img.crossOrigin = "anonymous"
-      img.src = imageInfo.src
-
-      img.onload = () => {
-        loadedImages[imageInfo.type] = img
-        imagesLoaded++
-
-        if (imagesLoaded === totalImages) {
-          // All images loaded, add them to PDF (compact size)
-          let currentX = margin
-
-          // Add signature if available (compact)
-          if (loadedImages.signature) {
-            doc.addImage(loadedImages.signature, "PNG", currentX, yPosition, 60, 20)
-            currentX += 70
-          }
-
-          // Add stamp if available (compact)
-          if (loadedImages.stamp) {
-            doc.addImage(loadedImages.stamp, "PNG", currentX, yPosition, 40, 40)
-          }
-
-          if (onComplete) onComplete()
-        }
-      }
-
-      img.onerror = () => {
-        console.warn(`Failed to load ${imageInfo.type} image for page`)
-        imagesLoaded++
-
-        if (imagesLoaded === totalImages) {
-          if (onComplete) onComplete()
-        }
-      }
-    })
-  } else {
-    // No signature or stamp, continue
-    if (onComplete) onComplete()
+    yPosition += displayLines.length * 6
   }
 }
