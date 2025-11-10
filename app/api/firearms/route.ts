@@ -1,82 +1,42 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCentralDataStore, updateCentralDataStore } from "../data-migration/route"
-
-// In-memory storage for firearms (in production, this would be a database)
-let firearmsStorage: any[] = []
-
-// Initialize with default data if empty
-const initializeFirearmsData = () => {
-  if (firearmsStorage.length === 0) {
-    firearmsStorage = [
-      {
-        id: "1",
-        stockNo: "CO3",
-        dateReceived: "2023-11-15",
-        make: "Walther",
-        type: "Pistol",
-        caliber: "7.65",
-        serialNo: "223083",
-        fullName: "GM",
-        surname: "Smuts",
-        registrationId: "1/23/1985",
-        physicalAddress: "",
-        licenceNo: "31/21",
-        licenceDate: "",
-        remarks: "Mac EPR Dealer Stock",
-        status: "dealer-stock",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: "2",
-        stockNo: "A01",
-        dateReceived: "2025-05-07",
-        make: "Glock",
-        type: "Pistol",
-        caliber: "9mm",
-        serialNo: "SSN655",
-        fullName: "I",
-        surname: "Dunn",
-        registrationId: "9103035027088",
-        physicalAddress: "54 Lazaar Ave",
-        licenceNo: "",
-        licenceDate: "",
-        remarks: "Safekeeping",
-        status: "safe-keeping",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ]
-  }
-}
+import { sql } from "@/lib/db"
 
 export async function GET(request: NextRequest) {
   try {
-    const centralData = getCentralDataStore()
-
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const search = searchParams.get("search")
 
-    let filteredFirearms = [...centralData.firearms]
+    let query = `SELECT * FROM firearms WHERE 1=1`
+    const params: any[] = []
 
-    // Apply status filter
     if (status && status !== "all") {
-      filteredFirearms = filteredFirearms.filter((f) => f.status === status)
+      query += ` AND status = $${params.length + 1}`
+      params.push(status)
     }
 
-    // Apply search filter
     if (search) {
-      const searchTerm = search.toLowerCase()
-      filteredFirearms = filteredFirearms.filter((f) =>
-        Object.values(f).some((value) => value && value.toString().toLowerCase().includes(searchTerm)),
-      )
+      query += ` AND (
+        stock_no ILIKE $${params.length + 1} OR
+        make ILIKE $${params.length + 1} OR
+        type ILIKE $${params.length + 1} OR
+        caliber ILIKE $${params.length + 1} OR
+        serial_no ILIKE $${params.length + 1} OR
+        full_name ILIKE $${params.length + 1} OR
+        surname ILIKE $${params.length + 1} OR
+        remarks ILIKE $${params.length + 1}
+      )`
+      params.push(`%${search}%`)
     }
+
+    query += ` ORDER BY created_at DESC`
+
+    const result = await sql(query, params)
 
     return NextResponse.json({
-      firearms: filteredFirearms,
-      total: centralData.firearms.length,
-      lastUpdated: centralData.lastUpdated,
+      firearms: result,
+      total: result.length,
+      lastUpdated: new Date().toISOString(),
     })
   } catch (error) {
     console.error("Error fetching firearms:", error)
@@ -86,7 +46,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const centralData = getCentralDataStore()
     const firearmData = await request.json()
 
     // Validate required fields
@@ -94,21 +53,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields: stockNo, make, serialNo" }, { status: 400 })
     }
 
-    const newFirearm = {
-      ...firearmData,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-    // Add to central data store
-    centralData.firearms.push(newFirearm)
-    updateCentralDataStore(centralData)
+    const result = await sql`
+      INSERT INTO firearms (
+        id, stock_no, date_received, make, type, caliber, serial_no,
+        full_name, surname, registration_id, physical_address, licence_no,
+        licence_date, remarks, status
+      )
+      VALUES (
+        ${id}, ${firearmData.stockNo}, ${firearmData.dateReceived}, ${firearmData.make},
+        ${firearmData.type}, ${firearmData.caliber}, ${firearmData.serialNo},
+        ${firearmData.fullName}, ${firearmData.surname}, ${firearmData.registrationId},
+        ${firearmData.physicalAddress}, ${firearmData.licenceNo},
+        ${firearmData.licenceDate}, ${firearmData.remarks}, ${firearmData.status}
+      )
+      RETURNING *;
+    `
+
+    const newFirearm = result[0]
 
     return NextResponse.json(
       {
         firearm: newFirearm,
-        total: centralData.firearms.length,
+        total: 1,
       },
       { status: 201 },
     )

@@ -1,32 +1,31 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getCentralDataStore, updateCentralDataStore } from "../data-migration/route"
+import { sql } from "@/lib/db"
 
 export async function POST(request: NextRequest) {
   try {
-    const centralData = getCentralDataStore()
     const { username, password } = await request.json()
 
     if (!username || !password) {
       return NextResponse.json({ error: "Username and password are required" }, { status: 400 })
     }
 
-    const user = centralData.users.find((u) => u.username === username && u.password === password)
+    const result = await sql`
+      SELECT * FROM users
+      WHERE username = ${username} AND password = ${password}
+    `
 
-    if (!user) {
+    if (result.length === 0) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    // Update last login
-    user.lastLogin = new Date().toISOString()
-    updateCentralDataStore(centralData)
+    const user = result[0]
 
     return NextResponse.json({
       user: {
         id: user.id,
         username: user.username,
         role: user.role,
-        isSystemAdmin: user.isSystemAdmin,
-        lastLogin: user.lastLogin,
+        fullName: user.full_name,
       },
     })
   } catch (error) {
@@ -36,12 +35,16 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const centralData = getCentralDataStore()
+    const result = await sql`
+      SELECT id, username, role, full_name, email, created_at, is_active
+      FROM users
+      ORDER BY created_at DESC
+    `
 
     return NextResponse.json({
-      users: centralData.users.map(({ password, ...user }) => user),
-      total: centralData.users.length,
-      lastUpdated: centralData.lastUpdated,
+      users: result,
+      total: result.length,
+      lastUpdated: new Date().toISOString(),
     })
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
@@ -50,31 +53,31 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const centralData = getCentralDataStore()
     const userData = await request.json()
 
     if (!userData.id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
-    const index = centralData.users.findIndex((u) => u.id === userData.id)
+    const result = await sql`
+      UPDATE users
+      SET
+        username = COALESCE(${userData.username}, username),
+        role = COALESCE(${userData.role}, role),
+        full_name = COALESCE(${userData.fullName}, full_name),
+        email = COALESCE(${userData.email}, email),
+        is_active = COALESCE(${userData.isActive}, is_active)
+      WHERE id = ${userData.id}
+      RETURNING id, username, role, full_name, email, created_at, is_active
+    `
 
-    if (index === -1) {
+    if (result.length === 0) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const updatedUser = {
-      ...centralData.users[index],
-      ...userData,
-      updatedAt: new Date().toISOString(),
-    }
-
-    centralData.users[index] = updatedUser
-    updateCentralDataStore(centralData)
-
     return NextResponse.json({
-      user: { ...updatedUser, password: undefined },
-      total: centralData.users.length,
+      user: result[0],
+      total: 1,
     })
   } catch (error) {
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 })
