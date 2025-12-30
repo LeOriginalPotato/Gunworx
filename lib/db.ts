@@ -15,7 +15,5 @@ export function getSQL() {
   return _sql
 }
 
-// This supports both tagged templates and function calls
-export const sql = (...args: any[]) => {
-  return getSQL()(...args)
-}
+// Export the sql function that supports tagged templates
+export const sql = getSQL()

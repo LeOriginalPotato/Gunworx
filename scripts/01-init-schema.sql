@@ -1,3 +1,4 @@
+-- Making nullable fields that can be empty in inspections
 -- Create firearms table
 CREATE TABLE IF NOT EXISTS firearms (
   id VARCHAR(255) PRIMARY KEY,
@@ -30,11 +31,11 @@ CREATE TABLE IF NOT EXISTS inspections (
   inspector_id VARCHAR(100),
   company_name VARCHAR(255),
   dealer_code VARCHAR(100),
-  firearm_type JSONB NOT NULL,
+  firearm_type JSONB,
   caliber VARCHAR(50),
   cartridge_code VARCHAR(100),
-  serial_numbers JSONB NOT NULL,
-  action_type JSONB NOT NULL,
+  serial_numbers JSONB,
+  action_type JSONB,
   make VARCHAR(100),
   country_of_origin VARCHAR(100),
   observations TEXT,

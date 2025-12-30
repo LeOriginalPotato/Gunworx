@@ -1,6 +1,29 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 
+function transformInspectionRow(row: any) {
+  return {
+    id: row.id,
+    date: row.date,
+    inspector: row.inspector,
+    inspectorId: row.inspector_id,
+    companyName: row.company_name,
+    dealerCode: row.dealer_code,
+    firearmType: typeof row.firearm_type === "string" ? JSON.parse(row.firearm_type) : row.firearm_type,
+    caliber: row.caliber,
+    cartridgeCode: row.cartridge_code,
+    serialNumbers: typeof row.serial_numbers === "string" ? JSON.parse(row.serial_numbers) : row.serial_numbers,
+    actionType: typeof row.action_type === "string" ? JSON.parse(row.action_type) : row.action_type,
+    make: row.make,
+    countryOfOrigin: row.country_of_origin,
+    observations: row.observations,
+    comments: row.comments,
+    signature: row.signature,
+    inspectorTitle: row.inspector_title,
+    status: row.status,
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -32,10 +55,12 @@ export async function GET(request: NextRequest) {
       result = await sql`SELECT * FROM inspections ORDER BY date DESC`
     }
 
+    const inspections = result.map(transformInspectionRow)
+
     return NextResponse.json({
       success: true,
-      inspections: result,
-      count: result.length,
+      inspections,
+      count: inspections.length,
     })
   } catch (error) {
     console.error("Error fetching inspections:", error)

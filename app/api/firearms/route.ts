@@ -7,31 +7,49 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
     const search = searchParams.get("search")
 
-    let query = `SELECT * FROM firearms WHERE 1=1`
-    const params: any[] = []
+    let result
 
-    if (status && status !== "all") {
-      query += ` AND status = $${params.length + 1}`
-      params.push(status)
+    if (search && status && status !== "all") {
+      const searchTerm = `%${search}%`
+      result = await sql`
+        SELECT * FROM firearms 
+        WHERE status = ${status}
+        AND (
+          stock_no ILIKE ${searchTerm} OR
+          make ILIKE ${searchTerm} OR
+          type ILIKE ${searchTerm} OR
+          caliber ILIKE ${searchTerm} OR
+          serial_no ILIKE ${searchTerm} OR
+          full_name ILIKE ${searchTerm} OR
+          surname ILIKE ${searchTerm} OR
+          remarks ILIKE ${searchTerm}
+        )
+        ORDER BY created_at DESC
+      `
+    } else if (search) {
+      const searchTerm = `%${search}%`
+      result = await sql`
+        SELECT * FROM firearms 
+        WHERE 
+          stock_no ILIKE ${searchTerm} OR
+          make ILIKE ${searchTerm} OR
+          type ILIKE ${searchTerm} OR
+          caliber ILIKE ${searchTerm} OR
+          serial_no ILIKE ${searchTerm} OR
+          full_name ILIKE ${searchTerm} OR
+          surname ILIKE ${searchTerm} OR
+          remarks ILIKE ${searchTerm}
+        ORDER BY created_at DESC
+      `
+    } else if (status && status !== "all") {
+      result = await sql`
+        SELECT * FROM firearms 
+        WHERE status = ${status}
+        ORDER BY created_at DESC
+      `
+    } else {
+      result = await sql`SELECT * FROM firearms ORDER BY created_at DESC`
     }
-
-    if (search) {
-      query += ` AND (
-        stock_no ILIKE $${params.length + 1} OR
-        make ILIKE $${params.length + 1} OR
-        type ILIKE $${params.length + 1} OR
-        caliber ILIKE $${params.length + 1} OR
-        serial_no ILIKE $${params.length + 1} OR
-        full_name ILIKE $${params.length + 1} OR
-        surname ILIKE $${params.length + 1} OR
-        remarks ILIKE $${params.length + 1}
-      )`
-      params.push(`%${search}%`)
-    }
-
-    query += ` ORDER BY created_at DESC`
-
-    const result = await sql(query, params)
 
     return NextResponse.json({
       firearms: result,
