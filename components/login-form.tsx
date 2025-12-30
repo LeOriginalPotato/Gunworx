@@ -1,24 +1,22 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, LogIn } from "lucide-react"
-import { authService, type User } from "@/lib/auth"
+import { Package, AlertCircle } from "lucide-react"
+import { validateCredentials } from "@/lib/auth"
 
 interface LoginFormProps {
-  onLogin: (user: User) => void
+  onLogin: (username: string) => void
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -27,91 +25,76 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setError("")
     setIsLoading(true)
 
-    if (!username || !password) {
-      setError("Please enter both username and password")
-      setIsLoading(false)
-      return
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    const user = validateCredentials(username, password)
+
+    if (user) {
+      onLogin(username)
+    } else {
+      setError("Invalid username or password")
     }
 
-    try {
-      const user = await authService.login(username, password)
-      if (user) {
-        onLogin(user)
-      } else {
-        setError("Invalid username or password")
-      }
-    } catch (err) {
-      setError("Login failed. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
+    setIsLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <LogIn className="w-6 h-6 text-white" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">Gunworx Tracker</CardTitle>
-          <CardDescription className="text-center">Enter your credentials to access the system</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                disabled={isLoading}
-                autoComplete="username"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <Package className="mx-auto h-12 w-12 text-blue-600" />
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Gunworx Portal</h2>
+          <p className="mt-2 text-sm text-gray-600">Complete Firearm Management System</p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign in to your account</CardTitle>
+            <CardDescription>Enter your credentials to access the firearms management system</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  className="mt-1"
+                  placeholder="Enter your username"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="mt-1"
                   placeholder="Enter your password"
-                  disabled={isLoading}
-                  autoComplete="current-password"
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
-                </Button>
               </div>
-            </div>
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

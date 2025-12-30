@@ -1,149 +1,131 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { Shield, Package, FileText, Users, Search, Plus, Download, Printer, BarChart3, LogOut, Edit, Trash2 } from 'lucide-react'
+import type React from "react"
+
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
 import { LoginForm } from "@/components/login-form"
-import { UserManagement } from "@/components/user-management"
+import { generateInspectionPDF, generateMultipleInspectionsPDF } from "@/components/pdf-generator"
+import { getUserPermissions } from "@/lib/auth"
+import type { Firearm } from "@/lib/firearms-data"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { SignaturePad } from "@/components/signature-pad"
-import { authService, type User } from "@/lib/auth"
-import { formatDate, exportToCSV, generateId } from "@/lib/utils"
-
-interface Firearm {
-  id: string
-  stockNo: string
-  originalStockNo?: string
-  dateReceived: string
-  make: string
-  type: string
-  caliber: string
-  serialNo: string
-  fullName: string
-  surname: string
-  registrationId: string
-  physicalAddress: string
-  licenceNo: string
-  licenceDate: string
-  dateDelivered?: string
-  remarks: string
-  status: "in-stock" | "dealer-stock" | "safe-keeping" | "collected"
-  signature?: string
-  signerName?: string
-}
+import { dataService } from "@/lib/data-service"
+import {
+  Search,
+  FileText,
+  Package,
+  LogOut,
+  CheckSquare,
+  Square,
+  Printer,
+  Settings,
+  Activity,
+  Plus,
+  X,
+  Edit,
+  Trash2,
+  PenTool,
+  Download,
+  RefreshCw,
+  Database,
+} from "lucide-react"
+import { users } from "@/lib/auth"
+import { UserManagement } from "@/components/user-management"
 
 interface Inspection {
   id: string
   date: string
   inspector: string
-  type: string
-  findings: string
+  inspectorId: string
+  companyName: string
+  dealerCode: string
+
+  // Firearm Type
+  firearmType: {
+    pistol: boolean
+    revolver: boolean
+    rifle: boolean
+    selfLoadingRifle: boolean
+    shotgun: boolean
+    combination: boolean
+    other: boolean
+    otherDetails: string
+  }
+
+  // Caliber/Cartridge
+  caliber: string
+  cartridgeCode: string
+
+  // Serial Numbers
+  serialNumbers: {
+    barrel: string
+    barrelMake: string
+    frame: string
+    frameMake: string
+    receiver: string
+    receiverMake: string
+  }
+
+  // Action Type
+  actionType: {
+    manual: boolean
+    semiAuto: boolean
+    automatic: boolean
+    bolt: boolean
+    breakneck: boolean
+    pump: boolean
+    cappingBreechLoader: boolean
+    lever: boolean
+    cylinder: boolean
+    fallingBlock: boolean
+    other: boolean
+    otherDetails: string
+  }
+
+  make: string
+  countryOfOrigin: string
+  observations: string
+  comments: string
+  signature: string
+  inspectorTitle: string
   status: "passed" | "failed" | "pending"
-  recommendations: string
 }
 
-// Initial data - smaller set to prevent memory issues
-const initialFirearms: Firearm[] = [
-  {
-    id: "1",
-    stockNo: "CO3",
-    dateReceived: "2023-11-15",
-    make: "Walther",
-    type: "Pistol",
-    caliber: "7.65",
-    serialNo: "223083",
-    fullName: "GM",
-    surname: "Smuts",
-    registrationId: "1/23/1985",
-    physicalAddress: "",
-    licenceNo: "31/21",
-    licenceDate: "",
-    remarks: "Mac EPR Dealer Stock",
-    status: "dealer-stock",
-  },
-  {
-    id: "2",
-    stockNo: "A01",
-    dateReceived: "2025-05-07",
-    make: "Glock",
-    type: "Pistol",
-    caliber: "9mm",
-    serialNo: "SSN655",
-    fullName: "I",
-    surname: "Dunn",
-    registrationId: "9103035027088",
-    physicalAddress: "54 Lazaar Ave",
-    licenceNo: "",
-    licenceDate: "",
-    remarks: "Safekeeping",
-    status: "safe-keeping",
-  },
-]
-
-const initialInspections: Inspection[] = [
-  {
-    id: "1",
-    date: "2024-01-15",
-    inspector: "J. Smith",
-    type: "Routine Inspection",
-    findings: "All firearms properly stored and documented",
-    status: "passed",
-    recommendations: "Continue current procedures",
-  },
-  {
-    id: "2",
-    date: "2024-02-20",
-    inspector: "M. Johnson",
-    type: "Compliance Audit",
-    findings: "Minor documentation discrepancies found",
-    status: "passed",
-    recommendations: "Update serial number records for 3 items",
-  },
-]
-
-export default function GunworxTracker() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [currentUser, setCurrentUser] = useState("")
+  const [userRole, setUserRole] = useState("")
   const [firearms, setFirearms] = useState<Firearm[]>([])
   const [inspections, setInspections] = useState<Inspection[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [isAddFirearmOpen, setIsAddFirearmOpen] = useState(false)
-  const [isEditFirearmOpen, setIsEditFirearmOpen] = useState(false)
-  const [isAddInspectionOpen, setIsAddInspectionOpen] = useState(false)
-  const [isEditInspectionOpen, setIsEditInspectionOpen] = useState(false)
-  const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false)
-  const [selectedFirearmId, setSelectedFirearmId] = useState<string | null>(null)
+  const [selectedFirearms, setSelectedFirearms] = useState<string[]>([])
+  const [selectedInspections, setSelectedInspections] = useState<string[]>([])
   const [editingFirearm, setEditingFirearm] = useState<Firearm | null>(null)
-  const [editingInspection, setEditingInspection] = useState<Inspection | null>(null)
-  const [deleteFirearmId, setDeleteFirearmId] = useState<string | null>(null)
-  const [deleteInspectionId, setDeleteInspectionId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState("inventory")
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
+  const [currentFirearmForSignature, setCurrentFirearmForSignature] = useState<Firearm | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAddFirearmDialogOpen, setIsAddFirearmDialogOpen] = useState(false)
+  const [isAddInspectionDialogOpen, setIsAddInspectionDialogOpen] = useState(false)
+  const [isSubmittingInspection, setIsSubmittingInspection] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
+  // Edit inspection states
+  const [editingInspection, setEditingInspection] = useState<Inspection | null>(null)
+  const [isEditInspectionDialogOpen, setIsEditInspectionDialogOpen] = useState(false)
+
+  // Initialize newFirearm with proper defaults
   const [newFirearm, setNewFirearm] = useState<Partial<Firearm>>({
     stockNo: "",
     dateReceived: new Date().toISOString().split("T")[0],
@@ -161,943 +143,1151 @@ export default function GunworxTracker() {
     status: "in-stock",
   })
 
-  const [newInspection, setNewInspection] = useState<Partial<Inspection>>({
-    date: new Date().toISOString().split("T")[0],
-    inspector: "",
-    type: "",
-    findings: "",
+  // Initialize newInspection with proper nested object structure and pre-filled data
+  const getDefaultInspection = (): Partial<Inspection> => ({
+    date: "2025-06-03",
+    inspector: "Wikus Fourie",
+    inspectorId: "9106045129083",
+    companyName: "NICHOLAS YALE (PTY) LTD",
+    dealerCode: "Pi10184610",
+    firearmType: {
+      pistol: false,
+      revolver: false,
+      rifle: false,
+      selfLoadingRifle: false,
+      shotgun: false,
+      combination: false,
+      other: false,
+      otherDetails: "",
+    },
+    caliber: "",
+    cartridgeCode: "",
+    serialNumbers: {
+      barrel: "",
+      barrelMake: "",
+      frame: "",
+      frameMake: "",
+      receiver: "",
+      receiverMake: "",
+    },
+    actionType: {
+      manual: false,
+      semiAuto: false,
+      automatic: false,
+      bolt: false,
+      breakneck: false,
+      pump: false,
+      cappingBreechLoader: false,
+      lever: false,
+      cylinder: false,
+      fallingBlock: false,
+      other: false,
+      otherDetails: "",
+    },
+    make: "",
+    countryOfOrigin: "",
+    observations:
+      "According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm.",
+    comments: "",
+    signature: "",
+    inspectorTitle: "",
     status: "pending",
-    recommendations: "",
   })
 
-  // Initialize data
+  const [newInspection, setNewInspection] = useState<Partial<Inspection>>(getDefaultInspection())
+
+  // Load data from server on component mount
   useEffect(() => {
-    try {
-      const savedFirearms = localStorage.getItem("gunworx_firearms")
-      const savedInspections = localStorage.getItem("gunworx_inspections")
+    const loadData = async () => {
+      try {
+        setIsLoading(true)
 
-      if (savedFirearms) {
-        try {
-          const parsed = JSON.parse(savedFirearms)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setFirearms(parsed)
-          } else {
-            setFirearms(initialFirearms)
-          }
-        } catch {
-          setFirearms(initialFirearms)
-        }
-      } else {
-        setFirearms(initialFirearms)
-      }
+        // Load fresh data from server (ensures cross-device synchronization)
+        const freshData = await dataService.refreshAllData()
 
-      if (savedInspections) {
-        try {
-          const parsed = JSON.parse(savedInspections)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setInspections(parsed)
-          } else {
-            setInspections(initialInspections)
-          }
-        } catch {
-          setInspections(initialInspections)
-        }
-      } else {
-        setInspections(initialInspections)
-      }
+        setFirearms(freshData.firearms || [])
+        setInspections(freshData.inspections || [])
 
-      // Check for existing user session
-      const user = authService.getCurrentUser()
-      if (user) {
-        setCurrentUser(user)
+        console.log(
+          `🎉 Loaded fresh data: ${freshData.firearms?.length || 0} firearms and ${freshData.inspections?.length || 0} inspections`,
+        )
+
+        // Perform a sync to ensure any local changes are uploaded
+        await handleSyncData(false) // Silent sync
+      } catch (error) {
+        console.error("Error loading data:", error)
+        toast({
+          title: "Error Loading Data",
+          description: "Failed to load fresh data from server. Using cached data.",
+          variant: "destructive",
+        })
+
+        // Fallback to cached data
+        const cachedFirearms = dataService.getFromStorage?.("gunworx_firearms") || []
+        const cachedInspections = dataService.getFromStorage?.("gunworx_inspections") || []
+        setFirearms(cachedFirearms)
+        setInspections(cachedInspections)
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error("Error initializing data:", error)
-      setFirearms(initialFirearms)
-      setInspections(initialInspections)
     }
+
+    loadData()
   }, [])
 
-  // Save data to localStorage
-  useEffect(() => {
-    try {
-      if (firearms.length > 0) {
-        localStorage.setItem("gunworx_firearms", JSON.stringify(firearms))
-      }
-    } catch (error) {
-      console.error("Error saving firearms:", error)
-    }
-  }, [firearms])
+  // Get user permissions based on role
+  const permissions = getUserPermissions(userRole)
 
-  useEffect(() => {
-    try {
-      if (inspections.length > 0) {
-        localStorage.setItem("gunworx_inspections", JSON.stringify(inspections))
-      }
-    } catch (error) {
-      console.error("Error saving inspections:", error)
-    }
-  }, [inspections])
-
-  const handleLogin = (user: User) => {
-    setCurrentUser(user)
-  }
-
-  const handleLogout = () => {
-    authService.logout()
-    setCurrentUser(null)
-  }
-
-  const handleAddFirearm = () => {
-    if (!newFirearm.stockNo || !newFirearm.make || !newFirearm.serialNo) {
-      alert("Please fill in required fields: Stock No, Make, and Serial No")
-      return
-    }
-
-    const firearm: Firearm = {
-      id: generateId(),
-      stockNo: newFirearm.stockNo || "",
-      dateReceived: newFirearm.dateReceived || new Date().toISOString().split("T")[0],
-      make: newFirearm.make || "",
-      type: newFirearm.type || "",
-      caliber: newFirearm.caliber || "",
-      serialNo: newFirearm.serialNo || "",
-      fullName: newFirearm.fullName || "",
-      surname: newFirearm.surname || "",
-      registrationId: newFirearm.registrationId || "",
-      physicalAddress: newFirearm.physicalAddress || "",
-      licenceNo: newFirearm.licenceNo || "",
-      licenceDate: newFirearm.licenceDate || "",
-      remarks: newFirearm.remarks || "",
-      status: newFirearm.status || "in-stock",
-    }
-
-    setFirearms((prev) => [...prev, firearm])
-    setNewFirearm({
-      stockNo: "",
-      dateReceived: new Date().toISOString().split("T")[0],
-      make: "",
-      type: "",
-      caliber: "",
-      serialNo: "",
-      fullName: "",
-      surname: "",
-      registrationId: "",
-      physicalAddress: "",
-      licenceNo: "",
-      licenceDate: "",
-      remarks: "",
-      status: "in-stock",
-    })
-    setIsAddFirearmOpen(false)
-  }
-
-  const handleEditFirearm = (firearm: Firearm) => {
-    setEditingFirearm({ ...firearm })
-    setIsEditFirearmOpen(true)
-  }
-
-  const handleUpdateFirearm = () => {
-    if (!editingFirearm) return
-
-    if (!editingFirearm.stockNo || !editingFirearm.make || !editingFirearm.serialNo) {
-      alert("Please fill in required fields: Stock No, Make, and Serial No")
-      return
-    }
-
-    setFirearms((prev) => prev.map((firearm) => (firearm.id === editingFirearm.id ? editingFirearm : firearm)))
-    setEditingFirearm(null)
-    setIsEditFirearmOpen(false)
-  }
-
-  const handleDeleteFirearm = (firearmId: string) => {
-    const firearm = firearms.find((f) => f.id === firearmId)
-    if (firearm) {
-      setDeleteFirearmId(firearmId)
-    }
-  }
-
-  const confirmDeleteFirearm = () => {
-    if (deleteFirearmId) {
-      setFirearms((prev) => prev.filter((firearm) => firearm.id !== deleteFirearmId))
-      setDeleteFirearmId(null)
-    }
-  }
-
-  const handleAddInspection = () => {
-    if (!newInspection.inspector || !newInspection.type || !newInspection.findings) {
-      alert("Please fill in required fields")
-      return
-    }
-
-    const inspection: Inspection = {
-      id: generateId(),
-      date: newInspection.date || new Date().toISOString().split("T")[0],
-      inspector: newInspection.inspector || "",
-      type: newInspection.type || "",
-      findings: newInspection.findings || "",
-      status: newInspection.status || "pending",
-      recommendations: newInspection.recommendations || "",
-    }
-
-    setInspections((prev) => [...prev, inspection])
-    setNewInspection({
-      date: new Date().toISOString().split("T")[0],
-      inspector: "",
-      type: "",
-      findings: "",
-      status: "pending",
-      recommendations: "",
-    })
-    setIsAddInspectionOpen(false)
-  }
-
-  const handleEditInspection = (inspection: Inspection) => {
-    setEditingInspection({ ...inspection })
-    setIsEditInspectionOpen(true)
-  }
-
-  const handleUpdateInspection = () => {
-    if (!editingInspection) return
-
-    if (!editingInspection.inspector || !editingInspection.type || !editingInspection.findings) {
-      alert("Please fill in required fields")
-      return
-    }
-
-    setInspections((prev) =>
-      prev.map((inspection) => (inspection.id === editingInspection.id ? editingInspection : inspection)),
-    )
-    setEditingInspection(null)
-    setIsEditInspectionOpen(false)
-  }
-
-  const handleDeleteInspection = (inspectionId: string) => {
-    const inspection = inspections.find((i) => i.id === inspectionId)
-    if (inspection) {
-      setDeleteInspectionId(inspectionId)
-    }
-  }
-
-  const confirmDeleteInspection = () => {
-    if (deleteInspectionId) {
-      setInspections((prev) => prev.filter((inspection) => inspection.id !== deleteInspectionId))
-      setDeleteInspectionId(null)
-    }
-  }
-
-  const handleStatusChange = (firearmId: string, newStatus: Firearm["status"]) => {
-    setFirearms((prev) =>
-      prev.map((firearm) => {
-        if (firearm.id === firearmId) {
-          const updated = { ...firearm, status: newStatus }
-          if (newStatus === "collected") {
-            updated.originalStockNo = firearm.originalStockNo || firearm.stockNo
-            updated.stockNo = "COLLECTED"
-            updated.dateDelivered = new Date().toISOString().split("T")[0]
-          }
-          return updated
-        }
-        return firearm
-      }),
-    )
-  }
-
-  const handleSignatureCapture = (firearmId: string) => {
-    setSelectedFirearmId(firearmId)
-    setIsSignaturePadOpen(true)
-  }
-
-  const handleSignatureSave = (signatureData: string, signerName: string) => {
-    if (selectedFirearmId) {
-      setFirearms((prev) =>
-        prev.map((firearm) =>
-          firearm.id === selectedFirearmId ? { ...firearm, signature: signatureData, signerName } : firearm,
-        ),
-      )
-    }
-    setSelectedFirearmId(null)
-  }
-
-  const getStatusBadge = (status: Firearm["status"]) => {
-    const variants = {
-      "in-stock": "bg-blue-100 text-blue-800",
-      "dealer-stock": "bg-orange-100 text-orange-800",
-      "safe-keeping": "bg-red-100 text-red-800",
-      collected: "bg-green-100 text-green-800",
-    }
-
-    const labels = {
-      "in-stock": "In Stock",
-      "dealer-stock": "Dealer Stock",
-      "safe-keeping": "Safe Keeping",
-      collected: "Collected",
-    }
-
-    return <Badge className={variants[status]}>{labels[status]}</Badge>
-  }
-
-  const getInspectionStatusBadge = (status: Inspection["status"]) => {
-    if (!status) {
-      return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>
-    }
-
-    const variants = {
-      passed: "bg-green-100 text-green-800",
-      failed: "bg-red-100 text-red-800",
-      pending: "bg-yellow-100 text-yellow-800",
-    }
-
-    return <Badge className={variants[status]}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>
-  }
-
-  // Memoized filtered data to improve performance
+  // Filter firearms based on search term and status
   const filteredFirearms = useMemo(() => {
     return firearms.filter((firearm) => {
       const matchesSearch =
         searchTerm === "" ||
-        Object.values(firearm).some((value) => 
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        Object.values(firearm).some(
+          (value) => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
         )
-
       const matchesStatus = statusFilter === "all" || firearm.status === statusFilter
-
       return matchesSearch && matchesStatus
     })
   }, [firearms, searchTerm, statusFilter])
 
-  const activeFirearms = useMemo(() => 
-    filteredFirearms.filter((f) => f.status !== "collected"), 
-    [filteredFirearms]
-  )
-  
-  const collectedFirearms = useMemo(() => 
-    filteredFirearms.filter((f) => f.status === "collected"), 
-    [filteredFirearms]
-  )
-
+  // Filter inspections based on search term
   const filteredInspections = useMemo(() => {
     return inspections.filter((inspection) => {
       return (
         searchTerm === "" ||
-        Object.values(inspection).some((value) => 
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        Object.values(inspection).some(
+          (value) => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase()),
         )
       )
     })
   }, [inspections, searchTerm])
 
-  const stats = useMemo(() => ({
-    total: firearms.length,
-    inStock: firearms.filter((f) => f.status === "in-stock").length,
-    dealerStock: firearms.filter((f) => f.status === "dealer-stock").length,
-    safeKeeping: firearms.filter((f) => f.status === "safe-keeping").length,
-    collected: firearms.filter((f) => f.status === "collected").length,
-  }), [firearms])
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const firearmsStats = {
+      total: firearms.length,
+      inStock: firearms.filter((f) => f.status === "in-stock").length,
+      dealerStock: firearms.filter((f) => f.status === "dealer-stock").length,
+      safeKeeping: firearms.filter((f) => f.status === "safe-keeping").length,
+      collected: firearms.filter((f) => f.status === "collected").length,
+    }
 
-  if (!currentUser) {
+    const totalInspections = inspections.length
+    const passedInspections = inspections.filter((i) => i.status === "passed").length
+    const failedInspections = inspections.filter((i) => i.status === "failed").length
+    const pendingInspections = inspections.filter((i) => i.status === "pending").length
+
+    return {
+      firearms: firearmsStats,
+      inspections: {
+        total: totalInspections,
+        passed: passedInspections,
+        failed: failedInspections,
+        pending: pendingInspections,
+      },
+    }
+  }, [firearms, inspections])
+
+  const handleLogin = (username: string) => {
+    // Find the user in the auth system to get their role
+    const user = users.find((u) => u.username === username)
+    if (user) {
+      setIsLoggedIn(true)
+      setCurrentUser(username)
+      setUserRole(user.role)
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${username}!`,
+      })
+    }
+  }
+
+  const handleLogout = () => {
+    setIsLoggedIn(false)
+    setCurrentUser("")
+    setUserRole("")
+    setSelectedFirearms([])
+    setSelectedInspections([])
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    })
+  }
+
+  const handleSyncData = async (showToast = true) => {
+    try {
+      setIsSyncing(true)
+
+      const result = await dataService.syncData()
+
+      if (showToast) {
+        toast({
+          title: "Data Synchronized",
+          description: `Successfully synced ${result.synced.firearms} firearms, ${result.synced.inspections} inspections, and ${result.synced.users} users.`,
+        })
+      }
+
+      // Reload data after sync
+      const [firearmsData, inspectionsData] = await Promise.all([
+        dataService.getFirearms(),
+        dataService.getInspections(),
+      ])
+
+      setFirearms(firearmsData || [])
+      setInspections(inspectionsData || [])
+    } catch (error) {
+      console.error("Error syncing data:", error)
+      if (showToast) {
+        toast({
+          title: "Sync Failed",
+          description: "Failed to synchronize data with server.",
+          variant: "destructive",
+        })
+      }
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const handleBackupData = async () => {
+    try {
+      const backup = await dataService.backupData()
+
+      // Create downloadable backup file
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `gunworx_backup_${new Date().toISOString().split("T")[0]}.json`
+      link.click()
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: "Backup Created",
+        description: "Data backup has been downloaded successfully.",
+      })
+    } catch (error) {
+      console.error("Error creating backup:", error)
+      toast({
+        title: "Backup Failed",
+        description: "Failed to create data backup.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSelectFirearm = (firearmId: string) => {
+    setSelectedFirearms((prev) =>
+      prev.includes(firearmId) ? prev.filter((id) => id !== firearmId) : [...prev, firearmId],
+    )
+  }
+
+  const handleSelectAllFirearms = () => {
+    if (selectedFirearms.length === filteredFirearms.length) {
+      setSelectedFirearms([])
+    } else {
+      setSelectedFirearms(filteredFirearms.map((f) => f.id))
+    }
+  }
+
+  const handleSelectInspection = (inspectionId: string) => {
+    setSelectedInspections((prev) =>
+      prev.includes(inspectionId) ? prev.filter((id) => id !== inspectionId) : [...prev, inspectionId],
+    )
+  }
+
+  const handleSelectAllInspections = () => {
+    if (selectedInspections.length === filteredInspections.length) {
+      setSelectedInspections([])
+    } else {
+      setSelectedInspections(filteredInspections.map((i) => i.id))
+    }
+  }
+
+  const handleEditFirearm = (firearm: Firearm) => {
+    setEditingFirearm({ ...firearm })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleSaveFirearm = async () => {
+    if (editingFirearm) {
+      try {
+        const updatedFirearm = await dataService.updateFirearm(editingFirearm.id, editingFirearm)
+        setFirearms((prev) => prev.map((f) => (f.id === editingFirearm.id ? updatedFirearm : f)))
+        setIsEditDialogOpen(false)
+        setEditingFirearm(null)
+        toast({
+          title: "Firearm Updated",
+          description: "Firearm details have been successfully updated.",
+        })
+      } catch (error) {
+        console.error("Error updating firearm:", error)
+        toast({
+          title: "Error",
+          description: "Failed to update firearm. Please try again.",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const handleDeleteFirearm = async (firearmId: string) => {
+    try {
+      await dataService.deleteFirearm(firearmId)
+      setFirearms((prev) => prev.filter((f) => f.id !== firearmId))
+      setSelectedFirearms((prev) => prev.filter((id) => id !== firearmId))
+      toast({
+        title: "Firearm Deleted",
+        description: "Firearm has been successfully deleted.",
+      })
+    } catch (error) {
+      console.error("Error deleting firearm:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete firearm. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteInspection = async (inspectionId: string) => {
+    try {
+      await dataService.deleteInspection(inspectionId)
+      setInspections((prev) => prev.filter((i) => i.id !== inspectionId))
+      setSelectedInspections((prev) => prev.filter((id) => id !== inspectionId))
+      toast({
+        title: "Inspection Deleted",
+        description: "Inspection report has been successfully deleted.",
+      })
+    } catch (error) {
+      console.error("Error deleting inspection:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete inspection. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteSelectedInspections = async () => {
+    if (selectedInspections.length === 0) {
+      toast({
+        title: "No Inspections Selected",
+        description: "Please select inspections to delete.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setIsSyncing(true)
+
+      // Delete all selected inspections one by one
+      const deletePromises = selectedInspections.map(async (id) => {
+        try {
+          const response = await fetch(`/api/inspections/${id}`, {
+            method: "DELETE",
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+            throw new Error(errorData.error || `Failed to delete inspection ${id}`)
+          }
+
+          return { id, success: true }
+        } catch (error) {
+          console.error(`Error deleting inspection ${id}:`, error)
+          return { id, success: false, error: error.message }
+        }
+      })
+
+      const results = await Promise.all(deletePromises)
+      const successful = results.filter((r) => r.success)
+      const failed = results.filter((r) => !r.success)
+
+      // Update state with successfully deleted inspections
+      if (successful.length > 0) {
+        const successfulIds = successful.map((r) => r.id)
+        setInspections((prev) => prev.filter((i) => !successfulIds.includes(i.id)))
+        setSelectedInspections([])
+      }
+
+      // Show appropriate toast message
+      if (failed.length === 0) {
+        toast({
+          title: "Inspections Deleted",
+          description: `${successful.length} inspection reports have been successfully deleted.`,
+        })
+      } else if (successful.length === 0) {
+        toast({
+          title: "Delete Failed",
+          description: `Failed to delete all ${failed.length} selected inspections.`,
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Partial Success",
+          description: `${successful.length} inspections deleted, ${failed.length} failed.`,
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error in bulk delete operation:", error)
+      toast({
+        title: "Delete Operation Failed",
+        description: "An unexpected error occurred during the delete operation.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const handleCaptureSignature = (firearm: Firearm) => {
+    setCurrentFirearmForSignature(firearm)
+    setIsSignatureDialogOpen(true)
+  }
+
+  const handleSaveSignature = async (signatureData: string) => {
+    if (currentFirearmForSignature) {
+      try {
+        const updatedFirearm = await dataService.updateFirearm(currentFirearmForSignature.id, {
+          ...currentFirearmForSignature,
+          signature: signatureData,
+          signatureDate: new Date().toISOString(),
+          signedBy: currentUser,
+          status: "collected",
+        })
+
+        setFirearms((prev) => prev.map((f) => (f.id === currentFirearmForSignature.id ? updatedFirearm : f)))
+
+        setIsSignatureDialogOpen(false)
+        setCurrentFirearmForSignature(null)
+
+        toast({
+          title: "Signature Captured",
+          description: "Firearm collection signature has been successfully recorded.",
+        })
+      } catch (error) {
+        console.error("Error saving signature:", error)
+        toast({
+          title: "Error",
+          description: "Failed to save signature. Please try again.",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const handleAddFirearm = async () => {
+    try {
+      if (!newFirearm.stockNo || !newFirearm.make || !newFirearm.serialNo) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields (Stock No, Make, Serial No).",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const firearmToAdd = {
+        ...newFirearm,
+        dateReceived: newFirearm.dateReceived || new Date().toISOString().split("T")[0],
+        status: newFirearm.status || "in-stock",
+      } as Omit<Firearm, "id">
+
+      const addedFirearm = await dataService.createFirearm(firearmToAdd)
+      setFirearms((prev) => [...prev, addedFirearm])
+      setIsAddFirearmDialogOpen(false)
+      setNewFirearm({
+        stockNo: "",
+        dateReceived: new Date().toISOString().split("T")[0],
+        make: "",
+        type: "",
+        caliber: "",
+        serialNo: "",
+        fullName: "",
+        surname: "",
+        registrationId: "",
+        physicalAddress: "",
+        licenceNo: "",
+        licenceDate: "",
+        remarks: "",
+        status: "in-stock",
+      })
+      toast({
+        title: "Firearm Added",
+        description: "New firearm has been successfully added to the database.",
+      })
+    } catch (error) {
+      console.error("Error adding firearm:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add firearm. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddInspection = async () => {
+    if (isSubmittingInspection) return // Prevent double submission
+
+    setIsSubmittingInspection(true)
+
+    try {
+      console.log("Creating inspection with data:", newInspection)
+
+      // Validate that we have the minimum required data
+      if (!newInspection.date) {
+        toast({
+          title: "Validation Error",
+          description: "Inspection date is required.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Ensure all nested objects are properly structured
+      const inspectionToAdd: Omit<Inspection, "id"> = {
+        date: newInspection.date,
+        inspector: newInspection.inspector || "Unknown Inspector",
+        inspectorId: newInspection.inspectorId || "",
+        companyName: newInspection.companyName || "",
+        dealerCode: newInspection.dealerCode || "",
+        firearmType: {
+          pistol: newInspection.firearmType?.pistol || false,
+          revolver: newInspection.firearmType?.revolver || false,
+          rifle: newInspection.firearmType?.rifle || false,
+          selfLoadingRifle: newInspection.firearmType?.selfLoadingRifle || false,
+          shotgun: newInspection.firearmType?.shotgun || false,
+          combination: newInspection.firearmType?.combination || false,
+          other: newInspection.firearmType?.other || false,
+          otherDetails: newInspection.firearmType?.otherDetails || "",
+        },
+        caliber: newInspection.caliber || "",
+        cartridgeCode: newInspection.cartridgeCode || "",
+        serialNumbers: {
+          barrel: newInspection.serialNumbers?.barrel || "",
+          barrelMake: newInspection.serialNumbers?.barrelMake || "",
+          frame: newInspection.serialNumbers?.frame || "",
+          frameMake: newInspection.serialNumbers?.frameMake || "",
+          receiver: newInspection.serialNumbers?.receiver || "",
+          receiverMake: newInspection.serialNumbers?.receiverMake || "",
+        },
+        actionType: {
+          manual: newInspection.actionType?.manual || false,
+          semiAuto: newInspection.actionType?.semiAuto || false,
+          automatic: newInspection.actionType?.automatic || false,
+          bolt: newInspection.actionType?.bolt || false,
+          breakneck: newInspection.actionType?.breakneck || false,
+          pump: newInspection.actionType?.pump || false,
+          cappingBreechLoader: newInspection.actionType?.cappingBreechLoader || false,
+          lever: newInspection.actionType?.lever || false,
+          cylinder: newInspection.actionType?.cylinder || false,
+          fallingBlock: newInspection.actionType?.fallingBlock || false,
+          other: newInspection.actionType?.other || false,
+          otherDetails: newInspection.actionType?.otherDetails || "",
+        },
+        make: newInspection.make || "",
+        countryOfOrigin: newInspection.countryOfOrigin || "",
+        observations: newInspection.observations || "",
+        comments: newInspection.comments || "",
+        signature: newInspection.signature || "",
+        inspectorTitle: newInspection.inspectorTitle || "",
+        status: newInspection.status || "pending",
+      }
+
+      console.log("Processed inspection data:", inspectionToAdd)
+
+      const addedInspection = await dataService.createInspection(inspectionToAdd)
+
+      console.log("Successfully created inspection:", addedInspection)
+
+      setInspections((prev) => [...prev, addedInspection])
+      setIsAddInspectionDialogOpen(false)
+
+      // Reset form to default state
+      setNewInspection(getDefaultInspection())
+
+      toast({
+        title: "Inspection Report Created",
+        description: "New firearm inspection report has been successfully created.",
+      })
+    } catch (error) {
+      console.error("Error creating inspection:", error)
+      toast({
+        title: "Error",
+        description: `Failed to create inspection report: ${error instanceof Error ? error.message : "Unknown error"}`,
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmittingInspection(false)
+    }
+  }
+
+  // Edit inspection handlers
+  const handleEditInspection = (inspection: Inspection) => {
+    setEditingInspection({ ...inspection })
+    setIsEditInspectionDialogOpen(true)
+  }
+
+  const handleSaveEditedInspection = async () => {
+    if (!editingInspection) return
+
+    try {
+      setIsSyncing(true)
+
+      // Use the data service to update the inspection
+      const response = await fetch(`/api/inspections/${editingInspection.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingInspection),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to update inspection")
+      }
+
+      const data = await response.json()
+
+      // Update local state immediately
+      setInspections((prev) => prev.map((i) => (i.id === editingInspection.id ? data.inspection : i)))
+
+      // Close dialog and reset state
+      setIsEditInspectionDialogOpen(false)
+      setEditingInspection(null)
+
+      // Force a data refresh to ensure consistency
+      await handleRefreshData()
+
+      toast({
+        title: "Inspection Updated",
+        description: "Inspection report has been successfully updated and saved.",
+      })
+    } catch (error) {
+      console.error("Error updating inspection:", error)
+      toast({
+        title: "Error",
+        description: `Failed to update inspection: ${error instanceof Error ? error.message : "Unknown error"}`,
+        variant: "destructive",
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const updateEditingInspectionField = (field: string, value: any, nestedField?: string) => {
+    if (!editingInspection) return
+
+    setEditingInspection((prev) => {
+      if (!prev) return prev
+
+      if (nestedField) {
+        return {
+          ...prev,
+          [field]: {
+            ...prev[field as keyof typeof prev],
+            [nestedField]: value,
+          },
+        }
+      } else {
+        return {
+          ...prev,
+          [field]: value,
+        }
+      }
+    })
+  }
+
+  const handleExportFirearms = (type: "all" | "selected" | "filtered") => {
+    let dataToExport: Firearm[] = []
+
+    switch (type) {
+      case "all":
+        dataToExport = firearms
+        break
+      case "selected":
+        dataToExport = firearms.filter((f) => selectedFirearms.includes(f.id))
+        break
+      case "filtered":
+        dataToExport = filteredFirearms
+        break
+    }
+
+    if (dataToExport.length === 0) {
+      toast({
+        title: "No Data to Export",
+        description: "Please select firearms to export or adjust your filters.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Create CSV content
+    const headers = [
+      "Stock No",
+      "Date Received",
+      "Make",
+      "Type",
+      "Caliber",
+      "Serial No",
+      "Full Name",
+      "Surname",
+      "Registration ID",
+      "Physical Address",
+      "Licence No",
+      "Licence Date",
+      "Remarks",
+      "Status",
+    ]
+
+    const csvContent = [
+      headers.join(","),
+      ...dataToExport.map((firearm) =>
+        [
+          firearm.stockNo,
+          firearm.dateReceived,
+          firearm.make,
+          firearm.type,
+          firearm.caliber,
+          firearm.serialNo,
+          firearm.fullName,
+          firearm.surname,
+          firearm.registrationId,
+          `"${firearm.physicalAddress}"`,
+          firearm.licenceNo,
+          firearm.licenceDate,
+          `"${firearm.remarks}"`,
+          firearm.status,
+        ].join(","),
+      ),
+    ].join("\n")
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", `gunworx_firearms_${type}_${new Date().toISOString().split("T")[0]}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast({
+      title: "Export Successful",
+      description: `${dataToExport.length} firearms exported successfully.`,
+    })
+  }
+
+  const handlePrintInspection = (inspection: Inspection) => {
+    generateInspectionPDF(inspection)
+    toast({
+      title: "PDF Generated",
+      description: "Inspection report has been generated and sent to printer.",
+    })
+  }
+
+  const handlePrintSelectedInspections = () => {
+    const inspectionsToPrint = inspections.filter((i) => selectedInspections.includes(i.id))
+    if (inspectionsToPrint.length === 0) {
+      toast({
+        title: "No Inspections Selected",
+        description: "Please select inspections to print.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    generateMultipleInspectionsPDF(inspectionsToPrint)
+    toast({
+      title: "PDF Generated",
+      description: `${inspectionsToPrint.length} inspection reports have been generated and sent to printer.`,
+    })
+  }
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "in-stock":
+        return "default"
+      case "dealer-stock":
+        return "secondary"
+      case "safe-keeping":
+        return "outline"
+      case "collected":
+        return "destructive"
+      case "passed":
+        return "default"
+      case "failed":
+        return "destructive"
+      case "pending":
+        return "secondary"
+      default:
+        return "default"
+    }
+  }
+
+  // Helper function to safely update nested inspection objects
+  const updateInspectionField = (field: string, value: any, nestedField?: string) => {
+    setNewInspection((prev) => {
+      if (nestedField) {
+        return {
+          ...prev,
+          [field]: {
+            ...prev[field as keyof typeof prev],
+            [nestedField]: value,
+          },
+        }
+      } else {
+        return {
+          ...prev,
+          [field]: value,
+        }
+      }
+    })
+  }
+
+  const handleRefreshData = async () => {
+    try {
+      setIsSyncing(true)
+
+      const freshData = await dataService.refreshAllData()
+
+      setFirearms(freshData.firearms || [])
+      setInspections(freshData.inspections || [])
+
+      toast({
+        title: "Data Refreshed",
+        description: `Loaded latest data: ${freshData.firearms.length} firearms, ${freshData.inspections.length} inspections`,
+      })
+    } catch (error) {
+      console.error("Error refreshing data:", error)
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh data from server.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const handleRestoreData = async (backupData: any) => {
+    try {
+      setIsSyncing(true)
+
+      const response = await fetch("/api/data-migration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore", data: backupData }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to restore data")
+      }
+
+      const result = await response.json()
+      console.log("Data restored:", result)
+
+      // Refresh data after restore
+      await handleRefreshData()
+
+      toast({
+        title: "Data Restored",
+        description: `Successfully restored ${result.restored.firearms} firearms, ${result.restored.inspections} inspections, and ${result.restored.users} users.`,
+      })
+    } catch (error) {
+      console.error("Error restoring data:", error)
+      toast({
+        title: "Restore Failed",
+        description: "Failed to restore data from backup.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const handleLoadBackupFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a backup file to load.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const backupData = JSON.parse(e.target?.result as string)
+        await handleRestoreData(backupData)
+      } catch (error) {
+        console.error("Error parsing backup file:", error)
+        toast({
+          title: "Invalid File",
+          description: "Failed to parse backup file. Please ensure it is a valid JSON file.",
+          variant: "destructive",
+        })
+      }
+    }
+
+    reader.readAsText(file)
+  }
+
+  const handleClearAllInspections = async () => {
+    try {
+      setIsSyncing(true)
+
+      const response = await fetch("/api/data-migration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_inspections" }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to clear inspections")
+      }
+
+      const result = await response.json()
+
+      // Update local state
+      setInspections([])
+      setSelectedInspections([])
+
+      toast({
+        title: "All Inspections Cleared",
+        description: `Successfully removed ${result.cleared} inspection records from the system.`,
+      })
+
+      console.log(`🧹 Cleared ${result.cleared} inspections from the system`)
+    } catch (error) {
+      console.error("Error clearing all inspections:", error)
+      toast({
+        title: "Clear Failed",
+        description: "Failed to clear all inspections from the system.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  if (!isLoggedIn) {
     return <LoginForm onLogin={handleLogin} />
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Activity className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading firearms database...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Inspector role - only show inspections
+  if (userRole === "inspector") {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center space-x-4">
+                <FileText className="h-8 w-8 text-blue-600" />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Inspection Portal</h1>
+                  <p className="text-sm text-gray-500">View and Print Inspection Reports</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gunworx Management Portal</h1>
-                <p className="text-sm text-gray-600">Firearms Control Act Compliance System</p>
+              <div className="flex items-center space-x-4">
+                <Button variant="outline" size="sm" onClick={() => handleRefreshData()} disabled={isSyncing}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
+                  {isSyncing ? "Refreshing..." : "Refresh Data"}
+                </Button>
+                <span className="text-sm text-gray-600">Welcome, {currentUser} (Inspector)</span>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                Welcome, {currentUser.username}
-                {currentUser.isSystemAdmin && (
-                  <Badge className="ml-2 bg-purple-100 text-purple-800">System Admin</Badge>
-                )}
-                {currentUser.role === "admin" && !currentUser.isSystemAdmin && (
-                  <Badge className="ml-2 bg-orange-100 text-orange-800">Admin</Badge>
-                )}
-              </span>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </Button>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">Total Items</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-                <Package className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">In Stock</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.inStock}</p>
-                </div>
-                <Package className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">Dealer Stock</p>
-                  <p className="text-2xl font-bold text-orange-600">{stats.dealerStock}</p>
-                </div>
-                <Package className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">Safe Keeping</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.safeKeeping}</p>
-                </div>
-                <Package className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">Collected</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.collected}</p>
-                </div>
-                <Package className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-6">
+            {/* Inspection Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Inspections</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.inspections.total}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Passed</CardTitle>
+                  <Badge variant="default" className="h-4 w-4 rounded-full p-0" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.inspections.passed}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Failed</CardTitle>
+                  <Badge variant="destructive" className="h-4 w-4 rounded-full p-0" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.inspections.failed}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                  <Badge variant="secondary" className="h-4 w-4 rounded-full p-0" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.inspections.pending}</div>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="inventory">
-              <Package className="w-4 h-4 mr-2" />
-              Inventory
-            </TabsTrigger>
-            <TabsTrigger value="inspections">
-              <FileText className="w-4 h-4 mr-2" />
-              Inspections
-            </TabsTrigger>
-            <TabsTrigger value="reports">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Reports
-            </TabsTrigger>
-            {(currentUser.role === "admin" || currentUser.isSystemAdmin) && (
-              <TabsTrigger value="users">
-                <Users className="w-4 h-4 mr-2" />
-                Users
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          {/* Inventory Tab */}
-          <TabsContent value="inventory" className="space-y-6">
+            {/* Add Inspection Button */}
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Firearms Inventory</CardTitle>
-                    <CardDescription>Manage and track all firearms in the system</CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Dialog open={isAddFirearmOpen} onOpenChange={setIsAddFirearmOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Firearm
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Add New Firearm</DialogTitle>
-                          <DialogDescription>Enter the details for the new firearm</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="stockNo">Stock Number *</Label>
-                            <Input
-                              id="stockNo"
-                              value={newFirearm.stockNo || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, stockNo: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="dateReceived">Date Received</Label>
-                            <Input
-                              id="dateReceived"
-                              type="date"
-                              value={newFirearm.dateReceived || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, dateReceived: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="make">Make *</Label>
-                            <Input
-                              id="make"
-                              value={newFirearm.make || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, make: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="type">Type</Label>
-                            <Input
-                              id="type"
-                              value={newFirearm.type || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, type: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="caliber">Caliber</Label>
-                            <Input
-                              id="caliber"
-                              value={newFirearm.caliber || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, caliber: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="serialNo">Serial Number *</Label>
-                            <Input
-                              id="serialNo"
-                              value={newFirearm.serialNo || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, serialNo: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="fullName">Full Name</Label>
-                            <Input
-                              id="fullName"
-                              value={newFirearm.fullName || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, fullName: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="surname">Surname</Label>
-                            <Input
-                              id="surname"
-                              value={newFirearm.surname || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, surname: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="registrationId">Registration ID</Label>
-                            <Input
-                              id="registrationId"
-                              value={newFirearm.registrationId || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, registrationId: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="licenceNo">Licence Number</Label>
-                            <Input
-                              id="licenceNo"
-                              value={newFirearm.licenceNo || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, licenceNo: e.target.value }))}
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <Label htmlFor="physicalAddress">Physical Address</Label>
-                            <Input
-                              id="physicalAddress"
-                              value={newFirearm.physicalAddress || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, physicalAddress: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="licenceDate">Licence Date</Label>
-                            <Input
-                              id="licenceDate"
-                              type="date"
-                              value={newFirearm.licenceDate || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, licenceDate: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="status">Status</Label>
-                            <Select
-                              value={newFirearm.status || "in-stock"}
-                              onValueChange={(value: Firearm["status"]) =>
-                                setNewFirearm((prev) => ({ ...prev, status: value }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="in-stock">In Stock</SelectItem>
-                                <SelectItem value="dealer-stock">Dealer Stock</SelectItem>
-                                <SelectItem value="safe-keeping">Safe Keeping</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="col-span-2">
-                            <Label htmlFor="remarks">Remarks</Label>
-                            <Textarea
-                              id="remarks"
-                              value={newFirearm.remarks || ""}
-                              onChange={(e) => setNewFirearm((prev) => ({ ...prev, remarks: e.target.value }))}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2 pt-4">
-                          <Button onClick={handleAddFirearm} className="flex-1">
-                            Add Firearm
-                          </Button>
-                          <Button variant="outline" onClick={() => setIsAddFirearmOpen(false)}>
-                            Cancel
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Button variant="outline" onClick={() => exportToCSV(firearms, "firearms_export.csv")}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
-                  </div>
-                </div>
+                <CardTitle>Add New Inspection</CardTitle>
+                <CardDescription>Create a new inspection record</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Search and Filter */}
-                <div className="flex gap-4 mb-6">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        placeholder="Search firearms..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="in-stock">In Stock</SelectItem>
-                      <SelectItem value="dealer-stock">Dealer Stock</SelectItem>
-                      <SelectItem value="safe-keeping">Safe Keeping</SelectItem>
-                      <SelectItem value="collected">Collected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Button onClick={() => setIsAddInspectionDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Inspection
+                </Button>
+              </CardContent>
+            </Card>
 
-                {/* Active Firearms */}
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Active Inventory ({activeFirearms.length})</h3>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Stock No</TableHead>
-                            <TableHead>Make/Type</TableHead>
-                            <TableHead>Serial No</TableHead>
-                            <TableHead>Owner</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {activeFirearms.map((firearm) => (
-                            <TableRow key={firearm.id}>
-                              <TableCell className="font-medium">{firearm.stockNo}</TableCell>
-                              <TableCell>
-                                <div>
-                                  <div className="font-medium">{firearm.make}</div>
-                                  <div className="text-sm text-gray-500">{firearm.type}</div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="font-mono text-sm">{firearm.serialNo}</TableCell>
-                              <TableCell>
-                                {firearm.fullName} {firearm.surname}
-                              </TableCell>
-                              <TableCell>{getStatusBadge(firearm.status)}</TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Select
-                                    value={firearm.status}
-                                    onValueChange={(value: Firearm["status"]) => handleStatusChange(firearm.id, value)}
-                                  >
-                                    <SelectTrigger className="w-32">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="in-stock">In Stock</SelectItem>
-                                      <SelectItem value="dealer-stock">Dealer Stock</SelectItem>
-                                      <SelectItem value="safe-keeping">Safe Keeping</SelectItem>
-                                      <SelectItem value="collected">Collected</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleSignatureCapture(firearm.id)}
-                                  >
-                                    Sign
-                                  </Button>
-                                  <Button variant="outline" size="sm" onClick={() => handleEditFirearm(firearm)}>
-                                    <Edit className="w-3 h-3" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDeleteFirearm(firearm.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-
-                  {/* Collected Firearms */}
-                  {collectedFirearms.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Collected Items ({collectedFirearms.length})</h3>
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Original Stock No</TableHead>
-                              <TableHead>Make/Type</TableHead>
-                              <TableHead>Serial No</TableHead>
-                              <TableHead>Owner</TableHead>
-                              <TableHead>Date Collected</TableHead>
-                              <TableHead>Signature</TableHead>
-                              <TableHead>Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {collectedFirearms.map((firearm) => (
-                              <TableRow key={firearm.id} className="bg-green-50">
-                                <TableCell className="font-medium">{firearm.originalStockNo}</TableCell>
-                                <TableCell>
-                                  <div>
-                                    <div className="font-medium">{firearm.make}</div>
-                                    <div className="text-sm text-gray-500">{firearm.type}</div>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="font-mono text-sm">{firearm.serialNo}</TableCell>
-                                <TableCell>
-                                  {firearm.fullName} {firearm.surname}
-                                </TableCell>
-                                <TableCell>{formatDate(firearm.dateDelivered || "")}</TableCell>
-                                <TableCell>
-                                  {firearm.signature ? (
-                                    <div className="text-sm">
-                                      <div className="font-medium">{firearm.signerName}</div>
-                                      <div className="text-gray-500">Signed</div>
-                                    </div>
-                                  ) : (
-                                    <span className="text-gray-400">No signature</span>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => handleEditFirearm(firearm)}>
-                                      <Edit className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleDeleteFirearm(firearm.id)}
-                                      className="text-red-600 hover:text-red-700"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                  )}
+            {/* Search Controls */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Search Inspections</CardTitle>
+                <CardDescription>Search across all inspection fields</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search inspections..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* Inspections Tab */}
-          <TabsContent value="inspections" className="space-y-6">
+            {/* Print Controls */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Print Options</CardTitle>
+                <CardDescription>Generate PDF reports for selected inspections</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={handlePrintSelectedInspections}
+                    variant="outline"
+                    size="sm"
+                    disabled={selectedInspections.length === 0}
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print Selected ({selectedInspections.length})
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Inspections Table */}
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>Inspections</CardTitle>
+                    <CardTitle>Inspection Records</CardTitle>
                     <CardDescription>
-                      Track compliance inspections and audits ({filteredInspections.length} total)
+                      Showing {filteredInspections.length} of {stats.inspections.total} inspections
+                      {selectedInspections.length > 0 && ` (${selectedInspections.length} selected)`}
                     </CardDescription>
                   </div>
-                  <Dialog open={isAddInspectionOpen} onOpenChange={setIsAddInspectionOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Inspection
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Inspection</DialogTitle>
-                        <DialogDescription>Record a new inspection or audit</DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="inspectionDate">Date</Label>
-                          <Input
-                            id="inspectionDate"
-                            type="date"
-                            value={newInspection.date || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, date: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="inspector">Inspector *</Label>
-                          <Input
-                            id="inspector"
-                            value={newInspection.inspector || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, inspector: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="inspectionType">Type *</Label>
-                          <Input
-                            id="inspectionType"
-                            value={newInspection.type || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, type: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="findings">Findings *</Label>
-                          <Textarea
-                            id="findings"
-                            value={newInspection.findings || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, findings: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="inspectionStatus">Status</Label>
-                          <Select
-                            value={newInspection.status || "pending"}
-                            onValueChange={(value: Inspection["status"]) =>
-                              setNewInspection((prev) => ({ ...prev, status: value }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="passed">Passed</SelectItem>
-                              <SelectItem value="failed">Failed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="recommendations">Recommendations</Label>
-                          <Textarea
-                            id="recommendations"
-                            value={newInspection.recommendations || ""}
-                            onChange={(e) => setNewInspection((prev) => ({ ...prev, recommendations: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-2 pt-4">
-                        <Button onClick={handleAddInspection} className="flex-1">
-                          Add Inspection
-                        </Button>
-                        <Button variant="outline" onClick={() => setIsAddInspectionOpen(false)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAllInspections}
+                    disabled={filteredInspections.length === 0}
+                  >
+                    {selectedInspections.length === filteredInspections.length ? (
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Square className="h-4 w-4 mr-2" />
+                    )}
+                    {selectedInspections.length === filteredInspections.length ? "Deselect All" : "Select All"}
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Search */}
-                <div className="flex gap-4 mb-6">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        placeholder="Search inspections..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={
+                              selectedInspections.length === filteredInspections.length &&
+                              filteredInspections.length > 0
+                            }
+                            onCheckedChange={handleSelectAllInspections}
+                          />
+                        </TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Inspector</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Company</TableHead>
+                        <TableHead>Make</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Findings</TableHead>
-                        <TableHead>Recommendations</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredInspections.map((inspection) => (
                         <TableRow key={inspection.id}>
-                          <TableCell>{formatDate(inspection.date)}</TableCell>
-                          <TableCell className="font-medium">{inspection.inspector}</TableCell>
-                          <TableCell>{inspection.type}</TableCell>
-                          <TableCell>{getInspectionStatusBadge(inspection.status)}</TableCell>
-                          <TableCell className="max-w-xs truncate">{inspection.findings}</TableCell>
-                          <TableCell className="max-w-xs truncate">{inspection.recommendations}</TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
+                            <Checkbox
+                              checked={selectedInspections.includes(inspection.id)}
+                              onCheckedChange={() => handleSelectInspection(inspection.id)}
+                            />
+                          </TableCell>
+                          <TableCell>{inspection.date}</TableCell>
+                          <TableCell>{inspection.inspector}</TableCell>
+                          <TableCell>{inspection.companyName}</TableCell>
+                          <TableCell>{inspection.make}</TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(inspection.status)}>{inspection.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
                               <Button variant="outline" size="sm" onClick={() => handleEditInspection(inspection)}>
-                                <Edit className="w-3 h-3" />
+                                <Edit className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteInspection(inspection.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-3 h-3" />
+                              <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
+                                <Printer className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
@@ -1108,345 +1298,1870 @@ export default function GunworxTracker() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        </div>
 
-          {/* Reports Tab */}
-          <TabsContent value="reports" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Toaster />
+      </div>
+    )
+  }
+
+  // Regular users with full interface
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <Package className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Gunworx Portal</h1>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" size="sm" onClick={() => handleRefreshData()} disabled={isSyncing}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
+                {isSyncing ? "Refreshing..." : "Refresh Data"}
+              </Button>
+              {userRole === "admin" && (
+                <Button variant="outline" size="sm" onClick={handleBackupData}>
+                  <Database className="h-4 w-4 mr-2" />
+                  Backup
+                </Button>
+              )}
+              <div className="text-right">
+                <span className="text-sm text-gray-600">
+                  Welcome, {currentUser} ({userRole})
+                </span>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="firearms" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            {permissions.canViewFirearms && (
+              <TabsTrigger value="firearms" className="flex items-center space-x-2">
+                <Package className="h-4 w-4" />
+                <span>Firearms ({stats.firearms.total})</span>
+              </TabsTrigger>
+            )}
+            {permissions.canViewInspections && (
+              <TabsTrigger value="inspections" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Inspections ({stats.inspections.total})</span>
+              </TabsTrigger>
+            )}
+            {permissions.canManageUsers && (
+              <TabsTrigger value="users" className="flex items-center space-x-2">
+                <Settings className="h-4 w-4" />
+                <span>Users</span>
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {permissions.canViewFirearms && (
+            <TabsContent value="firearms" className="space-y-6">
+              {/* Statistics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Firearms</CardTitle>
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.firearms.total}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">In Stock</CardTitle>
+                    <Badge variant="default" className="h-4 w-4 rounded-full p-0" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.firearms.inStock}</div>
+                    <p className="text-xs text-muted-foreground">Workshop items</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Dealer Stock</CardTitle>
+                    <Badge variant="secondary" className="h-4 w-4 rounded-full p-0" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.firearms.dealerStock}</div>
+                    <p className="text-xs text-muted-foreground">Items in dealer stock</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Safe Keeping</CardTitle>
+                    <Badge variant="outline" className="h-4 w-4 rounded-full p-0" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.firearms.safeKeeping}</div>
+                    <p className="text-xs text-muted-foreground">Items under safe keeping</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Collected</CardTitle>
+                    <Badge variant="destructive" className="h-4 w-4 rounded-full p-0" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.firearms.collected}</div>
+                    <p className="text-xs text-muted-foreground">Collected firearms</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Add Firearm */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Inventory Summary</CardTitle>
-                  <CardDescription>Current status of all firearms</CardDescription>
+                  <CardTitle>Add New Firearm</CardTitle>
+                  <CardDescription>Add a new firearm to the database</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Total Items:</span>
-                      <span className="font-bold">{stats.total}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>In Stock:</span>
-                      <span className="font-bold text-blue-600">{stats.inStock}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Dealer Stock:</span>
-                      <span className="font-bold text-orange-600">{stats.dealerStock}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Safe Keeping:</span>
-                      <span className="font-bold text-red-600">{stats.safeKeeping}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Collected:</span>
-                      <span className="font-bold text-green-600">{stats.collected}</span>
-                    </div>
-                  </div>
-                  <Button className="w-full mt-4" onClick={() => window.print()}>
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print Report
+                  <Button onClick={() => setIsAddFirearmDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Firearm
                   </Button>
                 </CardContent>
               </Card>
 
+              {/* Search Controls */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Latest system activities</CardDescription>
+                  <CardTitle>Search & Filter</CardTitle>
+                  <CardDescription>Search and filter firearms by various criteria</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-sm">
-                      <div className="font-medium">System initialized</div>
-                      <div className="text-gray-500">Today</div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search firearms..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
                     </div>
-                    <div className="text-sm">
-                      <div className="font-medium">{firearms.length} firearms loaded</div>
-                      <div className="text-gray-500">Today</div>
-                    </div>
-                    <div className="text-sm">
-                      <div className="font-medium">{inspections.length} inspections recorded</div>
-                      <div className="text-gray-500">Today</div>
-                    </div>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="in-stock">In Stock</option>
+                      <option value="dealer-stock">Dealer Stock</option>
+                      <option value="safe-keeping">Safe Keeping</option>
+                      <option value="collected">Collected</option>
+                    </select>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
 
-          {/* Users Tab */}
-          {(currentUser.role === "admin" || currentUser.isSystemAdmin) && (
-            <TabsContent value="users">
-              <UserManagement currentUser={currentUser} />
+              {/* Export Controls */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Export Options</CardTitle>
+                  <CardDescription>Export firearms data in various formats</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => handleExportFirearms("all")} variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export All
+                    </Button>
+                    <Button
+                      onClick={() => handleExportFirearms("selected")}
+                      variant="outline"
+                      size="sm"
+                      disabled={selectedFirearms.length === 0}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Selected ({selectedFirearms.length})
+                    </Button>
+                    <Button onClick={() => handleExportFirearms("filtered")} variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Filtered ({filteredFirearms.length})
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Firearms Table */}
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Firearms Database</CardTitle>
+                      <CardDescription>
+                        Showing {filteredFirearms.length} of {stats.firearms.total} firearms
+                        {selectedFirearms.length > 0 && ` (${selectedFirearms.length} selected)`}
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAllFirearms}
+                      disabled={filteredFirearms.length === 0}
+                    >
+                      {selectedFirearms.length === filteredFirearms.length ? (
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                      ) : (
+                        <Square className="h-4 w-4 mr-2" />
+                      )}
+                      {selectedFirearms.length === filteredFirearms.length ? "Deselect All" : "Select All"}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <Checkbox
+                              checked={
+                                selectedFirearms.length === filteredFirearms.length && filteredFirearms.length > 0
+                              }
+                              onCheckedChange={handleSelectAllFirearms}
+                            />
+                          </TableHead>
+                          <TableHead>Stock No</TableHead>
+                          <TableHead>Make</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Caliber</TableHead>
+                          <TableHead>Serial No</TableHead>
+                          <TableHead>Owner</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredFirearms.map((firearm) => (
+                          <TableRow key={firearm.id}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedFirearms.includes(firearm.id)}
+                                onCheckedChange={() => handleSelectFirearm(firearm.id)}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{firearm.stockNo}</TableCell>
+                            <TableCell>{firearm.make}</TableCell>
+                            <TableCell>{firearm.type}</TableCell>
+                            <TableCell>{firearm.caliber}</TableCell>
+                            <TableCell>{firearm.serialNo}</TableCell>
+                            <TableCell>{firearm.fullName}</TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariant(firearm.status)}>{firearm.status}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button variant="outline" size="sm" onClick={() => handleEditFirearm(firearm)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCaptureSignature(firearm)}
+                                  disabled={firearm.status === "collected"}
+                                >
+                                  <PenTool className="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handleDeleteFirearm(firearm.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {permissions.canViewInspections && (
+            <TabsContent value="inspections" className="space-y-6">
+              {/* Inspections Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Inspections</CardTitle>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.inspections.total}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Passed</CardTitle>
+                    <Badge variant="default" className="h-4 w-4 rounded-full p-0" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.inspections.passed}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Failed</CardTitle>
+                    <Badge variant="destructive" className="h-4 w-4 rounded-full p-0" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.inspections.failed}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                    <Badge variant="secondary" className="h-4 w-4 rounded-full p-0" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.inspections.pending}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Add Inspection Button */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Add New Inspection</CardTitle>
+                  <CardDescription>Create a new inspection record</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={() => setIsAddInspectionDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Inspection
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Search Controls */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Search Inspections</CardTitle>
+                  <CardDescription>Search across all inspection fields</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search inspections..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Admin Controls for Inspections */}
+              {userRole === "admin" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Admin Controls</CardTitle>
+                    <CardDescription>Administrative actions for inspection management</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={handlePrintSelectedInspections}
+                        variant="outline"
+                        size="sm"
+                        disabled={selectedInspections.length === 0}
+                      >
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print Selected ({selectedInspections.length})
+                      </Button>
+                      <Button
+                        onClick={handleDeleteSelectedInspections}
+                        variant="destructive"
+                        size="sm"
+                        disabled={selectedInspections.length === 0 || isSyncing}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Selected ({selectedInspections.length})
+                      </Button>
+                      <Button onClick={handleClearAllInspections} variant="destructive" size="sm" disabled={isSyncing}>
+                        <X className="h-4 w-4 mr-2" />
+                        Clear All Inspections
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <label htmlFor="backup-file">
+                          <Download className="h-4 w-4 mr-2" />
+                          Restore Backup
+                          <input
+                            type="file"
+                            id="backup-file"
+                            accept=".json"
+                            onChange={handleLoadBackupFile}
+                            className="hidden"
+                          />
+                        </label>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Print Controls for Non-Admin Users */}
+              {userRole !== "admin" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Print Options</CardTitle>
+                    <CardDescription>Generate PDF reports for selected inspections</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={handlePrintSelectedInspections}
+                        variant="outline"
+                        size="sm"
+                        disabled={selectedInspections.length === 0}
+                      >
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print Selected ({selectedInspections.length})
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Inspections Table */}
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Inspection Records</CardTitle>
+                      <CardDescription>
+                        Showing {filteredInspections.length} of {stats.inspections.total} inspections
+                        {selectedInspections.length > 0 && ` (${selectedInspections.length} selected)`}
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAllInspections}
+                      disabled={filteredInspections.length === 0}
+                    >
+                      {selectedInspections.length === filteredInspections.length ? (
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                      ) : (
+                        <Square className="h-4 w-4 mr-2" />
+                      )}
+                      {selectedInspections.length === filteredInspections.length ? "Deselect All" : "Select All"}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <Checkbox
+                              checked={
+                                selectedInspections.length === filteredInspections.length &&
+                                filteredInspections.length > 0
+                              }
+                              onCheckedChange={handleSelectAllInspections}
+                            />
+                          </TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Inspector</TableHead>
+                          <TableHead>Company</TableHead>
+                          <TableHead>Make</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredInspections.map((inspection) => (
+                          <TableRow key={inspection.id}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedInspections.includes(inspection.id)}
+                                onCheckedChange={() => handleSelectInspection(inspection.id)}
+                              />
+                            </TableCell>
+                            <TableCell>{inspection.date}</TableCell>
+                            <TableCell>{inspection.inspector}</TableCell>
+                            <TableCell>{inspection.companyName}</TableCell>
+                            <TableCell>{inspection.make}</TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariant(inspection.status)}>{inspection.status}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button variant="outline" size="sm" onClick={() => handleEditInspection(inspection)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handlePrintInspection(inspection)}>
+                                  <Printer className="h-4 w-4" />
+                                </Button>
+                                {userRole === "admin" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteInspection(inspection.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {permissions.canManageUsers && (
+            <TabsContent value="users" className="space-y-6">
+              <UserManagement />
             </TabsContent>
           )}
         </Tabs>
       </div>
 
-      {/* Edit Firearm Dialog */}
-      <Dialog open={isEditFirearmOpen} onOpenChange={setIsEditFirearmOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Firearm</DialogTitle>
-            <DialogDescription>Update the firearm details</DialogDescription>
-          </DialogHeader>
-          {editingFirearm && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-stockNo">Stock Number *</Label>
-                <Input
-                  id="edit-stockNo"
-                  value={editingFirearm.stockNo}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, stockNo: e.target.value })}
-                />
+      {/* Add Firearm Dialog */}
+      {isAddFirearmDialogOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Add New Firearm</h3>
+                <Button variant="ghost" size="sm" onClick={() => setIsAddFirearmDialogOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="edit-dateReceived">Date Received</Label>
-                <Input
-                  id="edit-dateReceived"
-                  type="date"
-                  value={editingFirearm.dateReceived}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, dateReceived: e.target.value })}
-                />
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="stockNo">Stock No *</Label>
+                  <Input
+                    id="stockNo"
+                    type="text"
+                    placeholder="Stock Number"
+                    value={newFirearm.stockNo || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, stockNo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dateReceived">Date Received</Label>
+                  <Input
+                    id="dateReceived"
+                    type="date"
+                    value={newFirearm.dateReceived || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, dateReceived: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="make">Make *</Label>
+                  <Input
+                    id="make"
+                    type="text"
+                    placeholder="Manufacturer"
+                    value={newFirearm.make || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, make: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="type">Type</Label>
+                  <Input
+                    id="type"
+                    type="text"
+                    placeholder="Firearm Type"
+                    value={newFirearm.type || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, type: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="caliber">Caliber</Label>
+                  <Input
+                    id="caliber"
+                    type="text"
+                    placeholder="Caliber"
+                    value={newFirearm.caliber || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, caliber: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="serialNo">Serial No *</Label>
+                  <Input
+                    id="serialNo"
+                    type="text"
+                    placeholder="Serial Number"
+                    value={newFirearm.serialNo || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, serialNo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Owner Full Name"
+                    value={newFirearm.fullName || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, fullName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="surname">Surname</Label>
+                  <Input
+                    id="surname"
+                    type="text"
+                    placeholder="Owner Surname"
+                    value={newFirearm.surname || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, surname: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="registrationId">Registration ID</Label>
+                  <Input
+                    id="registrationId"
+                    type="text"
+                    placeholder="Registration ID"
+                    value={newFirearm.registrationId || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, registrationId: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="physicalAddress">Physical Address</Label>
+                  <Textarea
+                    id="physicalAddress"
+                    placeholder="Physical Address"
+                    value={newFirearm.physicalAddress || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, physicalAddress: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="licenceNo">Licence No</Label>
+                  <Input
+                    id="licenceNo"
+                    type="text"
+                    placeholder="Licence Number"
+                    value={newFirearm.licenceNo || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, licenceNo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="licenceDate">Licence Date</Label>
+                  <Input
+                    id="licenceDate"
+                    type="date"
+                    value={newFirearm.licenceDate || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, licenceDate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="remarks">Remarks</Label>
+                  <Textarea
+                    id="remarks"
+                    placeholder="Additional remarks"
+                    value={newFirearm.remarks || ""}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, remarks: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <select
+                    id="status"
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    value={newFirearm.status || "in-stock"}
+                    onChange={(e) => setNewFirearm({ ...newFirearm, status: e.target.value as any })}
+                  >
+                    <option value="in-stock">In Stock</option>
+                    <option value="dealer-stock">Dealer Stock</option>
+                    <option value="safe-keeping">Safe Keeping</option>
+                    <option value="collected">Collected</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="edit-make">Make *</Label>
-                <Input
-                  id="edit-make"
-                  value={editingFirearm.make}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, make: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-type">Type</Label>
-                <Input
-                  id="edit-type"
-                  value={editingFirearm.type}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, type: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-caliber">Caliber</Label>
-                <Input
-                  id="edit-caliber"
-                  value={editingFirearm.caliber}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, caliber: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-serialNo">Serial Number *</Label>
-                <Input
-                  id="edit-serialNo"
-                  value={editingFirearm.serialNo}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, serialNo: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-fullName">Full Name</Label>
-                <Input
-                  id="edit-fullName"
-                  value={editingFirearm.fullName}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, fullName: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-surname">Surname</Label>
-                <Input
-                  id="edit-surname"
-                  value={editingFirearm.surname}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, surname: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-registrationId">Registration ID</Label>
-                <Input
-                  id="edit-registrationId"
-                  value={editingFirearm.registrationId}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, registrationId: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-licenceNo">Licence Number</Label>
-                <Input
-                  id="edit-licenceNo"
-                  value={editingFirearm.licenceNo}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, licenceNo: e.target.value })}
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="edit-physicalAddress">Physical Address</Label>
-                <Input
-                  id="edit-physicalAddress"
-                  value={editingFirearm.physicalAddress}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, physicalAddress: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-licenceDate">Licence Date</Label>
-                <Input
-                  id="edit-licenceDate"
-                  type="date"
-                  value={editingFirearm.licenceDate}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, licenceDate: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-status">Status</Label>
-                <Select
-                  value={editingFirearm.status}
-                  onValueChange={(value: Firearm["status"]) => setEditingFirearm({ ...editingFirearm, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="in-stock">In Stock</SelectItem>
-                    <SelectItem value="dealer-stock">Dealer Stock</SelectItem>
-                    <SelectItem value="safe-keeping">Safe Keeping</SelectItem>
-                    <SelectItem value="collected">Collected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="edit-remarks">Remarks</Label>
-                <Textarea
-                  id="edit-remarks"
-                  value={editingFirearm.remarks}
-                  onChange={(e) => setEditingFirearm({ ...editingFirearm, remarks: e.target.value })}
-                />
+              <div className="flex justify-end gap-2 mt-6">
+                <Button variant="ghost" onClick={() => setIsAddFirearmDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddFirearm}>Add Firearm</Button>
               </div>
             </div>
-          )}
-          <div className="flex gap-2 pt-4">
-            <Button onClick={handleUpdateFirearm} className="flex-1">
-              Update Firearm
-            </Button>
-            <Button variant="outline" onClick={() => setIsEditFirearmOpen(false)}>
-              Cancel
-            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
+
+      {/* Edit Firearm Dialog */}
+      {isEditDialogOpen && editingFirearm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Edit Firearm</h3>
+                <Button variant="ghost" size="sm" onClick={() => setIsEditDialogOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-stockNo">Stock No</Label>
+                  <Input
+                    id="edit-stockNo"
+                    type="text"
+                    value={editingFirearm.stockNo}
+                    onChange={(e) => setEditingFirearm({ ...editingFirearm, stockNo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-make">Make</Label>
+                  <Input
+                    id="edit-make"
+                    type="text"
+                    value={editingFirearm.make}
+                    onChange={(e) => setEditingFirearm({ ...editingFirearm, make: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-type">Type</Label>
+                  <Input
+                    id="edit-type"
+                    type="text"
+                    value={editingFirearm.type}
+                    onChange={(e) => setEditingFirearm({ ...editingFirearm, type: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-caliber">Caliber</Label>
+                  <Input
+                    id="edit-caliber"
+                    type="text"
+                    value={editingFirearm.caliber}
+                    onChange={(e) => setEditingFirearm({ ...editingFirearm, caliber: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-serialNo">Serial No</Label>
+                  <Input
+                    id="edit-serialNo"
+                    type="text"
+                    value={editingFirearm.serialNo}
+                    onChange={(e) => setEditingFirearm({ ...editingFirearm, serialNo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-fullName">Full Name</Label>
+                  <Input
+                    id="edit-fullName"
+                    type="text"
+                    value={editingFirearm.fullName}
+                    onChange={(e) => setEditingFirearm({ ...editingFirearm, fullName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-status">Status</Label>
+                  <select
+                    id="edit-status"
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    value={editingFirearm.status}
+                    onChange={(e) => setEditingFirearm({ ...editingFirearm, status: e.target.value as any })}
+                  >
+                    <option value="in-stock">In Stock</option>
+                    <option value="dealer-stock">Dealer Stock</option>
+                    <option value="safe-keeping">Safe Keeping</option>
+                    <option value="collected">Collected</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-6">
+                <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveFirearm}>Save Changes</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Signature Dialog */}
+      {isSignatureDialogOpen && currentFirearmForSignature && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Capture Signature</h3>
+                <Button variant="ghost" size="sm" onClick={() => setIsSignatureDialogOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Firearm: {currentFirearmForSignature.make} {currentFirearmForSignature.type} (
+                  {currentFirearmForSignature.serialNo})
+                </p>
+                <p className="text-sm text-gray-600">Owner: {currentFirearmForSignature.fullName}</p>
+                <SignaturePad onSave={handleSaveSignature} onCancel={() => setIsSignatureDialogOpen(false)} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Inspection Dialog */}
+      {isAddInspectionDialogOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-5 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl leading-6 font-bold text-gray-900">FIREARM INSPECTION REPORT</h3>
+                  <p className="text-sm text-gray-600 mt-1">Complete firearm inspection form</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setIsAddInspectionDialogOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Inspector Information */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">Inspector Information</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="inspector" className="block text-sm font-medium text-gray-700">
+                        Inspector Name
+                      </label>
+                      <Input
+                        id="inspector"
+                        type="text"
+                        placeholder="Inspector Name"
+                        value={newInspection.inspector || ""}
+                        onChange={(e) => updateInspectionField("inspector", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="inspectorId" className="block text-sm font-medium text-gray-700">
+                        Inspector ID Number
+                      </label>
+                      <Input
+                        id="inspectorId"
+                        type="text"
+                        placeholder="ID Number"
+                        value={newInspection.inspectorId || ""}
+                        onChange={(e) => updateInspectionField("inspectorId", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="inspectionDate" className="block text-sm font-medium text-gray-700">
+                        Inspection Date
+                      </label>
+                      <Input
+                        id="inspectionDate"
+                        type="date"
+                        value={newInspection.date || ""}
+                        onChange={(e) => updateInspectionField("date", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Company Information */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">Company Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
+                        Company Name
+                      </label>
+                      <Input
+                        id="companyName"
+                        type="text"
+                        placeholder="Company Name"
+                        value={newInspection.companyName || ""}
+                        onChange={(e) => updateInspectionField("companyName", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="dealerCode" className="block text-sm font-medium text-gray-700">
+                        Dealer Code
+                      </label>
+                      <Input
+                        id="dealerCode"
+                        type="text"
+                        placeholder="Dealer Code"
+                        value={newInspection.dealerCode || ""}
+                        onChange={(e) => updateInspectionField("dealerCode", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Firearm Type */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">FIREARM TYPE</h4>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="pistol"
+                        checked={newInspection.firearmType?.pistol || false}
+                        onCheckedChange={(checked) => updateInspectionField("firearmType", checked, "pistol")}
+                      />
+                      <label htmlFor="pistol" className="text-sm">
+                        Pistol
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="revolver"
+                        checked={newInspection.firearmType?.revolver || false}
+                        onCheckedChange={(checked) => updateInspectionField("firearmType", checked, "revolver")}
+                      />
+                      <label htmlFor="revolver" className="text-sm">
+                        Revolver
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="rifle"
+                        checked={newInspection.firearmType?.rifle || false}
+                        onCheckedChange={(checked) => updateInspectionField("firearmType", checked, "rifle")}
+                      />
+                      <label htmlFor="rifle" className="text-sm">
+                        Rifle
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="selfLoadingRifle"
+                        checked={newInspection.firearmType?.selfLoadingRifle || false}
+                        onCheckedChange={(checked) => updateInspectionField("firearmType", checked, "selfLoadingRifle")}
+                      />
+                      <label htmlFor="selfLoadingRifle" className="text-sm">
+                        Self-Loading Rifle/Carbine
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="shotgun"
+                        checked={newInspection.firearmType?.shotgun || false}
+                        onCheckedChange={(checked) => updateInspectionField("firearmType", checked, "shotgun")}
+                      />
+                      <label htmlFor="shotgun" className="text-sm">
+                        Shotgun
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="combination"
+                        checked={newInspection.firearmType?.combination || false}
+                        onCheckedChange={(checked) => updateInspectionField("firearmType", checked, "combination")}
+                      />
+                      <label htmlFor="combination" className="text-sm">
+                        Combination
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="otherFirearmType"
+                        checked={newInspection.firearmType?.other || false}
+                        onCheckedChange={(checked) => updateInspectionField("firearmType", checked, "other")}
+                      />
+                      <label htmlFor="otherFirearmType" className="text-sm">
+                        Other
+                      </label>
+                    </div>
+                  </div>
+                  {newInspection.firearmType?.other && (
+                    <div className="mt-3">
+                      <label htmlFor="otherFirearmDetails" className="block text-sm font-medium text-gray-700">
+                        Other Details
+                      </label>
+                      <Input
+                        id="otherFirearmDetails"
+                        type="text"
+                        placeholder="Provide details"
+                        value={newInspection.firearmType?.otherDetails || ""}
+                        onChange={(e) => updateInspectionField("firearmType", e.target.value, "otherDetails")}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Caliber/Cartridge */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">CALIBER/CARTRIDGE</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="caliber" className="block text-sm font-medium text-gray-700">
+                        Caliber/Cartridge
+                      </label>
+                      <Input
+                        id="caliber"
+                        type="text"
+                        placeholder="e.g., .308 WIN"
+                        value={newInspection.caliber || ""}
+                        onChange={(e) => updateInspectionField("caliber", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="cartridgeCode" className="block text-sm font-medium text-gray-700">
+                        Code
+                      </label>
+                      <Input
+                        id="cartridgeCode"
+                        type="text"
+                        placeholder="e.g., 123"
+                        value={newInspection.cartridgeCode || ""}
+                        onChange={(e) => updateInspectionField("cartridgeCode", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Serial Numbers */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">SERIAL NUMBERS</h4>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="font-medium text-sm">Component</label>
+                      <label className="font-medium text-sm">Serial Number</label>
+                      <label className="font-medium text-sm">Make</label>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">BARREL:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={newInspection.serialNumbers?.barrel || ""}
+                        onChange={(e) => updateInspectionField("serialNumbers", e.target.value, "barrel")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={newInspection.serialNumbers?.barrelMake || ""}
+                        onChange={(e) => updateInspectionField("serialNumbers", e.target.value, "barrelMake")}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">FRAME:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={newInspection.serialNumbers?.frame || ""}
+                        onChange={(e) => updateInspectionField("serialNumbers", e.target.value, "frame")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={newInspection.serialNumbers?.frameMake || ""}
+                        onChange={(e) => updateInspectionField("serialNumbers", e.target.value, "frameMake")}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">RECEIVER:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={newInspection.serialNumbers?.receiver || ""}
+                        onChange={(e) => updateInspectionField("serialNumbers", e.target.value, "receiver")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={newInspection.serialNumbers?.receiverMake || ""}
+                        onChange={(e) => updateInspectionField("serialNumbers", e.target.value, "receiverMake")}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Type */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">ACTION TYPE</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="manual"
+                        checked={newInspection.actionType?.manual || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "manual")}
+                      />
+                      <label htmlFor="manual" className="text-sm">
+                        Manual
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="semiAuto"
+                        checked={newInspection.actionType?.semiAuto || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "semiAuto")}
+                      />
+                      <label htmlFor="semiAuto" className="text-sm">
+                        Semi Auto
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="automatic"
+                        checked={newInspection.actionType?.automatic || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "automatic")}
+                      />
+                      <label htmlFor="automatic" className="text-sm">
+                        Automatic
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="bolt"
+                        checked={newInspection.actionType?.bolt || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "bolt")}
+                      />
+                      <label htmlFor="bolt" className="text-sm">
+                        Bolt
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="breakneck"
+                        checked={newInspection.actionType?.breakneck || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "breakneck")}
+                      />
+                      <label htmlFor="breakneck" className="text-sm">
+                        Breakneck
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="pump"
+                        checked={newInspection.actionType?.pump || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "pump")}
+                      />
+                      <label htmlFor="pump" className="text-sm">
+                        Pump
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="cappingBreechLoader"
+                        checked={newInspection.actionType?.cappingBreechLoader || false}
+                        onCheckedChange={(checked) =>
+                          updateInspectionField("actionType", checked, "cappingBreechLoader")
+                        }
+                      />
+                      <label htmlFor="cappingBreechLoader" className="text-sm">
+                        Capping Breech Loader
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="lever"
+                        checked={newInspection.actionType?.lever || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "lever")}
+                      />
+                      <label htmlFor="lever" className="text-sm">
+                        Lever
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="cylinder"
+                        checked={newInspection.actionType?.cylinder || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "cylinder")}
+                      />
+                      <label htmlFor="cylinder" className="text-sm">
+                        Cylinder
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="fallingBlock"
+                        checked={newInspection.actionType?.fallingBlock || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "fallingBlock")}
+                      />
+                      <label htmlFor="fallingBlock" className="text-sm">
+                        Falling Block
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="otherActionType"
+                        checked={newInspection.actionType?.other || false}
+                        onCheckedChange={(checked) => updateInspectionField("actionType", checked, "other")}
+                      />
+                      <label htmlFor="otherActionType" className="text-sm">
+                        Other
+                      </label>
+                    </div>
+                  </div>
+                  {newInspection.actionType?.other && (
+                    <div className="mt-3">
+                      <label htmlFor="otherActionDetails" className="block text-sm font-medium text-gray-700">
+                        Other Details
+                      </label>
+                      <Input
+                        id="otherActionDetails"
+                        type="text"
+                        placeholder="Provide details"
+                        value={newInspection.actionType?.otherDetails || ""}
+                        onChange={(e) => updateInspectionField("actionType", e.target.value, "otherDetails")}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Make and Country */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">MAKE & ORIGIN</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="make" className="block text-sm font-medium text-gray-700">
+                        MAKE
+                      </label>
+                      <Input
+                        id="make"
+                        type="text"
+                        placeholder="e.g., RUGER"
+                        value={newInspection.make || ""}
+                        onChange={(e) => updateInspectionField("make", e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        (As engraved on the firearm i.e Beretta/Colt/Glock/Ruger, etc.)
+                      </p>
+                    </div>
+                    <div>
+                      <label htmlFor="countryOfOrigin" className="block text-sm font-medium text-gray-700">
+                        COUNTRY OF ORIGIN
+                      </label>
+                      <Input
+                        id="countryOfOrigin"
+                        type="text"
+                        placeholder="e.g., USA"
+                        value={newInspection.countryOfOrigin || ""}
+                        onChange={(e) => updateInspectionField("countryOfOrigin", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Observations and Comments */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">OBSERVATIONS & COMMENTS</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="observations" className="block text-sm font-medium text-gray-700">
+                        Observations
+                      </label>
+                      <textarea
+                        id="observations"
+                        placeholder="According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm."
+                        value={newInspection.observations || ""}
+                        onChange={(e) => updateInspectionField("observations", e.target.value)}
+                        rows={3}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="comments" className="block text-sm font-medium text-gray-700">
+                        Comments
+                      </label>
+                      <textarea
+                        id="comments"
+                        placeholder="Additional comments"
+                        value={newInspection.comments || ""}
+                        onChange={(e) => updateInspectionField("comments", e.target.value)}
+                        rows={3}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inspector Details */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">INSPECTOR CERTIFICATION</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="inspectorTitle" className="block text-sm font-medium text-gray-700">
+                        Inspector Title
+                      </label>
+                      <Input
+                        id="inspectorTitle"
+                        type="text"
+                        placeholder="e.g., Head Gunsmith"
+                        value={newInspection.inspectorTitle || ""}
+                        onChange={(e) => updateInspectionField("inspectorTitle", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="inspectionStatus" className="block text-sm font-medium text-gray-700">
+                        Status
+                      </label>
+                      <select
+                        id="inspectionStatus"
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        value={newInspection.status || "pending"}
+                        onChange={(e) =>
+                          updateInspectionField("status", e.target.value as "passed" | "failed" | "pending")
+                        }
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="passed">Passed</option>
+                        <option value="failed">Failed</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                <Button variant="ghost" onClick={() => setIsAddInspectionDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button variant="default" onClick={handleAddInspection} disabled={isSubmittingInspection}>
+                  {isSubmittingInspection ? "Creating..." : "Create Inspection"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Inspection Dialog */}
-      <Dialog open={isEditInspectionOpen} onOpenChange={setIsEditInspectionOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Inspection</DialogTitle>
-            <DialogDescription>Update the inspection details</DialogDescription>
-          </DialogHeader>
-          {editingInspection && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-inspectionDate">Date</Label>
-                <Input
-                  id="edit-inspectionDate"
-                  type="date"
-                  value={editingInspection.date}
-                  onChange={(e) => setEditingInspection({ ...editingInspection, date: e.target.value })}
-                />
+      {isEditInspectionDialogOpen && editingInspection && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-5 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl leading-6 font-bold text-gray-900">EDIT FIREARM INSPECTION REPORT</h3>
+                  <p className="text-sm text-gray-600 mt-1">Update firearm inspection details</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setIsEditInspectionDialogOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="edit-inspector">Inspector *</Label>
-                <Input
-                  id="edit-inspector"
-                  value={editingInspection.inspector}
-                  onChange={(e) => setEditingInspection({ ...editingInspection, inspector: e.target.value })}
-                />
+
+              <div className="space-y-6">
+                {/* Inspector Information */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">Inspector Information</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="edit-inspector" className="block text-sm font-medium text-gray-700">
+                        Inspector Name
+                      </label>
+                      <Input
+                        id="edit-inspector"
+                        type="text"
+                        placeholder="Inspector Name"
+                        value={editingInspection.inspector || ""}
+                        onChange={(e) => updateEditingInspectionField("inspector", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-inspectorId" className="block text-sm font-medium text-gray-700">
+                        Inspector ID Number
+                      </label>
+                      <Input
+                        id="edit-inspectorId"
+                        type="text"
+                        placeholder="ID Number"
+                        value={editingInspection.inspectorId || ""}
+                        onChange={(e) => updateEditingInspectionField("inspectorId", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-inspectionDate" className="block text-sm font-medium text-gray-700">
+                        Inspection Date
+                      </label>
+                      <Input
+                        id="edit-inspectionDate"
+                        type="date"
+                        value={editingInspection.date || ""}
+                        onChange={(e) => updateEditingInspectionField("date", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Company Information */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">Company Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-companyName" className="block text-sm font-medium text-gray-700">
+                        Company Name
+                      </label>
+                      <Input
+                        id="edit-companyName"
+                        type="text"
+                        placeholder="Company Name"
+                        value={editingInspection.companyName || ""}
+                        onChange={(e) => updateEditingInspectionField("companyName", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-dealerCode" className="block text-sm font-medium text-gray-700">
+                        Dealer Code
+                      </label>
+                      <Input
+                        id="edit-dealerCode"
+                        type="text"
+                        placeholder="Dealer Code"
+                        value={editingInspection.dealerCode || ""}
+                        onChange={(e) => updateEditingInspectionField("dealerCode", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Firearm Type */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">FIREARM TYPE</h4>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-pistol"
+                        checked={editingInspection.firearmType?.pistol || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "pistol")}
+                      />
+                      <label htmlFor="edit-pistol" className="text-sm">
+                        Pistol
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-revolver"
+                        checked={editingInspection.firearmType?.revolver || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "revolver")}
+                      />
+                      <label htmlFor="edit-revolver" className="text-sm">
+                        Revolver
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-rifle"
+                        checked={editingInspection.firearmType?.rifle || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "rifle")}
+                      />
+                      <label htmlFor="edit-rifle" className="text-sm">
+                        Rifle
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-selfLoadingRifle"
+                        checked={editingInspection.firearmType?.selfLoadingRifle || false}
+                        onCheckedChange={(checked) =>
+                          updateEditingInspectionField("firearmType", checked, "selfLoadingRifle")
+                        }
+                      />
+                      <label htmlFor="edit-selfLoadingRifle" className="text-sm">
+                        Self-Loading Rifle/Carbine
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-shotgun"
+                        checked={editingInspection.firearmType?.shotgun || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "shotgun")}
+                      />
+                      <label htmlFor="edit-shotgun" className="text-sm">
+                        Shotgun
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-combination"
+                        checked={editingInspection.firearmType?.combination || false}
+                        onCheckedChange={(checked) =>
+                          updateEditingInspectionField("firearmType", checked, "combination")
+                        }
+                      />
+                      <label htmlFor="edit-combination" className="text-sm">
+                        Combination
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-otherFirearmType"
+                        checked={editingInspection.firearmType?.other || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("firearmType", checked, "other")}
+                      />
+                      <label htmlFor="edit-otherFirearmType" className="text-sm">
+                        Other
+                      </label>
+                    </div>
+                  </div>
+                  {editingInspection.firearmType?.other && (
+                    <div className="mt-3">
+                      <label htmlFor="edit-otherFirearmDetails" className="block text-sm font-medium text-gray-700">
+                        Other Details
+                      </label>
+                      <Input
+                        id="edit-otherFirearmDetails"
+                        type="text"
+                        placeholder="Provide details"
+                        value={editingInspection.firearmType?.otherDetails || ""}
+                        onChange={(e) => updateEditingInspectionField("firearmType", e.target.value, "otherDetails")}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Caliber/Cartridge */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">CALIBER/CARTRIDGE</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-caliber" className="block text-sm font-medium text-gray-700">
+                        Caliber/Cartridge
+                      </label>
+                      <Input
+                        id="edit-caliber"
+                        type="text"
+                        placeholder="e.g., .308 WIN"
+                        value={editingInspection.caliber || ""}
+                        onChange={(e) => updateEditingInspectionField("caliber", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-cartridgeCode" className="block text-sm font-medium text-gray-700">
+                        Code
+                      </label>
+                      <Input
+                        id="edit-cartridgeCode"
+                        type="text"
+                        placeholder="e.g., 123"
+                        value={editingInspection.cartridgeCode || ""}
+                        onChange={(e) => updateEditingInspectionField("cartridgeCode", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Serial Numbers */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">SERIAL NUMBERS</h4>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="font-medium text-sm">Component</label>
+                      <label className="font-medium text-sm">Serial Number</label>
+                      <label className="font-medium text-sm">Make</label>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">BARREL:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={editingInspection.serialNumbers?.barrel || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "barrel")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={editingInspection.serialNumbers?.barrelMake || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "barrelMake")}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">FRAME:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={editingInspection.serialNumbers?.frame || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "frame")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={editingInspection.serialNumbers?.frameMake || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "frameMake")}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <label className="text-sm">RECEIVER:</label>
+                      <Input
+                        type="text"
+                        placeholder="Serial Number"
+                        value={editingInspection.serialNumbers?.receiver || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "receiver")}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Make"
+                        value={editingInspection.serialNumbers?.receiverMake || ""}
+                        onChange={(e) => updateEditingInspectionField("serialNumbers", e.target.value, "receiverMake")}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Type */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">ACTION TYPE</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-manual"
+                        checked={editingInspection.actionType?.manual || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "manual")}
+                      />
+                      <label htmlFor="edit-manual" className="text-sm">
+                        Manual
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-semiAuto"
+                        checked={editingInspection.actionType?.semiAuto || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "semiAuto")}
+                      />
+                      <label htmlFor="edit-semiAuto" className="text-sm">
+                        Semi Auto
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-automatic"
+                        checked={editingInspection.actionType?.automatic || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "automatic")}
+                      />
+                      <label htmlFor="edit-automatic" className="text-sm">
+                        Automatic
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-bolt"
+                        checked={editingInspection.actionType?.bolt || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "bolt")}
+                      />
+                      <label htmlFor="edit-bolt" className="text-sm">
+                        Bolt
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-breakneck"
+                        checked={editingInspection.actionType?.breakneck || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "breakneck")}
+                      />
+                      <label htmlFor="edit-breakneck" className="text-sm">
+                        Breakneck
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-pump"
+                        checked={editingInspection.actionType?.pump || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "pump")}
+                      />
+                      <label htmlFor="edit-pump" className="text-sm">
+                        Pump
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-cappingBreechLoader"
+                        checked={editingInspection.actionType?.cappingBreechLoader || false}
+                        onCheckedChange={(checked) =>
+                          updateEditingInspectionField("actionType", checked, "cappingBreechLoader")
+                        }
+                      />
+                      <label htmlFor="edit-cappingBreechLoader" className="text-sm">
+                        Capping Breech Loader
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-lever"
+                        checked={editingInspection.actionType?.lever || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "lever")}
+                      />
+                      <label htmlFor="edit-lever" className="text-sm">
+                        Lever
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-cylinder"
+                        checked={editingInspection.actionType?.cylinder || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "cylinder")}
+                      />
+                      <label htmlFor="edit-cylinder" className="text-sm">
+                        Cylinder
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-fallingBlock"
+                        checked={editingInspection.actionType?.fallingBlock || false}
+                        onCheckedChange={(checked) =>
+                          updateEditingInspectionField("actionType", checked, "fallingBlock")
+                        }
+                      />
+                      <label htmlFor="edit-fallingBlock" className="text-sm">
+                        Falling Block
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-otherActionType"
+                        checked={editingInspection.actionType?.other || false}
+                        onCheckedChange={(checked) => updateEditingInspectionField("actionType", checked, "other")}
+                      />
+                      <label htmlFor="edit-otherActionType" className="text-sm">
+                        Other
+                      </label>
+                    </div>
+                  </div>
+                  {editingInspection.actionType?.other && (
+                    <div className="mt-3">
+                      <label htmlFor="edit-otherActionDetails" className="block text-sm font-medium text-gray-700">
+                        Other Details
+                      </label>
+                      <Input
+                        id="edit-otherActionDetails"
+                        type="text"
+                        placeholder="Provide details"
+                        value={editingInspection.actionType?.otherDetails || ""}
+                        onChange={(e) => updateEditingInspectionField("actionType", e.target.value, "otherDetails")}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Make and Country */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">MAKE & ORIGIN</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-make" className="block text-sm font-medium text-gray-700">
+                        MAKE
+                      </label>
+                      <Input
+                        id="edit-make"
+                        type="text"
+                        placeholder="e.g., RUGER"
+                        value={editingInspection.make || ""}
+                        onChange={(e) => updateEditingInspectionField("make", e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        (As engraved on the firearm i.e Beretta/Colt/Glock/Ruger, etc.)
+                      </p>
+                    </div>
+                    <div>
+                      <label htmlFor="edit-countryOfOrigin" className="block text-sm font-medium text-gray-700">
+                        COUNTRY OF ORIGIN
+                      </label>
+                      <Input
+                        id="edit-countryOfOrigin"
+                        type="text"
+                        placeholder="e.g., USA"
+                        value={editingInspection.countryOfOrigin || ""}
+                        onChange={(e) => updateEditingInspectionField("countryOfOrigin", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Observations and Comments */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">OBSERVATIONS & COMMENTS</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="edit-observations" className="block text-sm font-medium text-gray-700">
+                        Observations
+                      </label>
+                      <textarea
+                        id="edit-observations"
+                        placeholder="According to my observation, there is no visible signs of correction or erasing of firearm details on this specific firearm."
+                        value={editingInspection.observations || ""}
+                        onChange={(e) => updateEditingInspectionField("observations", e.target.value)}
+                        rows={3}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-comments" className="block text-sm font-medium text-gray-700">
+                        Comments
+                      </label>
+                      <textarea
+                        id="edit-comments"
+                        placeholder="Additional comments"
+                        value={editingInspection.comments || ""}
+                        onChange={(e) => updateEditingInspectionField("comments", e.target.value)}
+                        rows={3}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inspector Details */}
+                <div className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">INSPECTOR CERTIFICATION</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="edit-inspectorTitle" className="block text-sm font-medium text-gray-700">
+                        Inspector Title
+                      </label>
+                      <Input
+                        id="edit-inspectorTitle"
+                        type="text"
+                        placeholder="e.g., Head Gunsmith"
+                        value={editingInspection.inspectorTitle || ""}
+                        onChange={(e) => updateEditingInspectionField("inspectorTitle", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-inspectionStatus" className="block text-sm font-medium text-gray-700">
+                        Status
+                      </label>
+                      <select
+                        id="edit-inspectionStatus"
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        value={editingInspection.status || "pending"}
+                        onChange={(e) =>
+                          updateEditingInspectionField("status", e.target.value as "passed" | "failed" | "pending")
+                        }
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="passed">Passed</option>
+                        <option value="failed">Failed</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="edit-inspectionType">Type *</Label>
-                <Input
-                  id="edit-inspectionType"
-                  value={editingInspection.type}
-                  onChange={(e) => setEditingInspection({ ...editingInspection, type: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-findings">Findings *</Label>
-                <Textarea
-                  id="edit-findings"
-                  value={editingInspection.findings}
-                  onChange={(e) => setEditingInspection({ ...editingInspection, findings: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-inspectionStatus">Status</Label>
-                <Select
-                  value={editingInspection.status}
-                  onValueChange={(value: Inspection["status"]) =>
-                    setEditingInspection({ ...editingInspection, status: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="passed">Passed</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="edit-recommendations">Recommendations</Label>
-                <Textarea
-                  id="edit-recommendations"
-                  value={editingInspection.recommendations}
-                  onChange={(e) => setEditingInspection({ ...editingInspection, recommendations: e.target.value })}
-                />
+
+              <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+                <Button variant="ghost" onClick={() => setIsEditInspectionDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button variant="default" onClick={handleSaveEditedInspection} disabled={isSyncing}>
+                  {isSyncing ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
             </div>
-          )}
-          <div className="flex gap-2 pt-4">
-            <Button onClick={handleUpdateInspection} className="flex-1">
-              Update Inspection
-            </Button>
-            <Button variant="outline" onClick={() => setIsEditInspectionOpen(false)}>
-              Cancel
-            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
-      {/* Delete Firearm Confirmation */}
-      <AlertDialog open={!!deleteFirearmId} onOpenChange={() => setDeleteFirearmId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the firearm record.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteFirearm}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Inspection Confirmation */}
-      <AlertDialog open={!!deleteInspectionId} onOpenChange={() => setDeleteInspectionId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the inspection record.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteInspection}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Signature Pad */}
-      <SignaturePad
-        isOpen={isSignaturePadOpen}
-        onClose={() => setIsSignaturePadOpen(false)}
-        onSignatureSave={handleSignatureSave}
-        title="Digital Signature for Firearm Collection"
-      />
+      <Toaster />
     </div>
   )
 }

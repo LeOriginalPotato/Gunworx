@@ -1,219 +1,177 @@
-export interface User {
-  id: string
-  username: string
-  password: string
-  role: "admin" | "user"
-  createdAt: string
-  lastLogin?: string
-  isSystemAdmin?: boolean
+export const users = [
+  {
+    id: "1",
+    username: "Jean-Mari",
+    password: "Foktogbokka",
+    name: "Jean-Mari",
+    role: "admin",
+    isSystemAdmin: true,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "2",
+    username: "Jean",
+    password: "xNgU7ADa",
+    name: "Jean",
+    role: "admin",
+    isSystemAdmin: true,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "3",
+    username: "Wikus",
+    password: "Wikus@888",
+    name: "Wikus",
+    role: "admin",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "4",
+    username: "Eben",
+    password: "UY9FBe8abajU",
+    name: "Eben",
+    role: "user",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "5",
+    username: "Francois",
+    password: "MnWbCkE4AcFP",
+    name: "Francois",
+    role: "user",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "6",
+    username: "inspector",
+    password: "inspector123",
+    name: "Inspector",
+    role: "inspector",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "7",
+    username: "operator",
+    password: "operator123",
+    name: "Operator",
+    role: "operator",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "8",
+    username: "viewer",
+    password: "viewer123",
+    name: "Viewer",
+    role: "viewer",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "9",
+    username: "Dymian",
+    password: "Dymian@888",
+    name: "Dymian",
+    role: "admin",
+    isSystemAdmin: false,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+]
+
+export function validateCredentials(username: string, password: string) {
+  const user = users.find((u) => u.username === username && u.password === password)
+  return user || null
 }
 
-class AuthService {
-  private readonly STORAGE_KEY = "gunworx_current_user"
-  private readonly USERS_KEY = "gunworx_users"
-  private readonly API_ENDPOINT = "/api/users"
-
-  constructor() {
-    if (typeof window !== "undefined") {
-      this.initializeUsers()
-    }
-  }
-
-  private async initializeUsers() {
-    if (typeof window === "undefined") return
-
-    try {
-      // First try to get users from server
-      const response = await fetch(this.API_ENDPOINT)
-      if (response.ok) {
-        const serverUsers = await response.json()
-        if (Array.isArray(serverUsers) && serverUsers.length > 0) {
-          localStorage.setItem(this.USERS_KEY, JSON.stringify(serverUsers))
-          return
-        }
+export function getUserPermissions(role: string) {
+  switch (role) {
+    case "admin":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: true,
+        canDeleteFirearms: true,
+        canCreateFirearms: true,
+        canCaptureSignatures: true,
+        canViewInspections: true,
+        canEditInspections: true,
+        canDeleteInspections: true,
+        canCreateInspections: true,
+        canViewAnalytics: true,
+        canManageUsers: true,
       }
-    } catch (error) {
-      console.warn("Failed to fetch users from server, using localStorage fallback:", error)
-    }
-
-    // Fallback to localStorage or create default users
-    const existingUsers = localStorage.getItem(this.USERS_KEY)
-    if (!existingUsers) {
-      const defaultUsers: User[] = [
-        {
-          id: "system_admin_001",
-          username: "Jean-Mari",
-          password: "Password123",
-          role: "admin",
-          createdAt: "2024-01-01T00:00:00.000Z",
-          isSystemAdmin: true,
-        },
-        {
-          id: "user_jp_admin_001",
-          username: "JP",
-          password: "xNgU7ADa",
-          role: "admin",
-          createdAt: "2024-01-15T10:30:00.000Z",
-        },
-        {
-          id: "1",
-          username: "admin",
-          password: "admin123",
-          role: "admin",
-          createdAt: new Date().toISOString(),
-        },
-      ]
-      localStorage.setItem(this.USERS_KEY, JSON.stringify(defaultUsers))
-    }
-  }
-
-  async login(username: string, password: string): Promise<User | null> {
-    if (typeof window === "undefined") return null
-
-    const users = await this.getUsers()
-    const user = users.find((u) => u.username === username && u.password === password)
-
-    if (user) {
-      const updatedUser = { ...user, lastLogin: new Date().toISOString() }
-      await this.updateUser(updatedUser)
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedUser))
-      return updatedUser
-    }
-
-    return null
-  }
-
-  logout(): void {
-    if (typeof window === "undefined") return
-    localStorage.removeItem(this.STORAGE_KEY)
-  }
-
-  getCurrentUser(): User | null {
-    if (typeof window === "undefined") return null
-
-    const userStr = localStorage.getItem(this.STORAGE_KEY)
-    return userStr ? JSON.parse(userStr) : null
-  }
-
-  async getUsers(): Promise<User[]> {
-    if (typeof window === "undefined") return []
-
-    try {
-      // Try to get fresh data from server first
-      const response = await fetch(this.API_ENDPOINT)
-      if (response.ok) {
-        const serverUsers = await response.json()
-        if (Array.isArray(serverUsers) && serverUsers.length > 0) {
-          // Update localStorage with server data
-          localStorage.setItem(this.USERS_KEY, JSON.stringify(serverUsers))
-          return serverUsers
-        }
+    case "inspector":
+      return {
+        canViewFirearms: false,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: false,
+        canCaptureSignatures: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: true,
+        canViewAnalytics: false,
+        canManageUsers: false,
       }
-    } catch (error) {
-      console.warn("Failed to fetch users from server:", error)
-    }
-
-    // Fallback to localStorage
-    try {
-      const usersStr = localStorage.getItem(this.USERS_KEY)
-      if (!usersStr) {
-        await this.initializeUsers()
-        const newUsersStr = localStorage.getItem(this.USERS_KEY)
-        return newUsersStr ? JSON.parse(newUsersStr) : []
+    case "operator":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: true,
+        canCaptureSignatures: true,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: true,
+        canViewAnalytics: false,
+        canManageUsers: false,
       }
-      return JSON.parse(usersStr)
-    } catch (error) {
-      console.error("Error parsing users from localStorage:", error)
-      await this.initializeUsers()
-      const usersStr = localStorage.getItem(this.USERS_KEY)
-      return usersStr ? JSON.parse(usersStr) : []
-    }
-  }
-
-  async createUser(userData: Omit<User, "id" | "createdAt">): Promise<User> {
-    if (typeof window === "undefined") throw new Error("Cannot create user on server side")
-
-    const users = await this.getUsers()
-    const newUser: User = {
-      ...userData,
-      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-    }
-
-    const updatedUsers = [...users, newUser]
-
-    // Save to server
-    try {
-      await fetch(this.API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", user: newUser }),
-      })
-    } catch (error) {
-      console.warn("Failed to save user to server:", error)
-    }
-
-    // Always save to localStorage as backup
-    localStorage.setItem(this.USERS_KEY, JSON.stringify(updatedUsers))
-    return newUser
-  }
-
-  async updateUser(userData: User): Promise<void> {
-    if (typeof window === "undefined") return
-
-    const users = await this.getUsers()
-    const index = users.findIndex((u) => u.id === userData.id)
-
-    if (index !== -1) {
-      users[index] = userData
-
-      // Save to server
-      try {
-        await fetch(this.API_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "update", user: userData }),
-        })
-      } catch (error) {
-        console.warn("Failed to update user on server:", error)
+    case "viewer":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: false,
+        canCaptureSignatures: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: false,
+        canViewAnalytics: true,
+        canManageUsers: false,
       }
-
-      // Always save to localStorage as backup
-      localStorage.setItem(this.USERS_KEY, JSON.stringify(users))
-    }
-  }
-
-  async deleteUser(userId: string): Promise<void> {
-    if (typeof window === "undefined") return
-
-    const users = await this.getUsers()
-    const userToDelete = users.find((u) => u.id === userId)
-
-    if (!userToDelete) return
-
-    const filteredUsers = users.filter((u) => u.id !== userId)
-
-    // Delete from server
-    try {
-      await fetch(this.API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", user: { id: userId } }),
-      })
-    } catch (error) {
-      console.warn("Failed to delete user from server:", error)
-    }
-
-    // Always save to localStorage as backup
-    localStorage.setItem(this.USERS_KEY, JSON.stringify(filteredUsers))
-  }
-
-  async userExists(username: string): Promise<boolean> {
-    if (typeof window === "undefined") return false
-
-    const users = await this.getUsers()
-    return users.some((u) => u.username === username)
+    case "user":
+      return {
+        canViewFirearms: true,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: true,
+        canCaptureSignatures: false,
+        canViewInspections: true,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: true,
+        canViewAnalytics: false,
+        canManageUsers: false,
+      }
+    default:
+      return {
+        canViewFirearms: false,
+        canEditFirearms: false,
+        canDeleteFirearms: false,
+        canCreateFirearms: false,
+        canCaptureSignatures: false,
+        canViewInspections: false,
+        canEditInspections: false,
+        canDeleteInspections: false,
+        canCreateInspections: false,
+        canViewAnalytics: false,
+        canManageUsers: false,
+      }
   }
 }
-
-export const authService = new AuthService()
