@@ -1,6 +1,21 @@
 import { neon } from "@neondatabase/serverless"
 
-// Create reusable SQL client
-const sql = neon(process.env.DATABASE_URL!)
+let _sql: ReturnType<typeof neon> | null = null
 
-export { sql }
+export function getSQL() {
+  if (!_sql) {
+    const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL
+    if (!connectionString) {
+      throw new Error(
+        "Database connection string not found. Please set NEON_DATABASE_URL or DATABASE_URL environment variable.",
+      )
+    }
+    _sql = neon(connectionString)
+  }
+  return _sql
+}
+
+// This supports both tagged templates and function calls
+export const sql = (...args: any[]) => {
+  return getSQL()(...args)
+}

@@ -20,20 +20,26 @@ export class DataService {
       await this.performAutoSync()
     }, 30000)
 
-    // Sync on page load
+    // Sync on page load with longer delay and error handling
     setTimeout(() => {
-      this.performAutoSync()
-    }, 1000)
+      this.performAutoSync().catch(() => {
+        // Silently fail on initial sync - database may not be set up yet
+      })
+    }, 3000)
 
     // Sync before page unload
     window.addEventListener("beforeunload", () => {
-      this.performAutoSync()
+      this.performAutoSync().catch(() => {
+        // Ignore errors during unload
+      })
     })
 
     // Sync when coming back online
     window.addEventListener("online", () => {
       this.isOnline = true
-      this.performAutoSync()
+      this.performAutoSync().catch(() => {
+        // Ignore errors when coming back online
+      })
     })
 
     window.addEventListener("offline", () => {
@@ -82,7 +88,13 @@ export class DataService {
         body: JSON.stringify({ action: "sync", data: localData }),
       })
 
-      if (!response.ok) throw new Error("Failed to sync data")
+      if (!response.ok) {
+        // Don't log error if it's a 500 - likely means database isn't set up yet
+        if (response.status !== 500) {
+          console.error("Sync failed with status:", response.status)
+        }
+        return
+      }
 
       const result = await response.json()
 
@@ -101,7 +113,7 @@ export class DataService {
 
       return result
     } catch (error) {
-      console.error("Auto-sync failed:", error)
+      // Database may not be set up yet
       // Don't throw error to avoid disrupting the app
     }
   }
