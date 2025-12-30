@@ -10,323 +10,68 @@ const lucide = { createIcons: () => {} } // Define a placeholder object
 const validateFirearm = () => [] // Define a placeholder function
 const exportToCSV = () => {} // Define a placeholder function
 
-// Main application JavaScript
-(function() {
-  'use strict';
+// Initialize the application
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize Lucide icons
+  lucide.createIcons()
 
-  // Initialize application
-  function init() {
-    console.log('Gunworx Management Portal initialized');
-    
-    // Set up event listeners
-    setupEventListeners();
-    
-    // Initialize components
-    initializeComponents();
+  // Load initial data
+  updateStats()
+  renderActiveFirearms()
+  renderCollectedFirearms()
+  updateReports()
+
+  // Set up event listeners
+  setupEventListeners()
+
+  console.log("Gunworx Firearms Tracker initialized")
+})
+
+function setupEventListeners() {
+  // Add firearm form
+  document.getElementById("add-firearm-form").addEventListener("submit", handleAddFirearm)
+
+  // Edit firearm form
+  document.getElementById("edit-firearm-form").addEventListener("submit", handleEditFirearm)
+
+  // Search input
+  document.getElementById("search-input").addEventListener("input", filterFirearms)
+  document.getElementById("search-input").addEventListener("keydown", handleBarcodeInput)
+
+  // Status filter
+  document.getElementById("status-filter").addEventListener("change", filterFirearms)
+
+  // Auto-save functionality
+  setInterval(saveToLocalStorage, 30000) // Save every 30 seconds
+  window.addEventListener("beforeunload", saveToLocalStorage)
+}
+
+// Tab management
+function showTab(tabName) {
+  // Hide all tab contents
+  document.getElementById("inventory-content").classList.add("hidden")
+  document.getElementById("add-content").classList.add("hidden")
+  document.getElementById("reports-content").classList.add("hidden")
+
+  // Remove active class from all tabs
+  document.querySelectorAll(".tab-button").forEach((tab) => {
+    tab.classList.remove("active")
+  })
+
+  // Show selected tab content and mark tab as active
+  document.getElementById(tabName + "-content").classList.remove("hidden")
+  document.getElementById(tabName + "-tab").classList.add("active")
+
+  currentTab = tabName
+
+  // Update reports if switching to reports tab
+  if (tabName === "reports") {
+    updateReports()
   }
 
-  // Set up global event listeners
-  function setupEventListeners() {
-    // Handle form submissions
-    document.addEventListener('submit', function(e) {
-      const form = e.target;
-      if (form.classList.contains('needs-validation')) {
-        if (!form.checkValidity()) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        form.classList.add('was-validated');
-      }
-    });
-
-    // Handle modal triggers
-    document.addEventListener('click', function(e) {
-      if (e.target.hasAttribute('data-modal-trigger')) {
-        const modalId = e.target.getAttribute('data-modal-trigger');
-        const modal = document.getElementById(modalId);
-        if (modal) {
-          showModal(modal);
-        }
-      }
-
-      if (e.target.hasAttribute('data-modal-close')) {
-        const modal = e.target.closest('.modal');
-        if (modal) {
-          hideModal(modal);
-        }
-      }
-    });
-
-    // Handle dropdown toggles
-    document.addEventListener('click', function(e) {
-      if (e.target.hasAttribute('data-dropdown-toggle')) {
-        const dropdownId = e.target.getAttribute('data-dropdown-toggle');
-        const dropdown = document.getElementById(dropdownId);
-        if (dropdown) {
-          toggleDropdown(dropdown);
-        }
-      }
-    });
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.dropdown')) {
-        const openDropdowns = document.querySelectorAll('.dropdown.show');
-        openDropdowns.forEach(dropdown => {
-          dropdown.classList.remove('show');
-        });
-      }
-    });
-
-    // Handle tab navigation
-    document.addEventListener('click', function(e) {
-      if (e.target.hasAttribute('data-tab-target')) {
-        const targetId = e.target.getAttribute('data-tab-target');
-        const target = document.getElementById(targetId);
-        if (target) {
-          showTab(target, e.target);
-        }
-      }
-    });
-
-    // Add firearm form
-    document.getElementById("add-firearm-form").addEventListener("submit", handleAddFirearm)
-
-    // Edit firearm form
-    document.getElementById("edit-firearm-form").addEventListener("submit", handleEditFirearm)
-
-    // Search input
-    document.getElementById("search-input").addEventListener("input", filterFirearms)
-    document.getElementById("search-input").addEventListener("keydown", handleBarcodeInput)
-
-    // Status filter
-    document.getElementById("status-filter").addEventListener("change", filterFirearms)
-
-    // Auto-save functionality
-    setInterval(saveToLocalStorage, 30000) // Save every 30 seconds
-    window.addEventListener("beforeunload", saveToLocalStorage)
-  }
-
-  // Initialize components
-  function initializeComponents() {
-    // Initialize tooltips
-    initializeTooltips();
-    
-    // Initialize data tables
-    initializeDataTables();
-    
-    // Initialize form validation
-    initializeFormValidation();
-  }
-
-  // Modal functions
-  function showModal(modal) {
-    modal.style.display = 'block';
-    modal.classList.add('show');
-    document.body.classList.add('modal-open');
-  }
-
-  function hideModal(modal) {
-    modal.style.display = 'none';
-    modal.classList.remove('show');
-    document.body.classList.remove('modal-open');
-  }
-
-  // Dropdown functions
-  function toggleDropdown(dropdown) {
-    dropdown.classList.toggle('show');
-  }
-
-  // Tab functions
-  function showTab(target, trigger) {
-    // Hide all tab panes
-    const tabPanes = document.querySelectorAll('.tab-pane');
-    tabPanes.forEach(pane => {
-      pane.classList.remove('active');
-    });
-
-    // Remove active class from all tab triggers
-    const tabTriggers = document.querySelectorAll('[data-tab-target]');
-    tabTriggers.forEach(trigger => {
-      trigger.classList.remove('active');
-    });
-
-    // Show target tab pane
-    target.classList.add('active');
-    trigger.classList.add('active');
-  }
-
-  // Initialize tooltips
-  function initializeTooltips() {
-    const tooltipElements = document.querySelectorAll('[data-tooltip]');
-    tooltipElements.forEach(element => {
-      element.addEventListener('mouseenter', showTooltip);
-      element.addEventListener('mouseleave', hideTooltip);
-    });
-  }
-
-  function showTooltip(e) {
-    const element = e.target;
-    const tooltipText = element.getAttribute('data-tooltip');
-    
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = tooltipText;
-    
-    document.body.appendChild(tooltip);
-    
-    const rect = element.getBoundingClientRect();
-    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
-    tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
-    
-    element._tooltip = tooltip;
-  }
-
-  function hideTooltip(e) {
-    const element = e.target;
-    if (element._tooltip) {
-      document.body.removeChild(element._tooltip);
-      delete element._tooltip;
-    }
-  }
-
-  // Initialize data tables
-  function initializeDataTables() {
-    const tables = document.querySelectorAll('.data-table');
-    tables.forEach(table => {
-      // Add sorting functionality
-      const headers = table.querySelectorAll('th[data-sortable]');
-      headers.forEach(header => {
-        header.addEventListener('click', function() {
-          sortTable(table, header);
-        });
-        header.style.cursor = 'pointer';
-      });
-    });
-  }
-
-  function sortTable(table, header) {
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    const columnIndex = Array.from(header.parentNode.children).indexOf(header);
-    const isAscending = !header.classList.contains('sort-asc');
-
-    rows.sort((a, b) => {
-      const aValue = a.children[columnIndex].textContent.trim();
-      const bValue = b.children[columnIndex].textContent.trim();
-      
-      if (isAscending) {
-        return aValue.localeCompare(bValue, undefined, { numeric: true });
-      } else {
-        return bValue.localeCompare(aValue, undefined, { numeric: true });
-      }
-    });
-
-    // Remove existing sort classes
-    header.parentNode.querySelectorAll('th').forEach(th => {
-      th.classList.remove('sort-asc', 'sort-desc');
-    });
-
-    // Add sort class to current header
-    header.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
-
-    // Reorder rows
-    rows.forEach(row => tbody.appendChild(row));
-  }
-
-  // Initialize form validation
-  function initializeFormValidation() {
-    const forms = document.querySelectorAll('.needs-validation');
-    forms.forEach(form => {
-      const inputs = form.querySelectorAll('input, select, textarea');
-      inputs.forEach(input => {
-        input.addEventListener('blur', function() {
-          validateField(input);
-        });
-        input.addEventListener('input', function() {
-          if (input.classList.contains('is-invalid')) {
-            validateField(input);
-          }
-        });
-      });
-    });
-  }
-
-  function validateField(field) {
-    const isValid = field.checkValidity();
-    field.classList.toggle('is-valid', isValid);
-    field.classList.toggle('is-invalid', !isValid);
-    
-    // Show/hide error message
-    const errorElement = field.parentNode.querySelector('.invalid-feedback');
-    if (errorElement) {
-      errorElement.style.display = isValid ? 'none' : 'block';
-    }
-  }
-
-  // Utility functions
-  function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-
-  function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  }
-
-  function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
-
-  function throttle(func, limit) {
-    let inThrottle;
-    return function() {
-      const args = arguments;
-      const context = this;
-      if (!inThrottle) {
-        func.apply(context, args);
-        inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
-      }
-    };
-  }
-
-  // Export utility functions to global scope
-  window.GunworxUtils = {
-    formatDate,
-    formatCurrency,
-    debounce,
-    throttle,
-    showModal,
-    hideModal,
-    toggleDropdown,
-    showTab
-  };
-
-  // Initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-})();
+  // Re-initialize icons
+  lucide.createIcons()
+}
 
 // Status badge generation
 function getStatusBadge(status) {
@@ -882,3 +627,21 @@ document.addEventListener("keydown", (e) => {
     closeEditModal()
   }
 })
+
+// Initialize tooltips and accessibility
+function initializeAccessibility() {
+  // Add ARIA labels and roles
+  document.querySelectorAll("button").forEach((button) => {
+    if (!button.getAttribute("aria-label") && button.title) {
+      button.setAttribute("aria-label", button.title)
+    }
+  })
+
+  // Add table headers association
+  document.querySelectorAll("table").forEach((table) => {
+    table.setAttribute("role", "table")
+  })
+}
+
+// Call accessibility initialization
+document.addEventListener("DOMContentLoaded", initializeAccessibility)
