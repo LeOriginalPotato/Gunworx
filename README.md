@@ -25,13 +25,6 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Default Users
-
-- **Jean-Mari**: Foktogbokka (System Admin)
-- **Jean**: xNgU7ADa (System Admin)
-- **Eben**: UY9FBe8abajU (User)
-- **Francois**: MnWbCkE4AcFP (User)
-- **Wikus**: Wikus@888 (Admin)
 
 ## Deployment
 
